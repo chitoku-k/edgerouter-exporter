@@ -27,7 +27,8 @@ const (
 )
 
 type Parser interface {
-	ParseLoadBalancerWatchdog(data []string) ([]service.LoadBalanceGroup, error)
+	ParseDdnsStatus(data []string) ([]service.DdnsStatus, error)
+	ParseLoadBalanceWatchdog(data []string) ([]service.LoadBalanceGroup, error)
 }
 
 type parser struct {
@@ -37,7 +38,57 @@ func NewParser() Parser {
 	return &parser{}
 }
 
-func (p *parser) ParseLoadBalancerWatchdog(data []string) ([]service.LoadBalanceGroup, error) {
+func (p *parser) ParseDdnsStatus(data []string) ([]service.DdnsStatus, error) {
+	var previous Line
+	var result []service.DdnsStatus
+
+	var current *service.DdnsStatus
+	for _, line := range data {
+		if len(strings.TrimSpace(line)) == 0 {
+			previous = LineNone
+			continue
+		}
+
+		if previous == LineNone {
+			if current != nil {
+				result = append(result, *current)
+			}
+			current = &service.DdnsStatus{}
+		}
+
+		if itemRegexp.MatchString(line) {
+			previous = LineItem
+			m := itemRegexp.FindStringSubmatch(line)
+			key := strings.TrimSpace(m[1])
+			value := strings.TrimSpace(m[2])
+
+			switch key {
+			case "interface":
+				current.Interface = value
+
+			case "ip address":
+				current.IPAddress = value
+
+			case "host-name":
+				current.HostName = value
+
+			case "last update":
+				current.LastUpdate = parseTime(key, value)
+
+			case "update-status":
+				current.UpdateStatus = value
+			}
+		}
+	}
+
+	if current != nil {
+		result = append(result, *current)
+	}
+
+	return result, nil
+}
+
+func (p *parser) ParseLoadBalanceWatchdog(data []string) ([]service.LoadBalanceGroup, error) {
 	var previous Line
 	var result []service.LoadBalanceGroup
 

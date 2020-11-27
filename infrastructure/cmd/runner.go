@@ -20,11 +20,20 @@ func NewRunnerService(command string, parser Parser) service.Runner {
 	}
 }
 
+func (s *runnerService) DdnsStatus() ([]service.DdnsStatus, error) {
+	result, err := exec.Command(s.Command, "show", "dns", "dynamic", "status").CombinedOutput()
+	if err != nil {
+		return nil, fmt.Errorf("failed to exec ddns status: %w", err)
+	}
+
+	return s.Parser.ParseDdnsStatus(strings.Split(string(result), "\n"))
+}
+
 func (s *runnerService) LoadBalanceWatchdog() ([]service.LoadBalanceGroup, error) {
 	result, err := exec.Command(s.Command, "show", "load-balance", "watchdog").CombinedOutput()
 	if err != nil {
-		return nil, fmt.Errorf("failed to exec load-balance watchdog")
+		return nil, fmt.Errorf("failed to exec load-balance watchdog: %w", err)
 	}
 
-	return s.Parser.ParseLoadBalancerWatchdog(strings.Split(string(result), "\n"))
+	return s.Parser.ParseLoadBalanceWatchdog(strings.Split(string(result), "\n"))
 }

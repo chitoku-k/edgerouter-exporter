@@ -18,10 +18,79 @@ var _ = Describe("Parser", func() {
 		parser = cmd.NewParser()
 	})
 
-	Describe("ParseLoadBalancerWatchdog()", func() {
+	Describe("ParseDdnsStatus()", func() {
 		Context("when empty data is given", func() {
 			It("returns empty", func() {
-				actual, err := parser.ParseLoadBalancerWatchdog(nil)
+				actual, err := parser.ParseDdnsStatus(nil)
+				Expect(actual).To(BeEmpty())
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when one status is given", func() {
+			It("returns one group", func() {
+				actual, err := parser.ParseDdnsStatus([]string{
+					"interface    : eth0",
+					"ip address   : 192.0.2.1",
+					"host-name    : example.com",
+					"last update  : Mon Jan 02 15:04:05 2006",
+					"update-status: good",
+					"",
+				})
+				Expect(actual).To(Equal([]service.DdnsStatus{
+					{
+						Interface:    "eth0",
+						IPAddress:    "192.0.2.1",
+						HostName:     "example.com",
+						LastUpdate:   parseTime("2006-01-02T15:04:05Z"),
+						UpdateStatus: "good",
+					},
+				}))
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when multiple statuses are given", func() {
+			It("returns multiple statuses", func() {
+				actual, err := parser.ParseDdnsStatus([]string{
+					"interface    : eth0",
+					"ip address   : 192.0.2.1",
+					"host-name    : 1.example.com",
+					"last update  : Mon Jan 02 15:04:05 2006",
+					"update-status: good",
+					"",
+					"interface    : eth1",
+					"ip address   : 192.0.2.2",
+					"host-name    : 2.example.com",
+					"last update  : Mon Jan 02 15:04:06 2006",
+					"update-status: good",
+					"",
+				})
+				Expect(actual).To(Equal([]service.DdnsStatus{
+					{
+						Interface:    "eth0",
+						IPAddress:    "192.0.2.1",
+						HostName:     "1.example.com",
+						LastUpdate:   parseTime("2006-01-02T15:04:05Z"),
+						UpdateStatus: "good",
+					},
+					{
+						Interface:    "eth1",
+						IPAddress:    "192.0.2.2",
+						HostName:     "2.example.com",
+						LastUpdate:   parseTime("2006-01-02T15:04:06Z"),
+						UpdateStatus: "good",
+					},
+				}))
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("ParseLoadBalanceWatchdog()", func() {
+		Context("when empty data is given", func() {
+			It("returns empty", func() {
+				actual, err := parser.ParseLoadBalanceWatchdog(nil)
 				Expect(actual).To(BeEmpty())
 				Expect(err).NotTo(HaveOccurred())
 			})
@@ -29,7 +98,7 @@ var _ = Describe("Parser", func() {
 
 		Context("when one group is given", func() {
 			It("returns one group", func() {
-				actual, err := parser.ParseLoadBalancerWatchdog([]string{
+				actual, err := parser.ParseLoadBalanceWatchdog([]string{
 					"Group FAILOVER_01",
 					"  eth0",
 					"  status: OK",
@@ -93,7 +162,7 @@ var _ = Describe("Parser", func() {
 
 		Context("when multiple groups are given", func() {
 			It("returns all groups", func() {
-				actual, err := parser.ParseLoadBalancerWatchdog([]string{
+				actual, err := parser.ParseLoadBalanceWatchdog([]string{
 					"Group FAILOVER_01",
 					"  eth0",
 					"  status: OK",

@@ -3,12 +3,12 @@ edgerouter-exporter
 
 [![][workflow-badge]][workflow-link]
 
-A Prometheus exporter for EdgeRouter Load Balancers
+A Prometheus exporter for EdgeRouter DDNS and Load Balancers
 
 ## Requirements
 
 - Go
-- EdgeRouter with load-balance configured
+- EdgeRouter
 
 ## Installation
 
@@ -35,6 +35,10 @@ $ ./edgerouter-exporter
 Example result:
 
 ```
+# HELP edgerouter_dynamic_dns_status Result of DDNS update
+# TYPE edgerouter_dynamic_dns_status gauge
+edgerouter_dynamic_dns_status{hostname="1.example.com",interface_name="eth0",ip_address="192.0.2.1"} 1
+edgerouter_dynamic_dns_status{hostname="2.example.com",interface_name="eth1",ip_address="192.0.2.2"} 0
 # HELP edgerouter_load_balancer_health Result of watchdog
 # TYPE edgerouter_load_balancer_health gauge
 edgerouter_load_balancer_health{group_name="WAN_FAILOVER",interface_name="eth0"} 1
