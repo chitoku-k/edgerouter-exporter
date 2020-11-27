@@ -5,7 +5,16 @@ import (
 )
 
 type Runner interface {
+	DdnsStatus() ([]DdnsStatus, error)
 	LoadBalanceWatchdog() ([]LoadBalanceGroup, error)
+}
+
+type DdnsStatus struct {
+	Interface    string
+	IPAddress    string
+	HostName     string
+	LastUpdate   *time.Time
+	UpdateStatus string
 }
 
 type LoadBalanceGroup struct {

@@ -46,6 +46,12 @@ func (e *engine) Start(ctx context.Context) error {
 	})
 
 	router.GET("/metrics", func(c *gin.Context) {
+		ddns := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "edgerouter",
+			Name:      "dynamic_dns_status",
+			Help:      "Result of DDNS update",
+		}, []string{"interface_name", "ip_address", "hostname"})
+
 		health := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: "edgerouter",
 			Name:      "load_balancer_health",
@@ -81,6 +87,27 @@ func (e *engine) Start(ctx context.Context) error {
 			Name:      "load_balancer_route_drop_total",
 			Help:      "Total number of route drops",
 		}, []string{"group_name", "interface_name"})
+
+		ddnsStatuses, err := e.Runner.DdnsStatus()
+		if err != nil {
+			logrus.Errorf("Error in retrieving ddns: %v", err)
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+
+		for _, status := range ddnsStatuses {
+			label := prometheus.Labels{
+				"interface_name": status.Interface,
+				"ip_address":     status.IPAddress,
+				"hostname":       status.HostName,
+			}
+
+			if status.UpdateStatus == "good" {
+				ddns.With(label).Set(1)
+			} else {
+				ddns.With(label).Set(0)
+			}
+		}
 
 		groups, err := e.Runner.LoadBalanceWatchdog()
 		if err != nil {
@@ -121,7 +148,7 @@ func (e *engine) Start(ctx context.Context) error {
 		}
 
 		registry := prometheus.NewRegistry()
-		registry.MustRegister(health, pingHealth, pingTotal, pingFailTotal, runFailTotal, routeDropTotal)
+		registry.MustRegister(ddns, health, pingHealth, pingTotal, pingFailTotal, runFailTotal, routeDropTotal)
 
 		handler := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
 		handler.ServeHTTP(c.Writer, c.Request)
