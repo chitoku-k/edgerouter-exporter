@@ -12,10 +12,11 @@ import (
 )
 
 var (
-	groupRegexp = regexp.MustCompile(`^Group (.+)`)
-	itemRegexp  = regexp.MustCompile(`(.+): (.+)`)
-	runRegexp   = regexp.MustCompile(`(\d+)/(\d+)`)
-	pingRegexp  = regexp.MustCompile(`^(.+) - (.+)`)
+	interfaceRegexp = regexp.MustCompile(`([^\[]+)`)
+	groupRegexp     = regexp.MustCompile(`^Group (.+)`)
+	itemRegexp      = regexp.MustCompile(`(.+): (.+)`)
+	runRegexp       = regexp.MustCompile(`(\d+)/(\d+)`)
+	pingRegexp      = regexp.MustCompile(`^(.+) - (.+)`)
 )
 
 type Line int
@@ -65,7 +66,8 @@ func (p *parser) ParseDdnsStatus(data []string) ([]service.DdnsStatus, error) {
 
 			switch key {
 			case "interface":
-				current.Interface = value
+				m = interfaceRegexp.FindStringSubmatch(value)
+				current.Interface = strings.TrimSpace(m[1])
 
 			case "ip address":
 				current.IPAddress = value

@@ -59,11 +59,10 @@ var _ = Describe("Parser", func() {
 					"last update  : Mon Jan  2 15:04:05 2006",
 					"update-status: good",
 					"",
-					"interface    : eth1",
-					"ip address   : 192.0.2.2",
+					"interface    : eth1 [ Currently no IP address ]",
 					"host-name    : 2.example.com",
 					"last update  : Mon Jan  2 15:04:06 2006",
-					"update-status: good",
+					"update-status: ",
 					"",
 				})
 				Expect(actual).To(Equal([]service.DdnsStatus{
@@ -76,10 +75,9 @@ var _ = Describe("Parser", func() {
 					},
 					{
 						Interface:    "eth1",
-						IPAddress:    "192.0.2.2",
 						HostName:     "2.example.com",
 						LastUpdate:   parseTime("2006-01-02T15:04:06Z"),
-						UpdateStatus: "good",
+						UpdateStatus: "",
 					},
 				}))
 				Expect(err).NotTo(HaveOccurred())
