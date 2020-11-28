@@ -12,11 +12,12 @@ import (
 )
 
 var (
-	interfaceRegexp = regexp.MustCompile(`([^\[]+)`)
-	groupRegexp     = regexp.MustCompile(`^Group (.+)`)
-	itemRegexp      = regexp.MustCompile(`(.+): (.+)`)
-	runRegexp       = regexp.MustCompile(`(\d+)/(\d+)`)
-	pingRegexp      = regexp.MustCompile(`^(.+) - (.+)`)
+	notConfiguredRegexp = regexp.MustCompile(`.* not configured`)
+	interfaceRegexp     = regexp.MustCompile(`([^\[]+)`)
+	groupRegexp         = regexp.MustCompile(`^Group (.+)`)
+	itemRegexp          = regexp.MustCompile(`(.+): (.+)`)
+	runRegexp           = regexp.MustCompile(`(\d+)/(\d+)`)
+	pingRegexp          = regexp.MustCompile(`^(.+) - (.+)`)
 )
 
 type Line int
@@ -49,6 +50,10 @@ func (p *parser) ParseDdnsStatus(data []string) ([]service.DdnsStatus, error) {
 		if len(strings.TrimSpace(line)) == 0 {
 			previous = LineNone
 			continue
+		}
+
+		if notConfiguredRegexp.MatchString(line) {
+			return nil, nil
 		}
 
 		if previous == LineNone {
@@ -100,6 +105,10 @@ func (p *parser) ParseLoadBalanceWatchdog(data []string) ([]service.LoadBalanceG
 		if len(strings.TrimSpace(line)) == 0 {
 			previous = LineNone
 			continue
+		}
+
+		if notConfiguredRegexp.MatchString(line) {
+			return nil, nil
 		}
 
 		if itemRegexp.MatchString(line) {
