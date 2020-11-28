@@ -21,7 +21,7 @@ func NewRunnerService(command string, parser Parser) service.Runner {
 }
 
 func (s *runnerService) DdnsStatus() ([]service.DdnsStatus, error) {
-	result, err := exec.Command(s.Command, "show", "dns", "dynamic", "status").CombinedOutput()
+	result, err := exec.Command(s.Command, "show", "dns", "dynamic", "status").Output()
 	if err != nil {
 		return nil, fmt.Errorf("failed to exec ddns status: %w", err)
 	}
@@ -30,7 +30,7 @@ func (s *runnerService) DdnsStatus() ([]service.DdnsStatus, error) {
 }
 
 func (s *runnerService) LoadBalanceWatchdog() ([]service.LoadBalanceGroup, error) {
-	result, err := exec.Command(s.Command, "show", "load-balance", "watchdog").CombinedOutput()
+	result, err := exec.Command(s.Command, "show", "load-balance", "watchdog").Output()
 	if err != nil {
 		return nil, fmt.Errorf("failed to exec load-balance watchdog: %w", err)
 	}

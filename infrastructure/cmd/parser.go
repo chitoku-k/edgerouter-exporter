@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -11,10 +12,11 @@ import (
 )
 
 var (
-	groupRegexp = regexp.MustCompile(`^Group (.+)`)
-	itemRegexp  = regexp.MustCompile(`(.+): (.+)`)
-	runRegexp   = regexp.MustCompile(`(\d+)/(\d+)`)
-	pingRegexp  = regexp.MustCompile(`^(.+) - (.+)`)
+	interfaceRegexp = regexp.MustCompile(`([^\[]+)`)
+	groupRegexp     = regexp.MustCompile(`^Group (.+)`)
+	itemRegexp      = regexp.MustCompile(`(.+): (.+)`)
+	runRegexp       = regexp.MustCompile(`(\d+)/(\d+)`)
+	pingRegexp      = regexp.MustCompile(`^(.+) - (.+)`)
 )
 
 type Line int
@@ -64,7 +66,8 @@ func (p *parser) ParseDdnsStatus(data []string) ([]service.DdnsStatus, error) {
 
 			switch key {
 			case "interface":
-				current.Interface = value
+				m = interfaceRegexp.FindStringSubmatch(value)
+				current.Interface = strings.TrimSpace(m[1])
 
 			case "ip address":
 				current.IPAddress = value
@@ -100,6 +103,13 @@ func (p *parser) ParseLoadBalanceWatchdog(data []string) ([]service.LoadBalanceG
 		}
 
 		if itemRegexp.MatchString(line) {
+			if current == nil {
+				return nil, fmt.Errorf("unexpected token, expecting group: %v", line)
+			}
+			if len(current.Statuses) == 0 {
+				return nil, fmt.Errorf("unexpected token, expecting group or empty line: %v", line)
+			}
+
 			previous = LineItem
 			m := itemRegexp.FindStringSubmatch(line)
 			status := &current.Statuses[len(current.Statuses)-1]
@@ -177,7 +187,7 @@ func parseInt(key, value string) int {
 }
 
 func parseTime(key, value string) *time.Time {
-	t, err := time.Parse("Mon Jan 02 15:04:05 2006", value)
+	t, err := time.Parse("Mon Jan _2 15:04:05 2006", value)
 	if err != nil {
 		logrus.Infof(`Cannot parse "%s" to a time (key: "%s"): %v`, value, key, err)
 		return nil
