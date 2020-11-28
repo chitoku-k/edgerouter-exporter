@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -100,6 +101,13 @@ func (p *parser) ParseLoadBalanceWatchdog(data []string) ([]service.LoadBalanceG
 		}
 
 		if itemRegexp.MatchString(line) {
+			if current == nil {
+				return nil, fmt.Errorf("unexpected token, expecting group: %v", line)
+			}
+			if len(current.Statuses) == 0 {
+				return nil, fmt.Errorf("unexpected token, expecting group or empty line: %v", line)
+			}
+
 			previous = LineItem
 			m := itemRegexp.FindStringSubmatch(line)
 			status := &current.Statuses[len(current.Statuses)-1]

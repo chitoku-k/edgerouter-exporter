@@ -278,6 +278,34 @@ var _ = Describe("Parser", func() {
 			})
 		})
 
+		Context("when invalid data is given", func() {
+			It("returns an error", func() {
+				actual, err := parser.ParseLoadBalanceWatchdog([]string{
+					"mesg: ttyname failed: Inappropriate ioctl for device",
+					"Group FAILOVER_01",
+					"  eth0",
+					"  status: OK",
+					"  pings: 7777",
+					"  fails: 1",
+					"  run fails: 0/3",
+					"  route drops: 0",
+					"  ping gateway: ping.ubnt.com - REACHABLE",
+					"",
+					"  eth1",
+					"  status: Waiting on recovery (0/3)",
+					"  pings: 7777",
+					"  fails: 77",
+					"  run fails: 3/3",
+					"  route drops: 1",
+					"  ping gateway: ping.ubnt.com - DOWN",
+					"  last route drop   : Mon Jan  2 15:04:05 2006",
+					"  last route recover: Mon Jan  2 15:04:00 2006",
+					"",
+				})
+				Expect(actual).To(BeEmpty())
+				Expect(err).To(MatchError("unexpected token, expecting group: mesg: ttyname failed: Inappropriate ioctl for device"))
+			})
+		})
 	})
 })
 
