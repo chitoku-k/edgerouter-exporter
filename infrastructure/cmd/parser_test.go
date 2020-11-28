@@ -27,6 +27,17 @@ var _ = Describe("Parser", func() {
 			})
 		})
 
+		Context("when no status is given", func() {
+			It("returns empty", func() {
+				actual, err := parser.ParseDdnsStatus([]string{
+					"Dynamic DNS not configured",
+					"",
+				})
+				Expect(actual).To(BeEmpty())
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
 		Context("when one status is given", func() {
 			It("returns one group", func() {
 				actual, err := parser.ParseDdnsStatus([]string{
@@ -90,6 +101,30 @@ var _ = Describe("Parser", func() {
 			It("returns empty", func() {
 				actual, err := parser.ParseLoadBalanceWatchdog(nil)
 				Expect(actual).To(BeEmpty())
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when no group is given", func() {
+			It("returns empty", func() {
+				actual, err := parser.ParseDdnsStatus([]string{
+					"load-balance is not configured",
+				})
+				Expect(actual).To(BeEmpty())
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when empty group is given", func() {
+			It("returns empty", func() {
+				actual, err := parser.ParseLoadBalanceWatchdog([]string{
+					"Group FAILOVER_01",
+				})
+				Expect(actual).To(Equal([]service.LoadBalanceGroup{
+					{
+						Name: "FAILOVER_01",
+					},
+				}))
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
