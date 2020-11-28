@@ -177,7 +177,7 @@ func parseInt(key, value string) int {
 }
 
 func parseTime(key, value string) *time.Time {
-	t, err := time.Parse("Mon Jan 02 15:04:05 2006", value)
+	t, err := time.Parse("Mon Jan _2 15:04:05 2006", value)
 	if err != nil {
 		logrus.Infof(`Cannot parse "%s" to a time (key: "%s"): %v`, value, key, err)
 		return nil
