@@ -37,3 +37,12 @@ func (s *runnerService) LoadBalanceWatchdog() ([]service.LoadBalanceGroup, error
 
 	return s.Parser.ParseLoadBalanceWatchdog(strings.Split(string(result), "\n"))
 }
+
+func (s *runnerService) PPPoEClientSessions() ([]service.PPPoEClientSession, error) {
+	result, err := exec.Command(s.Command, "show", "pppoe-client").Output()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get pppoe-client sessions: %w", err)
+	}
+
+	return s.Parser.ParsePPPoEClientSessions(strings.Split(string(result), "\n"))
+}

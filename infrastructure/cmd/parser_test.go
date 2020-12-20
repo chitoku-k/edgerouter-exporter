@@ -340,6 +340,110 @@ var _ = Describe("Parser", func() {
 			})
 		})
 	})
+
+	Describe("ParsePPPoEClientSessions()", func() {
+		Context("when empty data is given", func() {
+			It("returns empty", func() {
+				actual, err := parser.ParsePPPoEClientSessions(nil)
+				Expect(actual).To(BeEmpty())
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when no session is given", func() {
+			It("return empty", func() {
+				actual, err := parser.ParsePPPoEClientSessions([]string{
+					"No active PPPoE client sessions",
+				})
+				Expect(actual).To(BeEmpty())
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when one session is given", func() {
+			It("returns one session", func() {
+				actual, err := parser.ParsePPPoEClientSessions([]string{
+					"Active PPPoE client sessions:",
+					"",
+					"User       Time      Proto Iface   Remote IP       TX pkt/byte   RX pkt/byte",
+					"---------- --------- ----- -----   --------------- ------ ------ ------ ------",
+					"user01     01h02m03s PPPoE pppoe0  192.0.2.255   384  34.8K   1.2K  58.2K",
+					"",
+					"Total sessions: 1",
+				})
+				Expect(actual).To(Equal([]service.PPPoEClientSession{
+					{
+						User:            "user01",
+						Time:            parseDuration("3723s"),
+						Protocol:        "PPPoE",
+						Interface:       "pppoe0",
+						RemoteIP:        "192.0.2.255",
+						TransmitPackets: 384,
+						TransmitBytes:   35635,
+						ReceivePackets:  1228,
+						ReceiveBytes:    59596,
+					},
+				}))
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when multiple sessions are given", func() {
+			It("returns multiple sessions", func() {
+				actual, err := parser.ParsePPPoEClientSessions([]string{
+					"Active PPPoE client sessions:",
+					"",
+					"User       Time      Proto Iface   Remote IP       TX pkt/byte   RX pkt/byte",
+					"---------- --------- ----- -----   --------------- ------ ------ ------ ------",
+					"user01     01h02m03s PPPoE pppoe0  192.0.2.255   384  34.8K   1.2K  58.2K",
+					"user02     04h05m06s PPPoE pppoe1  198.51.100.255   768  76.8K   2.4K 116.4K",
+					"",
+					"Total sessions: 1",
+				})
+				Expect(actual).To(Equal([]service.PPPoEClientSession{
+					{
+						User:            "user01",
+						Time:            parseDuration("3723s"),
+						Protocol:        "PPPoE",
+						Interface:       "pppoe0",
+						RemoteIP:        "192.0.2.255",
+						TransmitPackets: 384,
+						TransmitBytes:   35635,
+						ReceivePackets:  1228,
+						ReceiveBytes:    59596,
+					},
+					{
+						User:            "user02",
+						Time:            parseDuration("14706s"),
+						Protocol:        "PPPoE",
+						Interface:       "pppoe1",
+						RemoteIP:        "198.51.100.255",
+						TransmitPackets: 768,
+						TransmitBytes:   78643,
+						ReceivePackets:  2457,
+						ReceiveBytes:    119193,
+					},
+				}))
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when invalid data is given", func() {
+			It("returns an error", func() {
+				actual, err := parser.ParsePPPoEClientSessions([]string{
+					"Active PPPoE client sessions:",
+					"",
+					"Time      Proto Iface   Remote IP       TX pkt/byte   RX pkt/byte",
+					"--------- ----- -----   --------------- ------ ------ ------ ------",
+					"01h02m03s PPPoE pppoe0  192.0.2.255   384  34.8K   1.2K  58.2K",
+					"",
+					"Total sessions: 1",
+				})
+				Expect(actual).To(BeEmpty())
+				Expect(err).To(MatchError("unexpected number of fields, expecting 9 fields: 01h02m03s PPPoE pppoe0  192.0.2.255   384  34.8K   1.2K  58.2K"))
+			})
+		})
+	})
 })
 
 func parseTime(value string) *time.Time {
@@ -348,4 +452,12 @@ func parseTime(value string) *time.Time {
 		GinkgoT().Fatal(err)
 	}
 	return &t
+}
+
+func parseDuration(value string) *time.Duration {
+	d, err := time.ParseDuration(value)
+	if err != nil {
+		GinkgoT().Fatal(err)
+	}
+	return &d
 }
