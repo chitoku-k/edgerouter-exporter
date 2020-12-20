@@ -3,7 +3,7 @@ edgerouter-exporter
 
 [![][workflow-badge]][workflow-link]
 
-A Prometheus exporter for EdgeRouter DDNS and Load Balancers
+A Prometheus exporter for EdgeRouter DDNS, Load Balancers, and PPPoE sessions
 
 ## Requirements
 
@@ -63,6 +63,21 @@ edgerouter_load_balancer_route_drop_total{group_name="WAN_FAILOVER",interface_na
 # TYPE edgerouter_load_balancer_run_fail_total gauge
 edgerouter_load_balancer_run_fail_total{group_name="WAN_FAILOVER",interface_name="eth0"} 0
 edgerouter_load_balancer_run_fail_total{group_name="WAN_FAILOVER",interface_name="eth1"} 0
+# HELP edgerouter_pppoe_client_session_receive_bytes_total Total receive bytes for PPPoE client session
+# TYPE edgerouter_pppoe_client_session_receive_bytes_total gauge
+edgerouter_pppoe_client_session_receive_bytes_total{interface_name="pppoe0",ip_address="192.0.2.255",protocol="PPPoE",user="user01"} 79360
+# HELP edgerouter_pppoe_client_session_receive_packets_total Total receive packets for PPPoE client session
+# TYPE edgerouter_pppoe_client_session_receive_packets_total gauge
+edgerouter_pppoe_client_session_receive_packets_total{interface_name="pppoe0",ip_address="192.0.2.255",protocol="PPPoE",user="user01"} 1638
+# HELP edgerouter_pppoe_client_session_seconds_total Total seconds for PPPoE client session
+# TYPE edgerouter_pppoe_client_session_seconds_total gauge
+edgerouter_pppoe_client_session_seconds_total{interface_name="pppoe0",ip_address="192.0.2.255",protocol="PPPoE",user="user01"} 18975
+# HELP edgerouter_pppoe_client_session_transmit_bytes_total Total transmit bytes for PPPoE client session
+# TYPE edgerouter_pppoe_client_session_transmit_bytes_total gauge
+edgerouter_pppoe_client_session_transmit_bytes_total{interface_name="pppoe0",ip_address="192.0.2.255",protocol="PPPoE",user="user01"} 39116
+# HELP edgerouter_pppoe_client_session_transmit_packets_total Total transmit packets for PPPoE client session
+# TYPE edgerouter_pppoe_client_session_transmit_packets_total gauge
+edgerouter_pppoe_client_session_transmit_packets_total{interface_name="pppoe0",ip_address="192.0.2.255",protocol="PPPoE",user="user01"} 412
 ```
 
 ### Spec
