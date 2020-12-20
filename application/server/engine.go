@@ -88,6 +88,36 @@ func (e *engine) Start(ctx context.Context) error {
 			Help:      "Total number of route drops",
 		}, []string{"group_name", "interface_name"})
 
+		pppoeClientSessionSecondsTotal := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "edgerouter",
+			Name:      "pppoe_client_session_seconds_total",
+			Help:      "Total seconds for PPPoE client session",
+		}, []string{"user", "protocol", "interface_name", "ip_address"})
+
+		pppoeClientSessionTransmitPacketsTotal := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "edgerouter",
+			Name:      "pppoe_client_session_transmit_packets_total",
+			Help:      "Total transmit packets for PPPoE client session",
+		}, []string{"user", "protocol", "interface_name", "ip_address"})
+
+		pppoeClientSessionTransmitBytesTotal := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "edgerouter",
+			Name:      "pppoe_client_session_transmit_bytes_total",
+			Help:      "Total transmit bytes for PPPoE client session",
+		}, []string{"user", "protocol", "interface_name", "ip_address"})
+
+		pppoeClientSessionReceivePacketsTotal := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "edgerouter",
+			Name:      "pppoe_client_session_receive_packets_total",
+			Help:      "Total receive packets for PPPoE client session",
+		}, []string{"user", "protocol", "interface_name", "ip_address"})
+
+		pppoeClientSessionReceiveBytesTotal := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "edgerouter",
+			Name:      "pppoe_client_session_receive_bytes_total",
+			Help:      "Total receive bytes for PPPoE client session",
+		}, []string{"user", "protocol", "interface_name", "ip_address"})
+
 		ddnsStatuses, err := e.Runner.DdnsStatus()
 		if err != nil {
 			logrus.Errorf("Error in retrieving ddns: %v", err)
@@ -147,8 +177,45 @@ func (e *engine) Start(ctx context.Context) error {
 			}
 		}
 
+		pppoeClientSessions, err := e.Runner.PPPoEClientSessions()
+		if err != nil {
+			logrus.Errorf("Error in running PPPoE client sessions: %v", err)
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+
+		for _, session := range pppoeClientSessions {
+			label := prometheus.Labels{
+				"user":           session.User,
+				"protocol":       session.Protocol,
+				"interface_name": session.Interface,
+				"ip_address":     session.RemoteIP,
+			}
+
+			if session.Time != nil {
+				pppoeClientSessionSecondsTotal.With(label).Set(session.Time.Seconds())
+			}
+			pppoeClientSessionTransmitPacketsTotal.With(label).Set(float64(session.TransmitPackets))
+			pppoeClientSessionTransmitBytesTotal.With(label).Set(float64(session.TransmitBytes))
+			pppoeClientSessionReceivePacketsTotal.With(label).Set(float64(session.ReceivePackets))
+			pppoeClientSessionReceiveBytesTotal.With(label).Set(float64(session.ReceiveBytes))
+		}
+
 		registry := prometheus.NewRegistry()
-		registry.MustRegister(ddns, health, pingHealth, pingTotal, pingFailTotal, runFailTotal, routeDropTotal)
+		registry.MustRegister(
+			ddns,
+			health,
+			pingHealth,
+			pingTotal,
+			pingFailTotal,
+			runFailTotal,
+			routeDropTotal,
+			pppoeClientSessionSecondsTotal,
+			pppoeClientSessionTransmitPacketsTotal,
+			pppoeClientSessionTransmitBytesTotal,
+			pppoeClientSessionReceivePacketsTotal,
+			pppoeClientSessionReceiveBytesTotal,
+		)
 
 		handler := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})
 		handler.ServeHTTP(c.Writer, c.Request)

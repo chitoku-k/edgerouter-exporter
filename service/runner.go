@@ -7,6 +7,7 @@ import (
 type Runner interface {
 	DdnsStatus() ([]DdnsStatus, error)
 	LoadBalanceWatchdog() ([]LoadBalanceGroup, error)
+	PPPoEClientSessions() ([]PPPoEClientSession, error)
 }
 
 type DdnsStatus struct {
@@ -38,4 +39,16 @@ type LoadBalanceStatus struct {
 type LoadBalancePing struct {
 	Gateway string
 	Status  string
+}
+
+type PPPoEClientSession struct {
+	User            string
+	Time            *time.Duration
+	Protocol        string
+	Interface       string
+	RemoteIP        string
+	TransmitPackets int64
+	TransmitBytes   int64
+	ReceivePackets  int64
+	ReceiveBytes    int64
 }

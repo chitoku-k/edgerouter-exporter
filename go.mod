@@ -3,6 +3,7 @@ module github.com/chitoku-k/edgerouter-exporter
 go 1.15
 
 require (
+	github.com/alecthomas/units v0.0.0-20201120081800-1786d5ef83d4
 	github.com/gin-gonic/gin v1.6.3
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/onsi/ginkgo v1.14.2

@@ -7,17 +7,22 @@ import (
 	"strings"
 	"time"
 
+	"github.com/alecthomas/units"
 	"github.com/chitoku-k/edgerouter-exporter/service"
 	"github.com/sirupsen/logrus"
 )
 
 var (
+	noActiveRegexp      = regexp.MustCompile(`^No active .*sessions`)
 	notConfiguredRegexp = regexp.MustCompile(`.* not configured`)
+	separatorRegexp     = regexp.MustCompile(`^[ -]+$`)
 	interfaceRegexp     = regexp.MustCompile(`([^\[]+)`)
 	groupRegexp         = regexp.MustCompile(`^Group (.+)`)
 	itemRegexp          = regexp.MustCompile(`(.+): (.+)`)
 	runRegexp           = regexp.MustCompile(`(\d+)/(\d+)`)
 	pingRegexp          = regexp.MustCompile(`^(.+) - (.+)`)
+
+	byteUnits = units.MakeUnitMap("", "", 1024)
 )
 
 type Line int
@@ -26,12 +31,14 @@ const (
 	LineNone Line = iota
 	LineGroup
 	LineInterface
+	LineSeparator
 	LineItem
 )
 
 type Parser interface {
 	ParseDdnsStatus(data []string) ([]service.DdnsStatus, error)
 	ParseLoadBalanceWatchdog(data []string) ([]service.LoadBalanceGroup, error)
+	ParsePPPoEClientSessions(data []string) ([]service.PPPoEClientSession, error)
 }
 
 type parser struct {
@@ -187,12 +194,71 @@ func (p *parser) ParseLoadBalanceWatchdog(data []string) ([]service.LoadBalanceG
 	return result, nil
 }
 
+func (p *parser) ParsePPPoEClientSessions(data []string) ([]service.PPPoEClientSession, error) {
+	var previous Line
+	var result []service.PPPoEClientSession
+
+	var current *service.PPPoEClientSession
+	for _, line := range data {
+		if len(strings.TrimSpace(line)) == 0 {
+			previous = LineNone
+			continue
+		}
+
+		if noActiveRegexp.MatchString(line) {
+			return nil, nil
+		}
+
+		if separatorRegexp.MatchString(line) {
+			previous = LineSeparator
+			continue
+		}
+
+		if previous == LineSeparator || previous == LineItem {
+			previous = LineItem
+			fields := strings.Fields(line)
+			if len(fields) != 9 {
+				return result, fmt.Errorf("unexpected number of fields, expecting 9 fields: %v", line)
+			}
+
+			if current != nil {
+				result = append(result, *current)
+			}
+			current = &service.PPPoEClientSession{
+				User:            fields[0],
+				Time:            parseDuration("[1]", fields[1]),
+				Protocol:        fields[2],
+				Interface:       fields[3],
+				RemoteIP:        fields[4],
+				TransmitPackets: parseBytes("[5]", fields[5]),
+				TransmitBytes:   parseBytes("[6]", fields[6]),
+				ReceivePackets:  parseBytes("[7]", fields[7]),
+				ReceiveBytes:    parseBytes("[8]", fields[8]),
+			}
+		}
+	}
+
+	if current != nil {
+		result = append(result, *current)
+	}
+
+	return result, nil
+}
+
 func parseInt(key, value string) int {
 	n, err := strconv.ParseInt(value, 10, strconv.IntSize)
 	if err != nil {
 		logrus.Infof(`Cannot parse "%s" to an integer (key "%s"): %v`, value, key, err)
 	}
 	return int(n)
+}
+
+func parseBytes(key, value string) int64 {
+	u, err := units.ParseUnit(value, byteUnits)
+	if err != nil {
+		logrus.Infof(`Cannot parse "%s" to a byte unit (key: "%s"): %v`, value, key, err)
+	}
+	return u
 }
 
 func parseTime(key, value string) *time.Time {
@@ -202,4 +268,13 @@ func parseTime(key, value string) *time.Time {
 		return nil
 	}
 	return &t
+}
+
+func parseDuration(key, value string) *time.Duration {
+	d, err := time.ParseDuration(value)
+	if err != nil {
+		logrus.Infof(`Cannot parse "%s" to a duration (key: "%s"): %v`, value, key, err)
+		return nil
+	}
+	return &d
 }
