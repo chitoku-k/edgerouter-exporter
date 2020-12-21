@@ -10,6 +10,7 @@ import (
 	"github.com/alecthomas/units"
 	"github.com/chitoku-k/edgerouter-exporter/service"
 	"github.com/sirupsen/logrus"
+	str2duration "github.com/xhit/go-str2duration/v2"
 )
 
 var (
@@ -271,7 +272,7 @@ func parseTime(key, value string) *time.Time {
 }
 
 func parseDuration(key, value string) *time.Duration {
-	d, err := time.ParseDuration(value)
+	d, err := str2duration.ParseDuration(value)
 	if err != nil {
 		logrus.Infof(`Cannot parse "%s" to a duration (key: "%s"): %v`, value, key, err)
 		return nil
