@@ -396,7 +396,7 @@ var _ = Describe("Parser", func() {
 					"User       Time      Proto Iface   Remote IP       TX pkt/byte   RX pkt/byte",
 					"---------- --------- ----- -----   --------------- ------ ------ ------ ------",
 					"user01     01h02m03s PPPoE pppoe0  192.0.2.255   384  34.8K   1.2K  58.2K",
-					"user02     04h05m06s PPPoE pppoe1  198.51.100.255   768  76.8K   2.4K 116.4K",
+					"user02     04d05h06m PPPoE pppoe1  198.51.100.255   768  76.8K   2.4K 116.4K",
 					"",
 					"Total sessions: 1",
 				})
@@ -414,7 +414,7 @@ var _ = Describe("Parser", func() {
 					},
 					{
 						User:            "user02",
-						Time:            parseDuration("14706s"),
+						Time:            parseDuration("363960s"),
 						Protocol:        "PPPoE",
 						Interface:       "pppoe1",
 						RemoteIP:        "198.51.100.255",
