@@ -1,4 +1,4 @@
-FROM golang:1.16.3-buster as build
+FROM golang:1.16.4-buster as build
 WORKDIR /usr/src
 COPY . /usr/src
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=mipsle go build -ldflags='-s -w'
