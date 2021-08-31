@@ -46,6 +46,12 @@ func (e *engine) Start(ctx context.Context) error {
 	})
 
 	router.GET("/metrics", func(c *gin.Context) {
+		info := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "edgerouter",
+			Name:      "info",
+			Help:      "Version info",
+		}, []string{"version", "build_id", "model"})
+
 		ddns := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: "edgerouter",
 			Name:      "dynamic_dns_status",
@@ -118,7 +124,20 @@ func (e *engine) Start(ctx context.Context) error {
 			Help:      "Total receive bytes for PPPoE client session",
 		}, []string{"user", "protocol", "interface_name", "ip_address"})
 
-		ddnsStatuses, err := e.Runner.DdnsStatus()
+		version, err := e.Runner.Version(c)
+		if err != nil {
+			logrus.Errorf("Error in retrieving version: %v", err)
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+
+		info.With(prometheus.Labels{
+			"version":  version.Version,
+			"build_id": version.BuildID,
+			"model":    version.HWModel,
+		}).Set(1)
+
+		ddnsStatuses, err := e.Runner.DdnsStatus(c)
 		if err != nil {
 			logrus.Errorf("Error in retrieving ddns: %v", err)
 			c.Status(http.StatusInternalServerError)
@@ -139,7 +158,7 @@ func (e *engine) Start(ctx context.Context) error {
 			}
 		}
 
-		groups, err := e.Runner.LoadBalanceWatchdog()
+		groups, err := e.Runner.LoadBalanceWatchdog(c)
 		if err != nil {
 			logrus.Errorf("Error in running watchdog: %v", err)
 			c.Status(http.StatusInternalServerError)
@@ -177,7 +196,7 @@ func (e *engine) Start(ctx context.Context) error {
 			}
 		}
 
-		pppoeClientSessions, err := e.Runner.PPPoEClientSessions()
+		pppoeClientSessions, err := e.Runner.PPPoEClientSessions(c)
 		if err != nil {
 			logrus.Errorf("Error in running PPPoE client sessions: %v", err)
 			c.Status(http.StatusInternalServerError)
@@ -203,6 +222,7 @@ func (e *engine) Start(ctx context.Context) error {
 
 		registry := prometheus.NewRegistry()
 		registry.MustRegister(
+			info,
 			ddns,
 			health,
 			pingHealth,

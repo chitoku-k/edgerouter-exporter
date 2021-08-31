@@ -30,15 +30,28 @@ export OP_COMMAND=/opt/vyatta/bin/vyatta-op-cmd-wrapper
 $ ./edgerouter-exporter
 ```
 
-## Prometheus Configuration
+## Prometheus Metrics
 
-Example result:
+### Version
+
+```
+# HELP edgerouter_info Version info
+# TYPE edgerouter_info gauge
+edgerouter_info{version="v2.0.6",build_id="5208541",model="EdgeRouter X 5-Port"} 1
+```
+
+### Dynamic DNS
 
 ```
 # HELP edgerouter_dynamic_dns_status Result of DDNS update
 # TYPE edgerouter_dynamic_dns_status gauge
 edgerouter_dynamic_dns_status{hostname="1.example.com",interface_name="eth0",ip_address="192.0.2.1"} 1
 edgerouter_dynamic_dns_status{hostname="2.example.com",interface_name="eth1",ip_address="192.0.2.2"} 0
+```
+
+### Load Balancers
+
+```
 # HELP edgerouter_load_balancer_health Result of watchdog
 # TYPE edgerouter_load_balancer_health gauge
 edgerouter_load_balancer_health{group_name="WAN_FAILOVER",interface_name="eth0"} 1
@@ -63,6 +76,11 @@ edgerouter_load_balancer_route_drop_total{group_name="WAN_FAILOVER",interface_na
 # TYPE edgerouter_load_balancer_run_fail_total gauge
 edgerouter_load_balancer_run_fail_total{group_name="WAN_FAILOVER",interface_name="eth0"} 0
 edgerouter_load_balancer_run_fail_total{group_name="WAN_FAILOVER",interface_name="eth1"} 0
+```
+
+### PPPoE Client Sessions
+
+```
 # HELP edgerouter_pppoe_client_session_receive_bytes_total Total receive bytes for PPPoE client session
 # TYPE edgerouter_pppoe_client_session_receive_bytes_total gauge
 edgerouter_pppoe_client_session_receive_bytes_total{interface_name="pppoe0",ip_address="192.0.2.255",protocol="PPPoE",user="user01"} 79360

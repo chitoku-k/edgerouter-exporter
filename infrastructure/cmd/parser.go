@@ -19,7 +19,7 @@ var (
 	separatorRegexp     = regexp.MustCompile(`^[ -]+$`)
 	interfaceRegexp     = regexp.MustCompile(`([^\[]+)`)
 	groupRegexp         = regexp.MustCompile(`^Group (.+)`)
-	itemRegexp          = regexp.MustCompile(`(.+): (.+)`)
+	itemRegexp          = regexp.MustCompile(`(.+?): (.+)`)
 	runRegexp           = regexp.MustCompile(`(\d+)/(\d+)`)
 	pingRegexp          = regexp.MustCompile(`^(.+) - (.+)`)
 
@@ -36,7 +36,15 @@ const (
 	LineItem
 )
 
+type TimeLayout string
+
+const (
+	GenericTimeLayout TimeLayout = "Mon Jan _2 15:04:05 2006"
+	BuildTimeLayout   TimeLayout = "01/02/06 15:04"
+)
+
 type Parser interface {
+	ParseVersion(data []string) (service.Version, error)
 	ParseDdnsStatus(data []string) ([]service.DdnsStatus, error)
 	ParseLoadBalanceWatchdog(data []string) ([]service.LoadBalanceGroup, error)
 	ParsePPPoEClientSessions(data []string) ([]service.PPPoEClientSession, error)
@@ -47,6 +55,49 @@ type parser struct {
 
 func NewParser() Parser {
 	return &parser{}
+}
+
+func (p *parser) ParseVersion(data []string) (service.Version, error) {
+	var result service.Version
+
+	for _, line := range data {
+		if !itemRegexp.MatchString(line) {
+			continue
+		}
+
+		m := itemRegexp.FindStringSubmatch(line)
+		key := strings.TrimSpace(m[1])
+		value := strings.TrimSpace(m[2])
+
+		switch key {
+		case "Version":
+			result.Version = value
+
+		case "Build ID":
+			result.BuildID = value
+
+		case "Build on":
+			result.BuildOn = parseTime(BuildTimeLayout, key, value)
+
+		case "Copyright":
+			result.Copyright = value
+
+		case "HW model":
+			result.HWModel = value
+
+		case "HW S/N":
+			result.HWSerialNumber = value
+
+		case "Uptime":
+			result.Uptime = value
+		}
+	}
+
+	if result.Version == "" {
+		return result, fmt.Errorf("expected version, found nothing")
+	}
+
+	return result, nil
 }
 
 func (p *parser) ParseDdnsStatus(data []string) ([]service.DdnsStatus, error) {
@@ -89,7 +140,7 @@ func (p *parser) ParseDdnsStatus(data []string) ([]service.DdnsStatus, error) {
 				current.HostName = value
 
 			case "last update":
-				current.LastUpdate = parseTime(key, value)
+				current.LastUpdate = parseTime(GenericTimeLayout, key, value)
 
 			case "update-status":
 				current.UpdateStatus = value
@@ -158,10 +209,10 @@ func (p *parser) ParseLoadBalanceWatchdog(data []string) ([]service.LoadBalanceG
 				}
 
 			case "last route drop":
-				status.LastRouteDrop = parseTime(key, value)
+				status.LastRouteDrop = parseTime(GenericTimeLayout, key, value)
 
 			case "last route recover":
-				status.LastRouteRecover = parseTime(key, value)
+				status.LastRouteRecover = parseTime(GenericTimeLayout, key, value)
 			}
 
 			continue
@@ -262,8 +313,8 @@ func parseBytes(key, value string) int64 {
 	return u
 }
 
-func parseTime(key, value string) *time.Time {
-	t, err := time.Parse("Mon Jan _2 15:04:05 2006", value)
+func parseTime(layout TimeLayout, key, value string) *time.Time {
+	t, err := time.Parse(string(layout), value)
 	if err != nil {
 		logrus.Infof(`Cannot parse "%s" to a time (key: "%s"): %v`, value, key, err)
 		return nil

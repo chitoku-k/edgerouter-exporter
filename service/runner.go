@@ -1,13 +1,25 @@
 package service
 
 import (
+	"context"
 	"time"
 )
 
 type Runner interface {
-	DdnsStatus() ([]DdnsStatus, error)
-	LoadBalanceWatchdog() ([]LoadBalanceGroup, error)
-	PPPoEClientSessions() ([]PPPoEClientSession, error)
+	Version(ctx context.Context) (Version, error)
+	DdnsStatus(ctx context.Context) ([]DdnsStatus, error)
+	LoadBalanceWatchdog(ctx context.Context) ([]LoadBalanceGroup, error)
+	PPPoEClientSessions(ctx context.Context) ([]PPPoEClientSession, error)
+}
+
+type Version struct {
+	Version        string
+	BuildID        string
+	BuildOn        *time.Time
+	Copyright      string
+	HWModel        string
+	HWSerialNumber string
+	Uptime         string
 }
 
 type DdnsStatus struct {

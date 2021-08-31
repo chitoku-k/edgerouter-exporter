@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -20,8 +21,17 @@ func NewRunnerService(command string, parser Parser) service.Runner {
 	}
 }
 
-func (s *runnerService) DdnsStatus() ([]service.DdnsStatus, error) {
-	result, err := exec.Command(s.Command, "show", "dns", "dynamic", "status").Output()
+func (s *runnerService) Version(ctx context.Context) (service.Version, error) {
+	result, err := exec.CommandContext(ctx, s.Command, "show", "version").Output()
+	if err != nil {
+		return service.Version{}, fmt.Errorf("failed to exec version: %w", err)
+	}
+
+	return s.Parser.ParseVersion(strings.Split(string(result), "\n"))
+}
+
+func (s *runnerService) DdnsStatus(ctx context.Context) ([]service.DdnsStatus, error) {
+	result, err := exec.CommandContext(ctx, s.Command, "show", "dns", "dynamic", "status").Output()
 	if err != nil {
 		return nil, fmt.Errorf("failed to exec ddns status: %w", err)
 	}
@@ -29,8 +39,8 @@ func (s *runnerService) DdnsStatus() ([]service.DdnsStatus, error) {
 	return s.Parser.ParseDdnsStatus(strings.Split(string(result), "\n"))
 }
 
-func (s *runnerService) LoadBalanceWatchdog() ([]service.LoadBalanceGroup, error) {
-	result, err := exec.Command(s.Command, "show", "load-balance", "watchdog").Output()
+func (s *runnerService) LoadBalanceWatchdog(ctx context.Context) ([]service.LoadBalanceGroup, error) {
+	result, err := exec.CommandContext(ctx, s.Command, "show", "load-balance", "watchdog").Output()
 	if err != nil {
 		return nil, fmt.Errorf("failed to exec load-balance watchdog: %w", err)
 	}
@@ -38,8 +48,8 @@ func (s *runnerService) LoadBalanceWatchdog() ([]service.LoadBalanceGroup, error
 	return s.Parser.ParseLoadBalanceWatchdog(strings.Split(string(result), "\n"))
 }
 
-func (s *runnerService) PPPoEClientSessions() ([]service.PPPoEClientSession, error) {
-	result, err := exec.Command(s.Command, "show", "pppoe-client").Output()
+func (s *runnerService) PPPoEClientSessions(ctx context.Context) ([]service.PPPoEClientSession, error) {
+	result, err := exec.CommandContext(ctx, s.Command, "show", "pppoe-client").Output()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get pppoe-client sessions: %w", err)
 	}
