@@ -3,16 +3,16 @@ package main
 import (
 	"context"
 	"os/signal"
-	"syscall"
 
 	"github.com/chitoku-k/edgerouter-exporter/application/server"
 	"github.com/chitoku-k/edgerouter-exporter/infrastructure/cmd"
 	"github.com/chitoku-k/edgerouter-exporter/infrastructure/config"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/sys/unix"
 )
 
 func main() {
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	ctx, stop := signal.NotifyContext(context.Background(), unix.SIGINT, unix.SIGTERM)
 	defer stop()
 
 	env, err := config.Get()
