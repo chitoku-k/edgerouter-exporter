@@ -18,6 +18,40 @@ var _ = Describe("Parser", func() {
 		parser = cmd.NewParser()
 	})
 
+	Describe("ParseVersion()", func() {
+		Context("when emtpy data is given", func() {
+			It("returns an error", func() {
+				actual, err := parser.ParseVersion(nil)
+				Expect(actual).To(Equal(service.Version{}))
+				Expect(err).To(MatchError("expected version, found nothing"))
+			})
+		})
+
+		Context("when version is given", func() {
+			It("returns version", func() {
+				actual, err := parser.ParseVersion([]string{
+					"Version:      v2.0.6",
+					"Build ID:     5208541",
+					"Build on:     01/02/06 15:04",
+					"Copyright:    2012-2018 Ubiquiti Networks, Inc.",
+					"HW model:     EdgeRouter X 5-Port",
+					"HW S/N:       000000000000",
+					"Uptime:       01:00:00 up  1:00,  1 user,  load average: 1.00, 1.00, 1.00",
+				})
+				Expect(actual).To(Equal(service.Version{
+					Version:        "v2.0.6",
+					BuildID:        "5208541",
+					BuildOn:        parseTime("2006-01-02T15:04:00Z"),
+					Copyright:      "2012-2018 Ubiquiti Networks, Inc.",
+					HWModel:        "EdgeRouter X 5-Port",
+					HWSerialNumber: "000000000000",
+					Uptime:         "01:00:00 up  1:00,  1 user,  load average: 1.00, 1.00, 1.00",
+				}))
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+	})
+
 	Describe("ParseDdnsStatus()", func() {
 		Context("when empty data is given", func() {
 			It("returns empty", func() {
