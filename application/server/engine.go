@@ -52,6 +52,42 @@ func (e *engine) Start(ctx context.Context) error {
 			Help:      "Version info",
 		}, []string{"version", "build_id", "model"})
 
+		bgpMsgRcv := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "edgerouter",
+			Name:      "bgp_message_received_total",
+			Help:      "Total number of BGP messages received",
+		}, []string{"neighbor", "as", "table_version"})
+
+		bgpMsgSen := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "edgerouter",
+			Name:      "bgp_message_sent_total",
+			Help:      "Total number of BGP messages sent",
+		}, []string{"neighbor", "as", "table_version"})
+
+		bgpInQ := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "edgerouter",
+			Name:      "bgp_message_in_queue",
+			Help:      "Number of BGP messages in incoming queue",
+		}, []string{"neighbor", "as", "table_version"})
+
+		bgpOutQ := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "edgerouter",
+			Name:      "bgp_message_out_queue",
+			Help:      "Number of BGP messages in outgoing queue",
+		}, []string{"neighbor", "as", "table_version"})
+
+		bgpSessionSecondsTotal := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "edgerouter",
+			Name:      "bgp_session_seconds_total",
+			Help:      "Total seconds for established BGP session",
+		}, []string{"neighbor", "as", "table_version"})
+
+		bgpPfxRcd := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Namespace: "edgerouter",
+			Name:      "bgp_prefix_received_total",
+			Help:      "Total number of BGP prefixes received",
+		}, []string{"neighbor", "as", "table_version"})
+
 		ddns := prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Namespace: "edgerouter",
 			Name:      "dynamic_dns_status",
@@ -136,6 +172,35 @@ func (e *engine) Start(ctx context.Context) error {
 			"build_id": version.BuildID,
 			"model":    version.HWModel,
 		}).Set(1)
+
+		bgpStatusIPv4, err := e.Runner.BGPStatus(c, service.IPv4)
+		if err != nil {
+			logrus.Errorf("Error in retrieving BGP status for IPv4: %v", err)
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+
+		bgpStatusIPv6, err := e.Runner.BGPStatus(c, service.IPv6)
+		if err != nil {
+			logrus.Errorf("Error in retrieving BGP status for IPv6: %v", err)
+			c.Status(http.StatusInternalServerError)
+			return
+		}
+
+		for _, neighbor := range append(bgpStatusIPv4.Neighbors, bgpStatusIPv6.Neighbors...) {
+			label := prometheus.Labels{
+				"neighbor":      neighbor.Address.String(),
+				"as":            fmt.Sprint(neighbor.RemoteAS),
+				"table_version": fmt.Sprint(neighbor.TableVersion),
+			}
+
+			bgpMsgRcv.With(label).Set(float64(neighbor.MessagesReceived))
+			bgpMsgSen.With(label).Set(float64(neighbor.MessagesSent))
+			bgpInQ.With(label).Set(float64(neighbor.InQueue))
+			bgpOutQ.With(label).Set(float64(neighbor.OutQueue))
+			bgpSessionSecondsTotal.With(label).Set(neighbor.Uptime.Seconds())
+			bgpPfxRcd.With(label).Set(float64(neighbor.PrefixesReceived))
+		}
 
 		ddnsStatuses, err := e.Runner.DdnsStatus(c)
 		if err != nil {
@@ -223,6 +288,12 @@ func (e *engine) Start(ctx context.Context) error {
 		registry := prometheus.NewRegistry()
 		registry.MustRegister(
 			info,
+			bgpMsgRcv,
+			bgpMsgSen,
+			bgpInQ,
+			bgpOutQ,
+			bgpSessionSecondsTotal,
+			bgpPfxRcd,
 			ddns,
 			health,
 			pingHealth,

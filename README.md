@@ -3,7 +3,7 @@ edgerouter-exporter
 
 [![][workflow-badge]][workflow-link]
 
-A Prometheus exporter for EdgeRouter DDNS, Load Balancers, and PPPoE sessions
+A Prometheus exporter for EdgeRouter BGP, DDNS, Load Balancers, and PPPoE sessions
 
 ## Requirements
 
@@ -13,7 +13,7 @@ A Prometheus exporter for EdgeRouter DDNS, Load Balancers, and PPPoE sessions
 ## Installation
 
 ```sh
-$ CGO_ENABLED=0 GOOS=linux GOARCH=mipsle go build
+$ CGO_ENABLED=0 GOOS=linux GOARCH=mipsle go build -trimpath
 ```
 
 ```sh
@@ -38,6 +38,47 @@ $ ./edgerouter-exporter
 # HELP edgerouter_info Version info
 # TYPE edgerouter_info gauge
 edgerouter_info{version="v2.0.6",build_id="5208541",model="EdgeRouter X 5-Port"} 1
+```
+
+### BGP
+
+```
+# HELP edgerouter_bgp_message_in_queue Number of BGP messages in incoming queue
+# TYPE edgerouter_bgp_message_in_queue gauge
+edgerouter_bgp_message_in_queue{as="64497",neighbor="192.0.2.2",table_version="128"} 0
+edgerouter_bgp_message_in_queue{as="64497",neighbor="192.0.2.3",table_version="128"} 0
+edgerouter_bgp_message_in_queue{as="64497",neighbor="2001:db8::2",table_version="128"} 0
+edgerouter_bgp_message_in_queue{as="64497",neighbor="2001:db8::3",table_version="128"} 0
+# HELP edgerouter_bgp_message_out_queue Number of BGP messages in outgoing queue
+# TYPE edgerouter_bgp_message_out_queue gauge
+edgerouter_bgp_message_out_queue{as="64497",neighbor="192.0.2.2",table_version="128"} 0
+edgerouter_bgp_message_out_queue{as="64497",neighbor="192.0.2.3",table_version="128"} 0
+edgerouter_bgp_message_out_queue{as="64497",neighbor="2001:db8::2",table_version="128"} 0
+edgerouter_bgp_message_out_queue{as="64497",neighbor="2001:db8::3",table_version="128"} 0
+# HELP edgerouter_bgp_message_received_total Total number of BGP messages received
+# TYPE edgerouter_bgp_message_received_total gauge
+edgerouter_bgp_message_received_total{as="64497",neighbor="192.0.2.2",table_version="128"} 1000
+edgerouter_bgp_message_received_total{as="64497",neighbor="192.0.2.3",table_version="128"} 2000
+edgerouter_bgp_message_received_total{as="64497",neighbor="2001:db8::2",table_version="128"} 3000
+edgerouter_bgp_message_received_total{as="64497",neighbor="2001:db8::3",table_version="128"} 4000
+# HELP edgerouter_bgp_message_sent_total Total number of BGP messages sent
+# TYPE edgerouter_bgp_message_sent_total gauge
+edgerouter_bgp_message_sent_total{as="64497",neighbor="192.0.2.2",table_version="128"} 5000
+edgerouter_bgp_message_sent_total{as="64497",neighbor="192.0.2.3",table_version="128"} 6000
+edgerouter_bgp_message_sent_total{as="64497",neighbor="2001:db8::2",table_version="128"} 7000
+edgerouter_bgp_message_sent_total{as="64497",neighbor="2001:db8::3",table_version="128"} 8000
+# HELP edgerouter_bgp_prefix_received_total Total number of BGP prefixes received
+# TYPE edgerouter_bgp_prefix_received_total gauge
+edgerouter_bgp_prefix_received_total{as="64497",neighbor="192.0.2.2",table_version="128"} 9
+edgerouter_bgp_prefix_received_total{as="64497",neighbor="192.0.2.3",table_version="128"} 10
+edgerouter_bgp_prefix_received_total{as="64497",neighbor="2001:db8::2",table_version="128"} 11
+edgerouter_bgp_prefix_received_total{as="64497",neighbor="2001:db8::3",table_version="128"} 12
+# HELP edgerouter_bgp_session_seconds_total Total seconds for established BGP session
+# TYPE edgerouter_bgp_session_seconds_total gauge
+edgerouter_bgp_session_seconds_total{as="64497",neighbor="192.0.2.2",table_version="128"} 100
+edgerouter_bgp_session_seconds_total{as="64497",neighbor="192.0.2.3",table_version="128"} 200
+edgerouter_bgp_session_seconds_total{as="64497",neighbor="2001:db8::2",table_version="128"} 300
+edgerouter_bgp_session_seconds_total{as="64497",neighbor="2001:db8::3",table_version="128"} 400
 ```
 
 ### Dynamic DNS

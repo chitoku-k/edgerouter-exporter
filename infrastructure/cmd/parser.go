@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"net"
 	"regexp"
 	"strconv"
 	"strings"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/alecthomas/units"
 	"github.com/chitoku-k/edgerouter-exporter/service"
+	"github.com/dannav/hhmmss"
 	"github.com/sirupsen/logrus"
 	str2duration "github.com/xhit/go-str2duration/v2"
 )
@@ -16,6 +18,10 @@ import (
 var (
 	noActiveRegexp      = regexp.MustCompile(`^No active .*sessions`)
 	notConfiguredRegexp = regexp.MustCompile(`.* not configured`)
+	bgpRouterRegexp     = regexp.MustCompile(`BGP router identifier ([\d.]+), local AS number (\d+)`)
+	bgpTableRegexp      = regexp.MustCompile(`BGP table version is (\d+)`)
+	bgpASPathRegexp     = regexp.MustCompile(`(\d+) BGP AS-PATH entries`)
+	bgpCommunityRegexp  = regexp.MustCompile(`(\d+) BGP community entries`)
 	separatorRegexp     = regexp.MustCompile(`^[ -]+$`)
 	interfaceRegexp     = regexp.MustCompile(`([^\[]+)`)
 	groupRegexp         = regexp.MustCompile(`^Group (.+)`)
@@ -30,6 +36,7 @@ type Line int
 
 const (
 	LineNone Line = iota
+	LineBGPStatus
 	LineGroup
 	LineInterface
 	LineSeparator
@@ -45,6 +52,7 @@ const (
 
 type Parser interface {
 	ParseVersion(data []string) (service.Version, error)
+	ParseBGPStatus(data []string, protocol service.IPProtocol) (service.BGPStatus, error)
 	ParseDdnsStatus(data []string) ([]service.DdnsStatus, error)
 	ParseLoadBalanceWatchdog(data []string) ([]service.LoadBalanceGroup, error)
 	ParsePPPoEClientSessions(data []string) ([]service.PPPoEClientSession, error)
@@ -95,6 +103,100 @@ func (p *parser) ParseVersion(data []string) (service.Version, error) {
 
 	if result.Version == "" {
 		return result, fmt.Errorf("expected version, found nothing")
+	}
+
+	return result, nil
+}
+
+func (p *parser) ParseBGPStatus(data []string, protocol service.IPProtocol) (service.BGPStatus, error) {
+	var previous Line
+	var result service.BGPStatus
+
+	for _, line := range data {
+		if len(strings.TrimSpace(line)) == 0 {
+			previous = LineNone
+			continue
+		}
+
+		if bgpRouterRegexp.MatchString(line) {
+			m := bgpRouterRegexp.FindStringSubmatch(line)
+			result.RouterID = strings.TrimSpace(m[1])
+			result.LocalAS = parseInt("local AS number", m[2])
+			previous = LineBGPStatus
+			continue
+		}
+
+		if bgpTableRegexp.MatchString(line) {
+			m := bgpTableRegexp.FindStringSubmatch(line)
+			result.TableVersion = parseInt("table version", m[1])
+			previous = LineBGPStatus
+			continue
+		}
+
+		if bgpASPathRegexp.MatchString(line) {
+			m := bgpASPathRegexp.FindStringSubmatch(line)
+			result.ASPaths = parseInt("AS-PATH entries", m[1])
+			previous = LineBGPStatus
+			continue
+		}
+
+		if bgpCommunityRegexp.MatchString(line) {
+			m := bgpCommunityRegexp.FindStringSubmatch(line)
+			result.Communities = parseInt("community entries", m[1])
+			previous = LineBGPStatus
+			continue
+		}
+
+		if previous == LineNone {
+			previous = LineSeparator
+			continue
+		}
+
+		if previous == LineSeparator || previous == LineItem {
+			previous = LineItem
+			fields := strings.Fields(line)
+			if len(fields) != 10 {
+				return result, fmt.Errorf("unexpected number of fields, expecting 10 fields: %v", line)
+			}
+
+			addr := net.ParseIP(fields[0])
+			switch {
+			case addr == nil:
+				return result, fmt.Errorf("failed to parse BGP neighbor %q", addr)
+
+			case addr.To4() == nil && protocol == service.IPv4:
+				continue
+
+			case addr.To4() != nil && protocol == service.IPv6:
+				continue
+			}
+
+			var uptime *time.Duration
+			if strings.Contains(fields[8], ":") {
+				uptime = parseDuration("Up/Down", fields[8])
+			}
+
+			var state string
+			pfxrcd, err := strconv.ParseInt(fields[9], 10, strconv.IntSize)
+			if err != nil {
+				state = fields[9]
+			}
+
+			result.Neighbors = append(result.Neighbors, service.BGPNeighbor{
+				Address:          addr.To16(),
+				Version:          parseInt("V", fields[1]),
+				RemoteAS:         parseInt("AS", fields[2]),
+				MessagesReceived: parseInt64("MsgRcv", fields[3]),
+				MessagesSent:     parseInt64("MsgSen", fields[4]),
+				TableVersion:     parseInt("TblVer", fields[5]),
+				InQueue:          parseInt64("InQ", fields[6]),
+				OutQueue:         parseInt64("OutQ", fields[7]),
+				Uptime:           uptime,
+				State:            state,
+				PrefixesReceived: pfxrcd,
+			})
+			continue
+		}
 	}
 
 	return result, nil
@@ -278,14 +380,14 @@ func (p *parser) ParsePPPoEClientSessions(data []string) ([]service.PPPoEClientS
 			}
 			current = &service.PPPoEClientSession{
 				User:            fields[0],
-				Time:            parseDuration("[1]", fields[1]),
+				Time:            parseDurationUnit("User", fields[1]),
 				Protocol:        fields[2],
 				Interface:       fields[3],
 				RemoteIP:        fields[4],
-				TransmitPackets: parseBytes("[5]", fields[5]),
-				TransmitBytes:   parseBytes("[6]", fields[6]),
-				ReceivePackets:  parseBytes("[7]", fields[7]),
-				ReceiveBytes:    parseBytes("[8]", fields[8]),
+				TransmitPackets: parseBytes("TX pkt", fields[5]),
+				TransmitBytes:   parseBytes("TX byte", fields[6]),
+				ReceivePackets:  parseBytes("RX pkt", fields[7]),
+				ReceiveBytes:    parseBytes("RX byte", fields[8]),
 			}
 		}
 	}
@@ -298,17 +400,21 @@ func (p *parser) ParsePPPoEClientSessions(data []string) ([]service.PPPoEClientS
 }
 
 func parseInt(key, value string) int {
+	return int(parseInt64(key, value))
+}
+
+func parseInt64(key, value string) int64 {
 	n, err := strconv.ParseInt(value, 10, strconv.IntSize)
 	if err != nil {
-		logrus.Infof(`Cannot parse "%s" to an integer (key "%s"): %v`, value, key, err)
+		logrus.Infof(`Cannot parse %q to an integer (key %q): %v`, value, key, err)
 	}
-	return int(n)
+	return n
 }
 
 func parseBytes(key, value string) int64 {
 	u, err := units.ParseUnit(value, byteUnits)
 	if err != nil {
-		logrus.Infof(`Cannot parse "%s" to a byte unit (key: "%s"): %v`, value, key, err)
+		logrus.Infof(`Cannot parse %q to a byte unit (key: %q): %v`, value, key, err)
 	}
 	return u
 }
@@ -316,16 +422,25 @@ func parseBytes(key, value string) int64 {
 func parseTime(layout TimeLayout, key, value string) *time.Time {
 	t, err := time.Parse(string(layout), value)
 	if err != nil {
-		logrus.Infof(`Cannot parse "%s" to a time (key: "%s"): %v`, value, key, err)
+		logrus.Infof(`Cannot parse %q to a time (key: %q): %v`, value, key, err)
 		return nil
 	}
 	return &t
 }
 
 func parseDuration(key, value string) *time.Duration {
+	d, err := hhmmss.Parse(value)
+	if err != nil {
+		logrus.Infof(`Cannot parse %q to a duration (key: %q): %v`, value, key, err)
+		return nil
+	}
+	return &d
+}
+
+func parseDurationUnit(key, value string) *time.Duration {
 	d, err := str2duration.ParseDuration(value)
 	if err != nil {
-		logrus.Infof(`Cannot parse "%s" to a duration (key: "%s"): %v`, value, key, err)
+		logrus.Infof(`Cannot parse %q to a duration (key: %q): %v`, value, key, err)
 		return nil
 	}
 	return &d

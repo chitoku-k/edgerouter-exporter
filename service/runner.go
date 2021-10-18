@@ -2,11 +2,21 @@ package service
 
 import (
 	"context"
+	"net"
 	"time"
+)
+
+type IPProtocol int
+
+const (
+	_ IPProtocol = iota
+	IPv4
+	IPv6
 )
 
 type Runner interface {
 	Version(ctx context.Context) (Version, error)
+	BGPStatus(ctx context.Context, protocol IPProtocol) (BGPStatus, error)
 	DdnsStatus(ctx context.Context) ([]DdnsStatus, error)
 	LoadBalanceWatchdog(ctx context.Context) ([]LoadBalanceGroup, error)
 	PPPoEClientSessions(ctx context.Context) ([]PPPoEClientSession, error)
@@ -20,6 +30,29 @@ type Version struct {
 	HWModel        string
 	HWSerialNumber string
 	Uptime         string
+}
+
+type BGPStatus struct {
+	RouterID     string
+	LocalAS      int
+	TableVersion int
+	ASPaths      int
+	Communities  int
+	Neighbors    []BGPNeighbor
+}
+
+type BGPNeighbor struct {
+	Address          net.IP
+	Version          int
+	RemoteAS         int
+	MessagesReceived int64
+	MessagesSent     int64
+	TableVersion     int
+	InQueue          int64
+	OutQueue         int64
+	Uptime           *time.Duration
+	State            string
+	PrefixesReceived int64
 }
 
 type DdnsStatus struct {
