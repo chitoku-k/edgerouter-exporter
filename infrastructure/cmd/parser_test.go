@@ -1,6 +1,7 @@
 package cmd_test
 
 import (
+	"net"
 	"time"
 
 	"github.com/chitoku-k/edgerouter-exporter/infrastructure/cmd"
@@ -48,6 +49,168 @@ var _ = Describe("Parser", func() {
 					Uptime:         "01:00:00 up  1:00,  1 user,  load average: 1.00, 1.00, 1.00",
 				}))
 				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("ParseBGPStatus()", func() {
+		Context("when IPv4 address is requested", func() {
+			Context("when empty data is given", func() {
+				It("returns empty", func() {
+					actual, err := parser.ParseBGPStatus(nil, service.IPv4)
+					Expect(actual.Neighbors).To(BeEmpty())
+					Expect(err).NotTo(HaveOccurred())
+				})
+			})
+
+			Context("when neighbors are given", func() {
+				It("returns IPv4 neighbors", func() {
+					actual, err := parser.ParseBGPStatus([]string{
+						"BGP router identifier 192.0.2.1, local AS number 64496",
+						"BGP table version is 128",
+						"1 BGP AS-PATH entries",
+						"2 BGP community entries",
+						"",
+						"Neighbor                 V   AS   MsgRcv    MsgSen TblVer   InQ   OutQ    Up/Down   State/PfxRcd",
+						"192.0.2.2                4 64497 1000       5000     128      1      5  01:11:11               9",
+						"192.0.2.3                4 64497 2000       6000     128      2      6  02:22:22              10",
+						"192.0.2.4                4 64497    0          0       0      0      0     never     Connect",
+						"2001:db8::2              4 64497 3000       7000     128      3      7  03:33:33               0",
+						"2001:db8::3              4 64497 4000       8000     128      4      8  04:44:44               0",
+						"2001:db8::4              4 64497    0          0       0      0      0     never     Connect",
+						"",
+						"Total number of neighbors 6",
+						"",
+						"Total number of Established sessions 4",
+					}, service.IPv4)
+					Expect(actual).To(Equal(service.BGPStatus{
+						RouterID:     "192.0.2.1",
+						LocalAS:      64496,
+						TableVersion: 128,
+						ASPaths:      1,
+						Communities:  2,
+						Neighbors: []service.BGPNeighbor{
+							{
+								Address:          net.IPv4(192, 0, 2, 2),
+								Version:          4,
+								RemoteAS:         64497,
+								MessagesReceived: 1000,
+								MessagesSent:     5000,
+								TableVersion:     128,
+								InQueue:          1,
+								OutQueue:         5,
+								Uptime:           parseDurationUnit("1h11m11s"),
+								PrefixesReceived: 9,
+							},
+							{
+								Address:          net.IPv4(192, 0, 2, 3),
+								Version:          4,
+								RemoteAS:         64497,
+								MessagesReceived: 2000,
+								MessagesSent:     6000,
+								TableVersion:     128,
+								InQueue:          2,
+								OutQueue:         6,
+								Uptime:           parseDurationUnit("2h22m22s"),
+								PrefixesReceived: 10,
+							},
+							{
+								Address:          net.IPv4(192, 0, 2, 4),
+								Version:          4,
+								RemoteAS:         64497,
+								MessagesReceived: 0,
+								MessagesSent:     0,
+								TableVersion:     0,
+								InQueue:          0,
+								OutQueue:         0,
+								Uptime:           nil,
+								State:            "Connect",
+								PrefixesReceived: 0,
+							},
+						},
+					}))
+					Expect(err).NotTo(HaveOccurred())
+				})
+			})
+		})
+
+		Context("when IPv6 address is requested", func() {
+			Context("when empty data is given", func() {
+				It("returns empty", func() {
+					actual, err := parser.ParseBGPStatus(nil, service.IPv6)
+					Expect(actual.Neighbors).To(BeEmpty())
+					Expect(err).NotTo(HaveOccurred())
+				})
+			})
+
+			Context("when neighbors are given", func() {
+				It("returns IPv6 neighbors", func() {
+					actual, err := parser.ParseBGPStatus([]string{
+						"BGP router identifier 192.0.2.1, local AS number 64496",
+						"BGP table version is 128",
+						"1 BGP AS-PATH entries",
+						"2 BGP community entries",
+						"",
+						"Neighbor                 V   AS   MsgRcv    MsgSen TblVer   InQ   OutQ    Up/Down   State/PfxRcd",
+						"192.0.2.2                4 64497 1000       5000     128      1      5  01:11:11               9",
+						"192.0.2.3                4 64497 2000       6000     128      2      6  02:22:22              10",
+						"192.0.2.4                4 64497    0          0       0      0      0     never     Connect",
+						"2001:db8::2              4 64497 3000       7000     128      3      7  03:33:33              11",
+						"2001:db8::3              4 64497 4000       8000     128      4      8  04:44:44              12",
+						"2001:db8::4              4 64497    0          0       0      0      0     never     Connect",
+						"",
+						"Total number of neighbors 6",
+						"",
+						"Total number of Established sessions 4",
+					}, service.IPv6)
+					Expect(actual).To(Equal(service.BGPStatus{
+						RouterID:     "192.0.2.1",
+						LocalAS:      64496,
+						TableVersion: 128,
+						ASPaths:      1,
+						Communities:  2,
+						Neighbors: []service.BGPNeighbor{
+							{
+								Address:          net.IP{0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02},
+								Version:          4,
+								RemoteAS:         64497,
+								MessagesReceived: 3000,
+								MessagesSent:     7000,
+								TableVersion:     128,
+								InQueue:          3,
+								OutQueue:         7,
+								Uptime:           parseDurationUnit("3h33m33s"),
+								PrefixesReceived: 11,
+							},
+							{
+								Address:          net.IP{0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03},
+								Version:          4,
+								RemoteAS:         64497,
+								MessagesReceived: 4000,
+								MessagesSent:     8000,
+								TableVersion:     128,
+								InQueue:          4,
+								OutQueue:         8,
+								Uptime:           parseDurationUnit("4h44m44s"),
+								PrefixesReceived: 12,
+							},
+							{
+								Address:          net.IP{0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04},
+								Version:          4,
+								RemoteAS:         64497,
+								MessagesReceived: 0,
+								MessagesSent:     0,
+								TableVersion:     0,
+								InQueue:          0,
+								OutQueue:         0,
+								Uptime:           nil,
+								State:            "Connect",
+								PrefixesReceived: 0,
+							},
+						},
+					}))
+					Expect(err).NotTo(HaveOccurred())
+				})
 			})
 		})
 	})
@@ -408,7 +571,7 @@ var _ = Describe("Parser", func() {
 				Expect(actual).To(Equal([]service.PPPoEClientSession{
 					{
 						User:            "user01",
-						Time:            parseDuration("3723s"),
+						Time:            parseDurationUnit("3723s"),
 						Protocol:        "PPPoE",
 						Interface:       "pppoe0",
 						RemoteIP:        "192.0.2.255",
@@ -437,7 +600,7 @@ var _ = Describe("Parser", func() {
 				Expect(actual).To(Equal([]service.PPPoEClientSession{
 					{
 						User:            "user01",
-						Time:            parseDuration("3723s"),
+						Time:            parseDurationUnit("3723s"),
 						Protocol:        "PPPoE",
 						Interface:       "pppoe0",
 						RemoteIP:        "192.0.2.255",
@@ -448,7 +611,7 @@ var _ = Describe("Parser", func() {
 					},
 					{
 						User:            "user02",
-						Time:            parseDuration("363960s"),
+						Time:            parseDurationUnit("363960s"),
 						Protocol:        "PPPoE",
 						Interface:       "pppoe1",
 						RemoteIP:        "198.51.100.255",
@@ -488,7 +651,7 @@ func parseTime(value string) *time.Time {
 	return &t
 }
 
-func parseDuration(value string) *time.Duration {
+func parseDurationUnit(value string) *time.Duration {
 	d, err := time.ParseDuration(value)
 	if err != nil {
 		GinkgoT().Fatal(err)

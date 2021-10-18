@@ -30,6 +30,20 @@ func (s *runnerService) Version(ctx context.Context) (service.Version, error) {
 	return s.Parser.ParseVersion(strings.Split(string(result), "\n"))
 }
 
+func (s *runnerService) BGPStatus(ctx context.Context, protocol service.IPProtocol) (service.BGPStatus, error) {
+	ip := "ip"
+	if protocol == service.IPv6 {
+		ip = "ipv6"
+	}
+
+	result, err := exec.CommandContext(ctx, s.Command, "show", ip, "bgp", "summary").Output()
+	if err != nil {
+		return service.BGPStatus{}, fmt.Errorf("failed to exec ip bgp summary: %w", err)
+	}
+
+	return s.Parser.ParseBGPStatus(strings.Split(string(result), "\n"), protocol)
+}
+
 func (s *runnerService) DdnsStatus(ctx context.Context) ([]service.DdnsStatus, error) {
 	result, err := exec.CommandContext(ctx, s.Command, "show", "dns", "dynamic", "status").Output()
 	if err != nil {

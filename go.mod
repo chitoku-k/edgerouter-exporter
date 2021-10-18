@@ -3,7 +3,8 @@ module github.com/chitoku-k/edgerouter-exporter
 go 1.17
 
 require (
-	github.com/alecthomas/units v0.0.0-20210208195552-ff826a37aa15
+	github.com/alecthomas/units v0.0.0-20210927113745-59d0afb8317a
+	github.com/dannav/hhmmss v1.0.0
 	github.com/gin-gonic/gin v1.7.4
 	github.com/kr/pretty v0.2.0 // indirect
 	github.com/onsi/ginkgo v1.16.5
@@ -13,7 +14,7 @@ require (
 	github.com/stretchr/testify v1.6.1 // indirect
 	github.com/xhit/go-str2duration/v2 v2.0.0
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20210831042530-f4d43177bf5e
+	golang.org/x/sys v0.0.0-20211015200801-69063c4bb744
 )
 
 require (
