@@ -20,6 +20,10 @@ $ CGO_ENABLED=0 GOOS=linux GOARCH=mipsle go build -trimpath
 # Port number (required)
 export PORT=8080
 
+# TLS certificate and private key (optional; if not specified, exporter is served over HTTP)
+export TLS_CERT=/path/to/tls/cert
+export TLS_KEY=/path/to/tls/key
+
 # Op command (optional)
 export OP_COMMAND=/opt/vyatta/bin/vyatta-op-cmd-wrapper
 ```
