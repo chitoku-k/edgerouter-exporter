@@ -22,6 +22,8 @@ func main() {
 
 	engine := server.NewEngine(
 		env.Port,
+		env.TLSCert,
+		env.TLSKey,
 		cmd.NewRunnerService(env.OpCommand, cmd.NewParser()),
 	)
 	err = engine.Start(ctx)

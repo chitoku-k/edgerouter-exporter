@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net"
 	"net/http"
@@ -15,8 +16,10 @@ import (
 )
 
 type engine struct {
-	Port   string
-	Runner service.Runner
+	Port     string
+	CertFile string
+	KeyFile  string
+	Runner   service.Runner
 }
 
 type Engine interface {
@@ -25,11 +28,15 @@ type Engine interface {
 
 func NewEngine(
 	port string,
+	certFile string,
+	keyFile string,
 	runner service.Runner,
 ) Engine {
 	return &engine{
-		Port:   port,
-		Runner: runner,
+		Port:     port,
+		CertFile: certFile,
+		KeyFile:  keyFile,
+		Runner:   runner,
 	}
 }
 
@@ -323,12 +330,30 @@ func (e *engine) Start(ctx context.Context) error {
 		return server.Shutdown(context.Background())
 	})
 
-	err := server.ListenAndServe()
+	var err error
+	if e.CertFile != "" && e.KeyFile != "" {
+		server.TLSConfig = &tls.Config{
+			GetCertificate: e.getCertificate,
+		}
+		err = server.ListenAndServeTLS("", "")
+	} else {
+		err = server.ListenAndServe()
+	}
+
 	if err == http.ErrServerClosed {
 		return eg.Wait()
 	}
 
 	return err
+}
+
+func (e *engine) getCertificate(*tls.ClientHelloInfo) (*tls.Certificate, error) {
+	cert, err := tls.LoadX509KeyPair(e.CertFile, e.KeyFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get certificate: %w", err)
+	}
+
+	return &cert, nil
 }
 
 func (e *engine) Formatter() gin.LogFormatter {

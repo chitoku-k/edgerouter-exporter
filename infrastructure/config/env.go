@@ -8,6 +8,8 @@ import (
 
 type Environment struct {
 	Port      string
+	TLSCert   string
+	TLSKey    string
 	OpCommand string
 }
 
@@ -16,6 +18,8 @@ func Get() (Environment, error) {
 	var env Environment
 
 	for k, v := range map[string]*string{
+		"TLS_CERT":   &env.TLSCert,
+		"TLS_KEY":    &env.TLSKey,
 		"OP_COMMAND": &env.OpCommand,
 	} {
 		*v = os.Getenv(k)
