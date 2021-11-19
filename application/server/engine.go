@@ -201,11 +201,16 @@ func (e *engine) Start(ctx context.Context) error {
 				"table_version": fmt.Sprint(neighbor.TableVersion),
 			}
 
+			var uptime float64
+			if neighbor.Uptime != nil {
+				uptime = neighbor.Uptime.Seconds()
+			}
+
 			bgpMsgRcv.With(label).Set(float64(neighbor.MessagesReceived))
 			bgpMsgSen.With(label).Set(float64(neighbor.MessagesSent))
 			bgpInQ.With(label).Set(float64(neighbor.InQueue))
 			bgpOutQ.With(label).Set(float64(neighbor.OutQueue))
-			bgpSessionSecondsTotal.With(label).Set(neighbor.Uptime.Seconds())
+			bgpSessionSecondsTotal.With(label).Set(uptime)
 			bgpPfxRcd.With(label).Set(float64(neighbor.PrefixesReceived))
 		}
 
