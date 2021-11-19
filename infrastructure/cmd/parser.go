@@ -175,6 +175,9 @@ func (p *parser) ParseBGPStatus(data []string, protocol service.IPProtocol) (ser
 			if strings.Contains(fields[8], ":") {
 				uptime = parseDuration("Up/Down", fields[8])
 			}
+			if strings.Contains(fields[8], "d") {
+				uptime = parseDurationUnit("Up/Down", fields[8])
+			}
 
 			var state string
 			pfxrcd, err := strconv.ParseInt(fields[9], 10, strconv.IntSize)
