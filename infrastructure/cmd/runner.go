@@ -10,19 +10,23 @@ import (
 )
 
 type runnerService struct {
-	Command string
-	Parser  Parser
+	OpCommand     string
+	OpDdnsCommand string
+	VtyshCommand  string
+	Parser        Parser
 }
 
-func NewRunnerService(command string, parser Parser) service.Runner {
+func NewRunnerService(opCommand, opDdnsCommand, vtyshCommand string, parser Parser) service.Runner {
 	return &runnerService{
-		Command: command,
-		Parser:  parser,
+		OpCommand:     opCommand,
+		OpDdnsCommand: opDdnsCommand,
+		VtyshCommand:  vtyshCommand,
+		Parser:        parser,
 	}
 }
 
 func (s *runnerService) Version(ctx context.Context) (service.Version, error) {
-	result, err := exec.CommandContext(ctx, s.Command, "show", "version").Output()
+	result, err := exec.CommandContext(ctx, s.OpCommand, "show", "version").Output()
 	if err != nil {
 		return service.Version{}, fmt.Errorf("failed to exec version: %w", err)
 	}
@@ -31,21 +35,28 @@ func (s *runnerService) Version(ctx context.Context) (service.Version, error) {
 }
 
 func (s *runnerService) BGPStatus(ctx context.Context, protocol service.IPProtocol) (service.BGPStatus, error) {
-	ip := "ip"
-	if protocol == service.IPv6 {
-		ip = "ipv6"
+	var cmd string
+	switch protocol {
+	case service.IPv4:
+		cmd = "show ip bgp summary"
+
+	case service.IPv6:
+		cmd = "show bgp ipv6 summary"
+
+	default:
+		return service.BGPStatus{}, fmt.Errorf("invalid protocol")
 	}
 
-	result, err := exec.CommandContext(ctx, s.Command, "show", ip, "bgp", "summary").Output()
+	result, err := exec.CommandContext(ctx, s.VtyshCommand, "-c", cmd).Output()
 	if err != nil {
-		return service.BGPStatus{}, fmt.Errorf("failed to exec ip bgp summary: %w", err)
+		return service.BGPStatus{}, fmt.Errorf("failed to exec %v: %w", cmd, err)
 	}
 
 	return s.Parser.ParseBGPStatus(strings.Split(string(result), "\n"), protocol)
 }
 
 func (s *runnerService) DdnsStatus(ctx context.Context) ([]service.DdnsStatus, error) {
-	result, err := exec.CommandContext(ctx, s.Command, "show", "dns", "dynamic", "status").Output()
+	result, err := exec.CommandContext(ctx, s.OpDdnsCommand, "--show-status").Output()
 	if err != nil {
 		return nil, fmt.Errorf("failed to exec ddns status: %w", err)
 	}
@@ -54,7 +65,7 @@ func (s *runnerService) DdnsStatus(ctx context.Context) ([]service.DdnsStatus, e
 }
 
 func (s *runnerService) LoadBalanceWatchdog(ctx context.Context) ([]service.LoadBalanceGroup, error) {
-	result, err := exec.CommandContext(ctx, s.Command, "show", "load-balance", "watchdog").Output()
+	result, err := exec.CommandContext(ctx, s.OpCommand, "show", "load-balance", "watchdog").Output()
 	if err != nil {
 		return nil, fmt.Errorf("failed to exec load-balance watchdog: %w", err)
 	}
@@ -63,7 +74,7 @@ func (s *runnerService) LoadBalanceWatchdog(ctx context.Context) ([]service.Load
 }
 
 func (s *runnerService) PPPoEClientSessions(ctx context.Context) ([]service.PPPoEClientSession, error) {
-	result, err := exec.CommandContext(ctx, s.Command, "show", "pppoe-client").Output()
+	result, err := exec.CommandContext(ctx, s.OpCommand, "show", "pppoe-client").Output()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get pppoe-client sessions: %w", err)
 	}

@@ -24,7 +24,7 @@ func main() {
 		env.Port,
 		env.TLSCert,
 		env.TLSKey,
-		cmd.NewRunnerService(env.OpCommand, cmd.NewParser()),
+		cmd.NewRunnerService(env.OpCommand, env.OpDdnsCommand, env.VtyshCommand, cmd.NewParser()),
 	)
 	err = engine.Start(ctx)
 	if err != nil {

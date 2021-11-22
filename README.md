@@ -26,6 +26,8 @@ export TLS_KEY=/path/to/tls/key
 
 # Op command (optional)
 export OP_COMMAND=/opt/vyatta/bin/vyatta-op-cmd-wrapper
+export OP_DDNS_COMMAND=/opt/vyatta/bin/sudo-users/vyatta-op-dynamic-dns.pl
+export VTYSH_COMMAND=/opt/vyatta/sbin/ubnt_vtysh
 ```
 
 ## Usage
