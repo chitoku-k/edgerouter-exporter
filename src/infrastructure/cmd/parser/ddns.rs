@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::anyhow;
 use chrono::NaiveDateTime;
 use nom::{
     branch::{alt, permutation},
@@ -21,12 +21,12 @@ pub struct DdnsParser;
 impl Parser for DdnsParser {
     type Item = Vec<DdnsStatus>;
 
-    fn parse(&self, input: &str) -> Result<Self::Item> {
+    fn parse(&self, input: &str) -> anyhow::Result<Self::Item> {
         parse_ddns_status(input)
     }
 }
 
-fn parse_ddns_status(input: &str) -> Result<Vec<DdnsStatus>> {
+fn parse_ddns_status(input: &str) -> anyhow::Result<Vec<DdnsStatus>> {
     match alt((
         terminated(
             map(tag("Dynamic DNS not configured"), |_| vec![]),

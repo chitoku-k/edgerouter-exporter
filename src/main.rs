@@ -1,4 +1,3 @@
-use anyhow::Result;
 use edgerouter_exporter::{
     di::container::Application,
     infrastructure::config::env,
@@ -7,7 +6,7 @@ use edgerouter_exporter::{
 use tokio::try_join;
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() -> anyhow::Result<()> {
     let config = env::get()?;
     let application = Application::new(&config);
 

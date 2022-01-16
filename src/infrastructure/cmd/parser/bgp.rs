@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use anyhow::{anyhow, Result};
+use anyhow::anyhow;
 use nom::{
     branch::permutation,
     bytes::complete::{tag, take_till, take_until},
@@ -22,12 +22,12 @@ pub struct BGPParser;
 impl Parser for BGPParser {
     type Item = Option<BGPStatus>;
 
-    fn parse(&self, input: &str) -> Result<Self::Item> {
+    fn parse(&self, input: &str) -> anyhow::Result<Self::Item> {
         parse_bgp_status(input)
     }
 }
 
-fn parse_bgp_neighbor(header: &[&str], entry: &[&str]) -> Result<BGPNeighbor> {
+fn parse_bgp_neighbor(header: &[&str], entry: &[&str]) -> anyhow::Result<BGPNeighbor> {
     let entry: HashMap<_, _> = header.iter().cloned().zip(entry.iter().cloned()).collect();
 
     Ok(BGPNeighbor {
@@ -45,7 +45,7 @@ fn parse_bgp_neighbor(header: &[&str], entry: &[&str]) -> Result<BGPNeighbor> {
     })
 }
 
-fn parse_bgp_status(input: &str) -> Result<Option<BGPStatus>> {
+fn parse_bgp_status(input: &str) -> anyhow::Result<Option<BGPStatus>> {
     match opt(
         map(
             permutation((

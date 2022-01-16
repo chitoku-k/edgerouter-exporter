@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::anyhow;
 use chrono::NaiveDateTime;
 use nom::{
     branch::permutation,
@@ -20,12 +20,12 @@ pub struct VersionParser;
 impl Parser for VersionParser {
     type Item = Version;
 
-    fn parse(&self, input: &str) -> Result<Self::Item> {
+    fn parse(&self, input: &str) -> anyhow::Result<Self::Item> {
         parse_version(input)
     }
 }
 
-fn parse_version(input: &str) -> Result<Version> {
+fn parse_version(input: &str) -> anyhow::Result<Version> {
     match map(
         permutation((
             delimited(

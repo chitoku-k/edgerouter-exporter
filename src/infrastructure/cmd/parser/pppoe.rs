@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use anyhow::{anyhow, Result};
+use anyhow::anyhow;
 use nom::{
     branch::alt,
     bytes::complete::{tag, take_till, take_while},
@@ -23,12 +23,12 @@ pub struct PPPoEParser;
 impl Parser for PPPoEParser {
     type Item = Vec<PPPoEClientSession>;
 
-    fn parse(&self, input: &str) -> Result<Self::Item> {
+    fn parse(&self, input: &str) -> anyhow::Result<Self::Item> {
         parse_pppoe_client_sessions(input)
     }
 }
 
-fn parse_pppoe_client_sessions(input: &str) -> Result<Vec<PPPoEClientSession>> {
+fn parse_pppoe_client_sessions(input: &str) -> anyhow::Result<Vec<PPPoEClientSession>> {
     match alt((
         map(tag("No active PPPoE client sessions"), |_| vec![]),
         delimited(

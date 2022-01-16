@@ -1,4 +1,3 @@
-use anyhow::Result;
 use async_trait::async_trait;
 
 use crate::{
@@ -27,7 +26,7 @@ where P: Parser<Item = Version> + Send + Sync
         }
     }
 
-    async fn version(&self) -> Result<Version> {
+    async fn version(&self) -> anyhow::Result<Version> {
         let output = self.output(&self.command, &["show", "version"]).await?;
         let result = self.parser.parse(&output)?;
         Ok(result)
@@ -45,7 +44,7 @@ where P: Parser<Item = Version> + Send + Sync
 {
     type Item = Version;
 
-    async fn run(&self) -> Result<Self::Item> {
+    async fn run(&self) -> anyhow::Result<Self::Item> {
         self.version().await
     }
 }

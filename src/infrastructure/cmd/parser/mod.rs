@@ -1,6 +1,5 @@
 use std::time::Duration;
 
-use anyhow::Result;
 use nom::{
     branch::alt,
     bytes::complete::tag,
@@ -19,7 +18,7 @@ pub mod version;
 pub trait Parser {
     type Item;
 
-    fn parse(&self, input: &str) -> Result<Self::Item>;
+    fn parse(&self, input: &str) -> anyhow::Result<Self::Item>;
 }
 
 pub fn parse_duration(input: &str) -> IResult<&str, Duration> {

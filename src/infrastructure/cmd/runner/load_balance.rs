@@ -1,4 +1,3 @@
-use anyhow::Result;
 use async_trait::async_trait;
 
 use crate::{
@@ -27,7 +26,7 @@ where P: Parser<Item = Vec<LoadBalanceGroup>> + Send + Sync
         }
     }
 
-    async fn groups(&self) -> Result<Vec<LoadBalanceGroup>> {
+    async fn groups(&self) -> anyhow::Result<Vec<LoadBalanceGroup>> {
         let output = self.output(&self.command, &["show", "load-balance", "watchdog"]).await?;
         let result = self.parser.parse(&output)?;
         Ok(result)
@@ -45,7 +44,7 @@ where P: Parser<Item = Vec<LoadBalanceGroup>> + Send + Sync
 {
     type Item = Vec<LoadBalanceGroup>;
 
-    async fn run(&self) -> Result<Self::Item> {
+    async fn run(&self) -> anyhow::Result<Self::Item> {
         self.groups().await
     }
 }

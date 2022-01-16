@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Result};
+use anyhow::anyhow;
 use chrono::NaiveDateTime;
 use nom::{
     branch::{alt, permutation},
@@ -25,12 +25,12 @@ pub struct LoadBalanceParser;
 impl Parser for LoadBalanceParser {
     type Item = Vec<LoadBalanceGroup>;
 
-    fn parse(&self, input: &str) -> Result<Self::Item> {
+    fn parse(&self, input: &str) -> anyhow::Result<Self::Item> {
         parse_load_balance_groups(input)
     }
 }
 
-fn parse_load_balance_groups(input: &str) -> Result<Vec<LoadBalanceGroup>> {
+fn parse_load_balance_groups(input: &str) -> anyhow::Result<Vec<LoadBalanceGroup>> {
     match alt((
         map(tag("load-balance is not configured"), |_| vec![]),
         many1(

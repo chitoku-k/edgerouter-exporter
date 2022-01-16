@@ -1,4 +1,3 @@
-use anyhow::Result;
 use async_trait::async_trait;
 
 use crate::{
@@ -27,7 +26,7 @@ where P: Parser<Item = Vec<DdnsStatus>> + Send + Sync
         }
     }
 
-    async fn statuses(&self) -> Result<Vec<DdnsStatus>> {
+    async fn statuses(&self) -> anyhow::Result<Vec<DdnsStatus>> {
         let output = self.output(&self.command, &["--show-status"]).await?;
         let result = self.parser.parse(&output)?;
         Ok(result)
@@ -45,7 +44,7 @@ where P: Parser<Item = Vec<DdnsStatus>> + Send + Sync
 {
     type Item = Vec<DdnsStatus>;
 
-    async fn run(&self) -> Result<Self::Item> {
+    async fn run(&self) -> anyhow::Result<Self::Item> {
         self.statuses().await
     }
 }

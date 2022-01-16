@@ -1,4 +1,3 @@
-use anyhow::Result;
 use async_trait::async_trait;
 
 use crate::{
@@ -27,7 +26,7 @@ where P: Parser<Item = Vec<PPPoEClientSession>> + Send + Sync
         }
     }
 
-    async fn sessions(&self) -> Result<Vec<PPPoEClientSession>> {
+    async fn sessions(&self) -> anyhow::Result<Vec<PPPoEClientSession>> {
         let output = self.output(&self.command, &["show", "pppoe-client"]).await?;
         let result = self.parser.parse(&output)?;
         Ok(result)
@@ -45,7 +44,7 @@ where P: Parser<Item = Vec<PPPoEClientSession>> + Send + Sync
 {
     type Item = Vec<PPPoEClientSession>;
 
-    async fn run(&self) -> Result<Self::Item> {
+    async fn run(&self) -> anyhow::Result<Self::Item> {
         self.sessions().await
     }
 }

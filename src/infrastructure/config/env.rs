@@ -1,4 +1,3 @@
-use anyhow::Result;
 use derive_more::Deref;
 use envy::Error;
 use serde::Deserialize;
@@ -28,7 +27,7 @@ pub struct Config {
     pub vtysh_command: VtyshCommand,
 }
 
-pub fn get() -> Result<Config, Error> {
+pub fn get() -> anyhow::Result<Config, Error> {
     envy::from_env()
 }
 

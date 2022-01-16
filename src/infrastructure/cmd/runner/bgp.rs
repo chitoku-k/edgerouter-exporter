@@ -1,4 +1,3 @@
-use anyhow::Result;
 use async_trait::async_trait;
 use tokio::try_join;
 
@@ -28,7 +27,7 @@ where P: Parser<Item = Option<BGPStatus>> + Send + Sync
         }
     }
 
-    async fn ipv4(&self) -> Result<Option<BGPStatus>> {
+    async fn ipv4(&self) -> anyhow::Result<Option<BGPStatus>> {
         let output = self.output(&self.command, &["-c", "show ip bgp summary"]).await?;
         let result = self.parser.parse(&output)?.and_then(|mut status| {
             status.neighbors.retain(|n| n.neighbor.is_ipv4());
@@ -37,7 +36,7 @@ where P: Parser<Item = Option<BGPStatus>> + Send + Sync
         Ok(result)
     }
 
-    async fn ipv6(&self) -> Result<Option<BGPStatus>> {
+    async fn ipv6(&self) -> anyhow::Result<Option<BGPStatus>> {
         let output = self.output(&self.command, &["-c", "show bgp ipv6 summary"]).await?;
         let result = self.parser.parse(&output)?.and_then(|mut status| {
             status.neighbors.retain(|n| n.neighbor.is_ipv6());
@@ -58,7 +57,7 @@ where P: Parser<Item = Option<BGPStatus>> + Send + Sync
 {
     type Item = (Option<BGPStatus>, Option<BGPStatus>);
 
-    async fn run(&self) -> Result<Self::Item> {
+    async fn run(&self) -> anyhow::Result<Self::Item> {
         try_join!(self.ipv4(), self.ipv6())
     }
 }
