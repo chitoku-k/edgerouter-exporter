@@ -4,16 +4,26 @@ use edgerouter_exporter::{
     infrastructure::config::env,
     service::Runner,
 };
+use tokio::try_join;
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     let config = env::get()?;
     let application = Application::new(&config);
 
-    let (bgp4, bgp6) = application.bgp_runner.run()?;
-    let ddns = application.ddns_runner.run()?;
-    let load_balance = application.load_balance_runner.run()?;
-    let pppoe = application.pppoe_runner.run()?;
-    let version = application.version_runner.run()?;
+    let (
+        (bgp4, bgp6),
+        ddns,
+        load_balance,
+        pppoe,
+        version,
+    ) = try_join!(
+        application.bgp_runner.run(),
+        application.ddns_runner.run(),
+        application.load_balance_runner.run(),
+        application.pppoe_runner.run(),
+        application.version_runner.run(),
+    )?;
 
     println!("BGP (IPv4): {bgp4:#?}");
     println!("BGP (IPv6): {bgp6:#?}");

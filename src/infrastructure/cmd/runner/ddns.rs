@@ -1,4 +1,5 @@
 use anyhow::Result;
+use async_trait::async_trait;
 
 use crate::{
     domain::ddns::DdnsStatus,
@@ -10,14 +11,14 @@ use crate::{
 };
 
 pub struct DdnsRunner<'a, P>
-where P: Parser<Item = Vec<DdnsStatus>>
+where P: Parser<Item = Vec<DdnsStatus>> + Send + Sync
 {
     command: &'a OpDdnsCommand,
     parser: P,
 }
 
 impl<'a, P> DdnsRunner<'a, P>
-where P: Parser<Item = Vec<DdnsStatus>>
+where P: Parser<Item = Vec<DdnsStatus>> + Send + Sync
 {
     pub fn new(command: &'a OpDdnsCommand, parser: P) -> Self {
         Self {
@@ -26,24 +27,25 @@ where P: Parser<Item = Vec<DdnsStatus>>
         }
     }
 
-    fn statuses(&self) -> Result<Vec<DdnsStatus>> {
-        let output = self.output(&self.command, &["--show-status"])?;
+    async fn statuses(&self) -> Result<Vec<DdnsStatus>> {
+        let output = self.output(&self.command, &["--show-status"]).await?;
         let result = self.parser.parse(&output)?;
         Ok(result)
     }
 }
 
 impl<P> Executor for DdnsRunner<'_, P>
-where P: Parser<Item = Vec<DdnsStatus>>
+where P: Parser<Item = Vec<DdnsStatus>> + Send + Sync
 {
 }
 
+#[async_trait]
 impl<P> Runner for DdnsRunner<'_, P>
-where P: Parser<Item = Vec<DdnsStatus>>
+where P: Parser<Item = Vec<DdnsStatus>> + Send + Sync
 {
     type Item = Vec<DdnsStatus>;
 
-    fn run(&self) -> Result<Self::Item> {
-        self.statuses()
+    async fn run(&self) -> Result<Self::Item> {
+        self.statuses().await
     }
 }

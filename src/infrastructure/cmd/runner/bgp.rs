@@ -1,4 +1,6 @@
 use anyhow::Result;
+use async_trait::async_trait;
+use tokio::try_join;
 
 use crate::{
     domain::bgp::BGPStatus,
@@ -10,14 +12,14 @@ use crate::{
 };
 
 pub struct BGPRunner<'a, P>
-where P: Parser<Item = Option<BGPStatus>>
+where P: Parser<Item = Option<BGPStatus>> + Send + Sync
 {
     command: &'a VtyshCommand,
     parser: P,
 }
 
 impl<'a, P> BGPRunner<'a, P>
-where P: Parser<Item = Option<BGPStatus>>
+where P: Parser<Item = Option<BGPStatus>> + Send + Sync
 {
     pub fn new(command: &'a VtyshCommand, parser: P) -> Self {
         Self {
@@ -26,8 +28,8 @@ where P: Parser<Item = Option<BGPStatus>>
         }
     }
 
-    fn ipv4(&self) -> Result<Option<BGPStatus>> {
-        let output = self.output(&self.command, &["-c", "show ip bgp summary"])?;
+    async fn ipv4(&self) -> Result<Option<BGPStatus>> {
+        let output = self.output(&self.command, &["-c", "show ip bgp summary"]).await?;
         let result = self.parser.parse(&output)?.and_then(|mut status| {
             status.neighbors.retain(|n| n.neighbor.is_ipv4());
             Some(status)
@@ -35,8 +37,8 @@ where P: Parser<Item = Option<BGPStatus>>
         Ok(result)
     }
 
-    fn ipv6(&self) -> Result<Option<BGPStatus>> {
-        let output = self.output(&self.command, &["-c", "show bgp ipv6 summary"])?;
+    async fn ipv6(&self) -> Result<Option<BGPStatus>> {
+        let output = self.output(&self.command, &["-c", "show bgp ipv6 summary"]).await?;
         let result = self.parser.parse(&output)?.and_then(|mut status| {
             status.neighbors.retain(|n| n.neighbor.is_ipv6());
             Some(status)
@@ -46,16 +48,17 @@ where P: Parser<Item = Option<BGPStatus>>
 }
 
 impl<P> Executor for BGPRunner<'_, P>
-where P: Parser<Item = Option<BGPStatus>>
+where P: Parser<Item = Option<BGPStatus>> + Send + Sync
 {
 }
 
+#[async_trait]
 impl<P> Runner for BGPRunner<'_, P>
-where P: Parser<Item = Option<BGPStatus>>
+where P: Parser<Item = Option<BGPStatus>> + Send + Sync
 {
     type Item = (Option<BGPStatus>, Option<BGPStatus>);
 
-    fn run(&self) -> Result<Self::Item> {
-        Ok((self.ipv4()?, self.ipv6()?))
+    async fn run(&self) -> Result<Self::Item> {
+        try_join!(self.ipv4(), self.ipv6())
     }
 }

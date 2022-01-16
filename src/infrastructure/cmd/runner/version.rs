@@ -1,4 +1,5 @@
 use anyhow::Result;
+use async_trait::async_trait;
 
 use crate::{
     domain::version::Version,
@@ -10,14 +11,14 @@ use crate::{
 };
 
 pub struct VersionRunner<'a, P>
-where P: Parser<Item = Version>
+where P: Parser<Item = Version> + Send + Sync
 {
     command: &'a OpCommand,
     parser: P,
 }
 
 impl<'a, P> VersionRunner<'a, P>
-where P: Parser<Item = Version>
+where P: Parser<Item = Version> + Send + Sync
 {
     pub fn new(command: &'a OpCommand, parser: P) -> Self {
         Self {
@@ -26,24 +27,25 @@ where P: Parser<Item = Version>
         }
     }
 
-    fn version(&self) -> Result<Version> {
-        let output = self.output(&self.command, &["show", "version"])?;
+    async fn version(&self) -> Result<Version> {
+        let output = self.output(&self.command, &["show", "version"]).await?;
         let result = self.parser.parse(&output)?;
         Ok(result)
     }
 }
 
 impl<P> Executor for VersionRunner<'_, P>
-where P: Parser<Item = Version>
+where P: Parser<Item = Version> + Send + Sync
 {
 }
 
+#[async_trait]
 impl<P> Runner for VersionRunner<'_, P>
-where P: Parser<Item = Version>
+where P: Parser<Item = Version> + Send + Sync
 {
     type Item = Version;
 
-    fn run(&self) -> Result<Self::Item> {
-        self.version()
+    async fn run(&self) -> Result<Self::Item> {
+        self.version().await
     }
 }
