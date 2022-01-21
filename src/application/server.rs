@@ -395,13 +395,17 @@ where
 
         let server = warp::serve(metrics);
         match tls {
-            Some((_tls_cert, _tls_key)) => {
-                panic!("unsupported");
-                // server
-                //     .tls()
-                //     .cert_path(tls_cert)
-                //     .key_path(tls_key)
-                //     .run((Ipv6Addr::UNSPECIFIED, port)).await
+            #[cfg(not(feature="tls"))]
+            Some(_) => {
+                panic!("TLS is not enabled.");
+            },
+            #[cfg(feature="tls")]
+            Some((tls_cert, tls_key)) => {
+                server
+                    .tls()
+                    .cert_path(tls_cert)
+                    .key_path(tls_key)
+                    .run((Ipv6Addr::UNSPECIFIED, port)).await
             },
             None => {
                 server

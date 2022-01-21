@@ -3,6 +3,10 @@ name = "edgerouter-exporter"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = []
+tls = ["warp/tls"]
+
 [dependencies.anyhow]
 version = "1.0.52"
 
