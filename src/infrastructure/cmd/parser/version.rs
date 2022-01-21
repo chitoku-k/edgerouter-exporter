@@ -13,19 +13,21 @@ use nom::{
 use crate::{
     domain::version::Version,
     infrastructure::cmd::parser::Parser,
+    service::version::VersionResult,
 };
 
+#[derive(Clone)]
 pub struct VersionParser;
 
 impl Parser for VersionParser {
-    type Item = Version;
+    type Item = VersionResult;
 
     fn parse(&self, input: &str) -> anyhow::Result<Self::Item> {
         parse_version(input)
     }
 }
 
-fn parse_version(input: &str) -> anyhow::Result<Version> {
+fn parse_version(input: &str) -> anyhow::Result<VersionResult> {
     match map(
         permutation((
             delimited(

@@ -1,39 +1,42 @@
-use crate::infrastructure::{
-    cmd::{
-        runner::{
-            bgp::BGPRunner,
-            ddns::DdnsRunner,
-            load_balance::LoadBalanceRunner,
-            pppoe::PPPoERunner,
-            version::VersionRunner,
+use std::sync::Arc;
+
+use crate::{
+    application::server::Engine,
+    infrastructure::{
+        cmd::{
+            parser::{
+                bgp::BGPParser,
+                ddns::DdnsParser,
+                load_balance::LoadBalanceParser,
+                pppoe::PPPoEParser,
+                version::VersionParser,
+            },
+            runner::{
+                bgp::BGPRunner,
+                ddns::DdnsRunner,
+                load_balance::LoadBalanceRunner,
+                pppoe::PPPoERunner,
+                version::VersionRunner,
+            },
         },
-        parser::{
-            bgp::BGPParser,
-            ddns::DdnsParser,
-            load_balance::LoadBalanceParser,
-            pppoe::PPPoEParser,
-            version::VersionParser,
-        },
+        config::env::Config,
     },
-    config::env::Config,
 };
 
-pub struct Application<'a> {
-    pub bgp_runner: BGPRunner<'a, BGPParser>,
-    pub ddns_runner: DdnsRunner<'a, DdnsParser>,
-    pub load_balance_runner: LoadBalanceRunner<'a, LoadBalanceParser>,
-    pub pppoe_runner: PPPoERunner<'a, PPPoEParser>,
-    pub version_runner: VersionRunner<'a, VersionParser>,
-}
+pub struct Application;
 
-impl Application<'_> {
-    pub fn new(config: &Config) -> Application {
-        Application {
-            bgp_runner: BGPRunner::new(&config.vtysh_command, BGPParser),
-            ddns_runner: DdnsRunner::new(&config.op_ddns_command, DdnsParser),
-            load_balance_runner: LoadBalanceRunner::new(&config.op_command, LoadBalanceParser),
-            pppoe_runner: PPPoERunner::new(&config.op_command, PPPoEParser),
-            version_runner: VersionRunner::new(&config.op_command, VersionParser),
-        }
+impl Application {
+    pub async fn start(config: &Config) -> anyhow::Result<()> {
+        let engine = Engine::new(
+            config.port,
+            None,
+            None,
+            BGPRunner::new(&config.vtysh_command, BGPParser),
+            DdnsRunner::new(&config.op_ddns_command, DdnsParser),
+            LoadBalanceRunner::new(&config.op_command, LoadBalanceParser),
+            PPPoERunner::new(&config.op_command, PPPoEParser),
+            VersionRunner::new(&config.op_command, VersionParser),
+        )?;
+        Ok(Arc::new(engine).start().await)
     }
 }

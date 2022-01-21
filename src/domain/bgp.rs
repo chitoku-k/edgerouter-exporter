@@ -1,6 +1,16 @@
-use std::{net::IpAddr, time::Duration};
+use std::{
+    iter::{Chain, Flatten},
+    net::IpAddr,
+    option::IntoIter,
+    time::Duration,
+};
 
-#[derive(Debug, PartialEq)]
+pub struct BGPIterator(Chain<
+    Flatten<IntoIter<Vec<BGPNeighbor>>>,
+    Flatten<IntoIter<Vec<BGPNeighbor>>>,
+>);
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct BGPStatus {
     pub router_id: String,
     pub local_as: u32,
@@ -11,7 +21,7 @@ pub struct BGPStatus {
     pub sessions: u64,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct BGPNeighbor {
     pub neighbor: IpAddr,
     pub version: u32,
@@ -24,4 +34,23 @@ pub struct BGPNeighbor {
     pub uptime: Option<Duration>,
     pub state: Option<String>,
     pub prefixes_received: Option<u64>,
+}
+
+impl From<(Option<BGPStatus>, Option<BGPStatus>)> for BGPIterator {
+    fn from((bgp4, bgp6): (Option<BGPStatus>, Option<BGPStatus>)) -> Self {
+        Self(
+            Iterator::chain(
+                bgp4.map(|s| s.neighbors).into_iter().flatten(),
+                bgp6.map(|s| s.neighbors).into_iter().flatten(),
+            )
+        )
+    }
+}
+
+impl Iterator for BGPIterator {
+    type Item = BGPNeighbor;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next()
+    }
 }

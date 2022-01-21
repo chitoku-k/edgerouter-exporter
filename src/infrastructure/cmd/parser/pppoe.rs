@@ -11,24 +11,25 @@ use nom::{
     sequence::{delimited, terminated, tuple},
     Finish,
 };
-use number_prefix::NumberPrefix;
 
 use crate::{
-    domain::pppoe::PPPoEClientSession,
+    domain::pppoe::{ByteSize, PacketSize, PPPoEClientSession},
     infrastructure::cmd::parser::{parse_duration, Parser},
+    service::pppoe::PPPoEClientSessionResult,
 };
 
+#[derive(Clone)]
 pub struct PPPoEParser;
 
 impl Parser for PPPoEParser {
-    type Item = Vec<PPPoEClientSession>;
+    type Item = PPPoEClientSessionResult;
 
     fn parse(&self, input: &str) -> anyhow::Result<Self::Item> {
         parse_pppoe_client_sessions(input)
     }
 }
 
-fn parse_pppoe_client_sessions(input: &str) -> anyhow::Result<Vec<PPPoEClientSession>> {
+fn parse_pppoe_client_sessions(input: &str) -> anyhow::Result<PPPoEClientSessionResult> {
     match alt((
         map(tag("No active PPPoE client sessions"), |_| vec![]),
         delimited(
@@ -76,19 +77,19 @@ fn parse_pppoe_client_sessions(input: &str) -> anyhow::Result<Vec<PPPoEClientSes
                             space1,
                         ),
                         terminated(
-                            map_res(take_till(|c| c == ' '), NumberPrefix::from_str),
+                            map_res(take_till(|c| c == ' '), PacketSize::from_str),
                             space1,
                         ),
                         terminated(
-                            map_res(take_till(|c| c == ' '), NumberPrefix::from_str),
+                            map_res(take_till(|c| c == ' '), ByteSize::from_str),
                             space1,
                         ),
                         terminated(
-                            map_res(take_till(|c| c == ' '), NumberPrefix::from_str),
+                            map_res(take_till(|c| c == ' '), PacketSize::from_str),
                             space1,
                         ),
                         terminated(
-                            map_res(take_till(|c| c == '\n'), NumberPrefix::from_str),
+                            map_res(take_till(|c| c == '\n'), ByteSize::from_str),
                             newline,
                         ),
                     )),
@@ -140,7 +141,7 @@ mod tests {
 
     use cool_asserts::assert_matches;
     use indoc::indoc;
-    use number_prefix::Prefix;
+    use number_prefix::{Prefix, NumberPrefix};
 
     use super::*;
 
@@ -189,10 +190,10 @@ mod tests {
                     protocol: "PPPoE".to_string(),
                     interface: "pppoe0".to_string(),
                     remote_ip: IpAddr::V4(Ipv4Addr::new(192, 0, 2, 255)),
-                    transmit_packets: NumberPrefix::Standalone(384.0),
-                    transmit_bytes: NumberPrefix::Prefixed(Prefix::Kilo, 34.8),
-                    receive_packets: NumberPrefix::Prefixed(Prefix::Kilo, 1.2),
-                    receive_bytes: NumberPrefix::Prefixed(Prefix::Kilo, 58.2),
+                    transmit_packets: NumberPrefix::Standalone(384.0).into(),
+                    transmit_bytes: NumberPrefix::Prefixed(Prefix::Kilo, 34.8).into(),
+                    receive_packets: NumberPrefix::Prefixed(Prefix::Kilo, 1.2).into(),
+                    receive_bytes: NumberPrefix::Prefixed(Prefix::Kilo, 58.2).into(),
                 },
                 PPPoEClientSession {
                     user: "user02".to_string(),
@@ -200,10 +201,10 @@ mod tests {
                     protocol: "PPPoE".to_string(),
                     interface: "pppoe1".to_string(),
                     remote_ip: IpAddr::V4(Ipv4Addr::new(198, 51, 100, 255)),
-                    transmit_packets: NumberPrefix::Standalone(768.0),
-                    transmit_bytes: NumberPrefix::Prefixed(Prefix::Kilo, 76.8),
-                    receive_packets: NumberPrefix::Prefixed(Prefix::Kilo, 2.4),
-                    receive_bytes: NumberPrefix::Prefixed(Prefix::Kilo, 116.4),
+                    transmit_packets: NumberPrefix::Standalone(768.0).into(),
+                    transmit_bytes: NumberPrefix::Prefixed(Prefix::Kilo, 76.8).into(),
+                    receive_packets: NumberPrefix::Prefixed(Prefix::Kilo, 2.4).into(),
+                    receive_bytes: NumberPrefix::Prefixed(Prefix::Kilo, 116.4).into(),
                 },
             ],
         );

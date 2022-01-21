@@ -1,3 +1,4 @@
+pub mod application;
 pub mod di;
 pub mod domain;
 pub mod infrastructure;

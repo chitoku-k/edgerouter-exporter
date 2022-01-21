@@ -2,32 +2,35 @@ use async_trait::async_trait;
 use tokio::try_join;
 
 use crate::{
-    domain::bgp::BGPStatus,
     infrastructure::{
         cmd::{parser::Parser, runner::Executor},
         config::env::VtyshCommand,
     },
-    service::Runner,
+    service::{bgp::BGPStatusResult, Runner},
 };
 
-pub struct BGPRunner<'a, P>
-where P: Parser<Item = Option<BGPStatus>> + Send + Sync
+#[derive(Clone)]
+pub struct BGPRunner<P>
+where
+    P: Parser<Item = BGPStatusResult> + Send + Sync,
 {
-    command: &'a VtyshCommand,
+    command: VtyshCommand,
     parser: P,
 }
 
-impl<'a, P> BGPRunner<'a, P>
-where P: Parser<Item = Option<BGPStatus>> + Send + Sync
+impl<P> BGPRunner<P>
+where
+    P: Parser<Item = BGPStatusResult> + Send + Sync,
 {
-    pub fn new(command: &'a VtyshCommand, parser: P) -> Self {
+    pub fn new(command: &VtyshCommand, parser: P) -> Self {
+        let command = command.to_owned();
         Self {
             command,
             parser,
         }
     }
 
-    async fn ipv4(&self) -> anyhow::Result<Option<BGPStatus>> {
+    async fn ipv4(&self) -> anyhow::Result<BGPStatusResult> {
         let output = self.output(&self.command, &["-c", "show ip bgp summary"]).await?;
         let result = self.parser.parse(&output)?.and_then(|mut status| {
             status.neighbors.retain(|n| n.neighbor.is_ipv4());
@@ -36,7 +39,7 @@ where P: Parser<Item = Option<BGPStatus>> + Send + Sync
         Ok(result)
     }
 
-    async fn ipv6(&self) -> anyhow::Result<Option<BGPStatus>> {
+    async fn ipv6(&self) -> anyhow::Result<BGPStatusResult> {
         let output = self.output(&self.command, &["-c", "show bgp ipv6 summary"]).await?;
         let result = self.parser.parse(&output)?.and_then(|mut status| {
             status.neighbors.retain(|n| n.neighbor.is_ipv6());
@@ -46,16 +49,18 @@ where P: Parser<Item = Option<BGPStatus>> + Send + Sync
     }
 }
 
-impl<P> Executor for BGPRunner<'_, P>
-where P: Parser<Item = Option<BGPStatus>> + Send + Sync
+impl<P> Executor for BGPRunner<P>
+where
+    P: Parser<Item = BGPStatusResult> + Send + Sync,
 {
 }
 
 #[async_trait]
-impl<P> Runner for BGPRunner<'_, P>
-where P: Parser<Item = Option<BGPStatus>> + Send + Sync
+impl<P> Runner for BGPRunner<P>
+where
+    P: Parser<Item = BGPStatusResult> + Send + Sync,
 {
-    type Item = (Option<BGPStatus>, Option<BGPStatus>);
+    type Item = (BGPStatusResult, BGPStatusResult);
 
     async fn run(&self) -> anyhow::Result<Self::Item> {
         try_join!(self.ipv4(), self.ipv6())

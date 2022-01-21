@@ -14,19 +14,21 @@ use nom::{
 use crate::{
     domain::ddns::{DdnsStatus, DdnsUpdateStatus},
     infrastructure::cmd::parser::Parser,
+    service::ddns::DdnsStatusResult,
 };
 
+#[derive(Clone)]
 pub struct DdnsParser;
 
 impl Parser for DdnsParser {
-    type Item = Vec<DdnsStatus>;
+    type Item = DdnsStatusResult;
 
     fn parse(&self, input: &str) -> anyhow::Result<Self::Item> {
         parse_ddns_status(input)
     }
 }
 
-fn parse_ddns_status(input: &str) -> anyhow::Result<Vec<DdnsStatus>> {
+fn parse_ddns_status(input: &str) -> anyhow::Result<DdnsStatusResult> {
     match alt((
         terminated(
             map(tag("Dynamic DNS not configured"), |_| vec![]),

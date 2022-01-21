@@ -1,48 +1,53 @@
 use async_trait::async_trait;
 
 use crate::{
-    domain::pppoe::PPPoEClientSession,
     infrastructure::{
         cmd::{parser::Parser, runner::Executor},
         config::env::OpCommand,
     },
-    service::Runner,
+    service::{pppoe::PPPoEClientSessionResult, Runner},
 };
 
-pub struct PPPoERunner<'a, P>
-where P: Parser<Item = Vec<PPPoEClientSession>> + Send + Sync
+#[derive(Clone)]
+pub struct PPPoERunner<P>
+where
+    P: Parser<Item = PPPoEClientSessionResult> + Send + Sync,
 {
-    command: &'a OpCommand,
+    command: OpCommand,
     parser: P,
 }
 
-impl<'a, P> PPPoERunner<'a, P>
-where P: Parser<Item = Vec<PPPoEClientSession>> + Send + Sync
+impl<P> PPPoERunner<P>
+where
+    P: Parser<Item = PPPoEClientSessionResult> + Send + Sync,
 {
-    pub fn new(command: &'a OpCommand, parser: P) -> Self {
+    pub fn new(command: &OpCommand, parser: P) -> Self {
+        let command = command.to_owned();
         Self {
             command,
             parser,
         }
     }
 
-    async fn sessions(&self) -> anyhow::Result<Vec<PPPoEClientSession>> {
+    async fn sessions(&self) -> anyhow::Result<PPPoEClientSessionResult> {
         let output = self.output(&self.command, &["show", "pppoe-client"]).await?;
         let result = self.parser.parse(&output)?;
         Ok(result)
     }
 }
 
-impl<P> Executor for PPPoERunner<'_, P>
-where P: Parser<Item = Vec<PPPoEClientSession>> + Send + Sync
+impl<P> Executor for PPPoERunner<P>
+where
+    P: Parser<Item = PPPoEClientSessionResult> + Send + Sync,
 {
 }
 
 #[async_trait]
-impl<P> Runner for PPPoERunner<'_, P>
-where P: Parser<Item = Vec<PPPoEClientSession>> + Send + Sync
+impl<P> Runner for PPPoERunner<P>
+where
+    P: Parser<Item = PPPoEClientSessionResult> + Send + Sync,
 {
-    type Item = Vec<PPPoEClientSession>;
+    type Item = PPPoEClientSessionResult;
 
     async fn run(&self) -> anyhow::Result<Self::Item> {
         self.sessions().await

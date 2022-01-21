@@ -13,7 +13,7 @@ pub struct VtyshCommand(String);
 
 #[derive(Debug, Deserialize, PartialEq)]
 pub struct Config {
-    pub port: String,
+    pub port: u16,
     pub tls_cert: Option<String>,
     pub tls_key: Option<String>,
 

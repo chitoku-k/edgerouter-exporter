@@ -18,19 +18,21 @@ use crate::{
         LoadBalanceStatus,
     },
     infrastructure::cmd::parser::Parser,
+    service::load_balance::LoadBalanceGroupResult,
 };
 
+#[derive(Clone)]
 pub struct LoadBalanceParser;
 
 impl Parser for LoadBalanceParser {
-    type Item = Vec<LoadBalanceGroup>;
+    type Item = LoadBalanceGroupResult;
 
     fn parse(&self, input: &str) -> anyhow::Result<Self::Item> {
         parse_load_balance_groups(input)
     }
 }
 
-fn parse_load_balance_groups(input: &str) -> anyhow::Result<Vec<LoadBalanceGroup>> {
+fn parse_load_balance_groups(input: &str) -> anyhow::Result<LoadBalanceGroupResult> {
     match alt((
         map(tag("load-balance is not configured"), |_| vec![]),
         many1(

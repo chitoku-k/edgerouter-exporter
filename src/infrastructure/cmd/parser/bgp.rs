@@ -15,12 +15,14 @@ use nom::{
 use crate::{
     domain::bgp::{BGPNeighbor, BGPStatus},
     infrastructure::cmd::parser::{parse_duration, Parser},
+    service::bgp::BGPStatusResult,
 };
 
+#[derive(Clone)]
 pub struct BGPParser;
 
 impl Parser for BGPParser {
-    type Item = Option<BGPStatus>;
+    type Item = BGPStatusResult;
 
     fn parse(&self, input: &str) -> anyhow::Result<Self::Item> {
         parse_bgp_status(input)
@@ -45,7 +47,7 @@ fn parse_bgp_neighbor(header: &[&str], entry: &[&str]) -> anyhow::Result<BGPNeig
     })
 }
 
-fn parse_bgp_status(input: &str) -> anyhow::Result<Option<BGPStatus>> {
+fn parse_bgp_status(input: &str) -> anyhow::Result<BGPStatusResult> {
     match opt(
         map(
             permutation((

@@ -1,48 +1,53 @@
 use async_trait::async_trait;
 
 use crate::{
-    domain::version::Version,
     infrastructure::{
         cmd::{parser::Parser, runner::Executor},
         config::env::OpCommand,
     },
-    service::Runner,
+    service::{version::VersionResult, Runner},
 };
 
-pub struct VersionRunner<'a, P>
-where P: Parser<Item = Version> + Send + Sync
+#[derive(Clone)]
+pub struct VersionRunner<P>
+where
+    P: Parser<Item = VersionResult> + Send + Sync,
 {
-    command: &'a OpCommand,
+    command: OpCommand,
     parser: P,
 }
 
-impl<'a, P> VersionRunner<'a, P>
-where P: Parser<Item = Version> + Send + Sync
+impl<P> VersionRunner<P>
+where
+    P: Parser<Item = VersionResult> + Send + Sync,
 {
-    pub fn new(command: &'a OpCommand, parser: P) -> Self {
+    pub fn new(command: &OpCommand, parser: P) -> Self {
+        let command = command.to_owned();
         Self {
             command,
             parser,
         }
     }
 
-    async fn version(&self) -> anyhow::Result<Version> {
+    async fn version(&self) -> anyhow::Result<VersionResult> {
         let output = self.output(&self.command, &["show", "version"]).await?;
         let result = self.parser.parse(&output)?;
         Ok(result)
     }
 }
 
-impl<P> Executor for VersionRunner<'_, P>
-where P: Parser<Item = Version> + Send + Sync
+impl<P> Executor for VersionRunner<P>
+where
+    P: Parser<Item = VersionResult> + Send + Sync,
 {
 }
 
 #[async_trait]
-impl<P> Runner for VersionRunner<'_, P>
-where P: Parser<Item = Version> + Send + Sync
+impl<P> Runner for VersionRunner<P>
+where
+    P: Parser<Item = VersionResult> + Send + Sync,
 {
-    type Item = Version;
+    type Item = VersionResult;
 
     async fn run(&self) -> anyhow::Result<Self::Item> {
         self.version().await
