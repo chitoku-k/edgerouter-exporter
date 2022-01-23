@@ -34,8 +34,6 @@ fn convert_size(prefix: NumberPrefix<f32>) -> u64 {
         NumberPrefix::Prefixed(Prefix::Tera, v) => v as f64 * NUM_1024.powi(4),
         NumberPrefix::Prefixed(Prefix::Peta, v) => v as f64 * NUM_1024.powi(5),
         NumberPrefix::Prefixed(Prefix::Exa, v) => v as f64 * NUM_1024.powi(6),
-        NumberPrefix::Prefixed(Prefix::Zetta, v) => v as f64 * NUM_1024.powi(7),
-        NumberPrefix::Prefixed(Prefix::Yotta, v) => v as f64 * NUM_1024.powi(8),
 
         NumberPrefix::Prefixed(Prefix::Kibi, v) => v as f64 * NUM_1024.powi(1),
         NumberPrefix::Prefixed(Prefix::Mebi, v) => v as f64 * NUM_1024.powi(2),
@@ -43,8 +41,8 @@ fn convert_size(prefix: NumberPrefix<f32>) -> u64 {
         NumberPrefix::Prefixed(Prefix::Tebi, v) => v as f64 * NUM_1024.powi(4),
         NumberPrefix::Prefixed(Prefix::Pebi, v) => v as f64 * NUM_1024.powi(5),
         NumberPrefix::Prefixed(Prefix::Exbi, v) => v as f64 * NUM_1024.powi(6),
-        NumberPrefix::Prefixed(Prefix::Zebi, v) => v as f64 * NUM_1024.powi(7),
-        NumberPrefix::Prefixed(Prefix::Yobi, v) => v as f64 * NUM_1024.powi(8),
+
+        v => panic!("{v:?} overflowed."),
     };
 
     n as u64
@@ -59,5 +57,94 @@ impl From<PacketSize> for u64 {
 impl From<ByteSize> for u64 {
     fn from(prefix: ByteSize) -> Self {
         convert_size(prefix.0)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::panic;
+
+    use cool_asserts::assert_matches;
+
+    use super::*;
+
+    #[test]
+    fn convert_packet_size() {
+        assert_eq!(u64::from(PacketSize::from(NumberPrefix::Standalone(10_f32))), 10);
+
+        assert_eq!(u64::from(PacketSize::from(NumberPrefix::Prefixed(Prefix::Kilo, 10_f32))), 10 * 1024);
+        assert_eq!(u64::from(PacketSize::from(NumberPrefix::Prefixed(Prefix::Mega, 10_f32))), 10 * 1024 * 1024);
+        assert_eq!(u64::from(PacketSize::from(NumberPrefix::Prefixed(Prefix::Giga, 10_f32))), 10 * 1024 * 1024 * 1024);
+        assert_eq!(u64::from(PacketSize::from(NumberPrefix::Prefixed(Prefix::Tera, 10_f32))), 10 * 1024 * 1024 * 1024 * 1024);
+        assert_eq!(u64::from(PacketSize::from(NumberPrefix::Prefixed(Prefix::Peta, 10_f32))), 10 * 1024 * 1024 * 1024 * 1024 * 1024);
+        assert_eq!(u64::from(PacketSize::from(NumberPrefix::Prefixed(Prefix::Exa, 10_f32))), 10 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024);
+
+        assert_eq!(u64::from(PacketSize::from(NumberPrefix::Prefixed(Prefix::Kibi, 10_f32))), 10 * 1024);
+        assert_eq!(u64::from(PacketSize::from(NumberPrefix::Prefixed(Prefix::Mebi, 10_f32))), 10 * 1024 * 1024);
+        assert_eq!(u64::from(PacketSize::from(NumberPrefix::Prefixed(Prefix::Gibi, 10_f32))), 10 * 1024 * 1024 * 1024);
+        assert_eq!(u64::from(PacketSize::from(NumberPrefix::Prefixed(Prefix::Tebi, 10_f32))), 10 * 1024 * 1024 * 1024 * 1024);
+        assert_eq!(u64::from(PacketSize::from(NumberPrefix::Prefixed(Prefix::Pebi, 10_f32))), 10 * 1024 * 1024 * 1024 * 1024 * 1024);
+        assert_eq!(u64::from(PacketSize::from(NumberPrefix::Prefixed(Prefix::Exbi, 10_f32))), 10 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024);
+    }
+
+    #[test]
+    fn convert_packet_size_overflow() {
+        assert_matches!(
+            panic::catch_unwind(|| u64::from(PacketSize::from(NumberPrefix::Prefixed(Prefix::Yotta, 10_f32)))),
+            Err(_),
+        );
+        assert_matches!(
+            panic::catch_unwind(|| u64::from(PacketSize::from(NumberPrefix::Prefixed(Prefix::Zetta, 10_f32)))),
+            Err(_),
+        );
+
+        assert_matches!(
+            panic::catch_unwind(|| u64::from(PacketSize::from(NumberPrefix::Prefixed(Prefix::Yobi, 10_f32)))),
+            Err(_),
+        );
+        assert_matches!(
+            panic::catch_unwind(|| u64::from(PacketSize::from(NumberPrefix::Prefixed(Prefix::Zebi, 10_f32)))),
+            Err(_),
+        );
+    }
+
+    #[test]
+    fn convert_byte_size() {
+        assert_eq!(u64::from(ByteSize::from(NumberPrefix::Standalone(10_f32))), 10);
+
+        assert_eq!(u64::from(ByteSize::from(NumberPrefix::Prefixed(Prefix::Kilo, 10_f32))), 10 * 1024);
+        assert_eq!(u64::from(ByteSize::from(NumberPrefix::Prefixed(Prefix::Mega, 10_f32))), 10 * 1024 * 1024);
+        assert_eq!(u64::from(ByteSize::from(NumberPrefix::Prefixed(Prefix::Giga, 10_f32))), 10 * 1024 * 1024 * 1024);
+        assert_eq!(u64::from(ByteSize::from(NumberPrefix::Prefixed(Prefix::Tera, 10_f32))), 10 * 1024 * 1024 * 1024 * 1024);
+        assert_eq!(u64::from(ByteSize::from(NumberPrefix::Prefixed(Prefix::Peta, 10_f32))), 10 * 1024 * 1024 * 1024 * 1024 * 1024);
+        assert_eq!(u64::from(ByteSize::from(NumberPrefix::Prefixed(Prefix::Exa, 10_f32))), 10 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024);
+
+        assert_eq!(u64::from(ByteSize::from(NumberPrefix::Prefixed(Prefix::Kibi, 10_f32))), 10 * 1024);
+        assert_eq!(u64::from(ByteSize::from(NumberPrefix::Prefixed(Prefix::Mebi, 10_f32))), 10 * 1024 * 1024);
+        assert_eq!(u64::from(ByteSize::from(NumberPrefix::Prefixed(Prefix::Gibi, 10_f32))), 10 * 1024 * 1024 * 1024);
+        assert_eq!(u64::from(ByteSize::from(NumberPrefix::Prefixed(Prefix::Tebi, 10_f32))), 10 * 1024 * 1024 * 1024 * 1024);
+        assert_eq!(u64::from(ByteSize::from(NumberPrefix::Prefixed(Prefix::Pebi, 10_f32))), 10 * 1024 * 1024 * 1024 * 1024 * 1024);
+        assert_eq!(u64::from(ByteSize::from(NumberPrefix::Prefixed(Prefix::Exbi, 10_f32))), 10 * 1024 * 1024 * 1024 * 1024 * 1024 * 1024);
+    }
+
+    #[test]
+    fn convert_byte_size_overflow() {
+        assert_matches!(
+            panic::catch_unwind(|| u64::from(ByteSize::from(NumberPrefix::Prefixed(Prefix::Yotta, 10_f32)))),
+            Err(_),
+        );
+        assert_matches!(
+            panic::catch_unwind(|| u64::from(ByteSize::from(NumberPrefix::Prefixed(Prefix::Zetta, 10_f32)))),
+            Err(_),
+        );
+
+        assert_matches!(
+            panic::catch_unwind(|| u64::from(ByteSize::from(NumberPrefix::Prefixed(Prefix::Yobi, 10_f32)))),
+            Err(_),
+        );
+        assert_matches!(
+            panic::catch_unwind(|| u64::from(ByteSize::from(NumberPrefix::Prefixed(Prefix::Zebi, 10_f32)))),
+            Err(_),
+        );
     }
 }
