@@ -9,42 +9,41 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct DdnsRunner<P>
+pub struct DdnsRunner<E, P>
 where
+    E: Executor + Send + Sync,
     P: Parser<Item = DdnsStatusResult> + Send + Sync,
 {
     command: OpDdnsCommand,
+    executor: E,
     parser: P,
 }
 
-impl<P> DdnsRunner<P>
+impl<E, P> DdnsRunner<E, P>
 where
+    E: Executor + Send + Sync,
     P: Parser<Item = DdnsStatusResult> + Send + Sync,
 {
-    pub fn new(command: &OpDdnsCommand, parser: P) -> Self {
+    pub fn new(command: &OpDdnsCommand, executor: E, parser: P) -> Self {
         let command = command.to_owned();
         Self {
             command,
+            executor,
             parser,
         }
     }
 
     async fn statuses(&self) -> anyhow::Result<DdnsStatusResult> {
-        let output = self.output(&self.command, &["--show-status"]).await?;
+        let output = self.executor.output(&self.command, &["--show-status"]).await?;
         let result = self.parser.parse(&output)?;
         Ok(result)
     }
 }
 
-impl<P> Executor for DdnsRunner<P>
-where
-    P: Parser<Item = DdnsStatusResult> + Send + Sync,
-{
-}
-
 #[async_trait]
-impl<P> Runner for DdnsRunner<P>
+impl<E, P> Runner for DdnsRunner<E, P>
 where
+    E: Executor + Send + Sync,
     P: Parser<Item = DdnsStatusResult> + Send + Sync,
 {
     type Item = DdnsStatusResult;

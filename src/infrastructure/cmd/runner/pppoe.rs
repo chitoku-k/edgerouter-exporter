@@ -9,42 +9,41 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct PPPoERunner<P>
+pub struct PPPoERunner<E, P>
 where
+    E: Executor + Send + Sync,
     P: Parser<Item = PPPoEClientSessionResult> + Send + Sync,
 {
     command: OpCommand,
+    executor: E,
     parser: P,
 }
 
-impl<P> PPPoERunner<P>
+impl<E, P> PPPoERunner<E, P>
 where
+    E: Executor + Send + Sync,
     P: Parser<Item = PPPoEClientSessionResult> + Send + Sync,
 {
-    pub fn new(command: &OpCommand, parser: P) -> Self {
+    pub fn new(command: &OpCommand, executor: E, parser: P) -> Self {
         let command = command.to_owned();
         Self {
             command,
+            executor,
             parser,
         }
     }
 
     async fn sessions(&self) -> anyhow::Result<PPPoEClientSessionResult> {
-        let output = self.output(&self.command, &["show", "pppoe-client"]).await?;
+        let output = self.executor.output(&self.command, &["show", "pppoe-client"]).await?;
         let result = self.parser.parse(&output)?;
         Ok(result)
     }
 }
 
-impl<P> Executor for PPPoERunner<P>
-where
-    P: Parser<Item = PPPoEClientSessionResult> + Send + Sync,
-{
-}
-
 #[async_trait]
-impl<P> Runner for PPPoERunner<P>
+impl<E, P> Runner for PPPoERunner<E, P>
 where
+    E: Executor + Send + Sync,
     P: Parser<Item = PPPoEClientSessionResult> + Send + Sync,
 {
     type Item = PPPoEClientSessionResult;

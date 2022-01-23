@@ -17,6 +17,7 @@ use crate::{
                 load_balance::LoadBalanceRunner,
                 pppoe::PPPoERunner,
                 version::VersionRunner,
+                CommandExecutor,
             },
         },
         config::env,
@@ -39,11 +40,11 @@ impl Application {
             config.tls_cert,
             config.tls_key,
             MetricsHandler::new(
-                BGPRunner::new(&config.vtysh_command, BGPParser),
-                DdnsRunner::new(&config.op_ddns_command, DdnsParser),
-                LoadBalanceRunner::new(&config.op_command, LoadBalanceParser),
-                PPPoERunner::new(&config.op_command, PPPoEParser),
-                VersionRunner::new(&config.op_command, VersionParser),
+                BGPRunner::new(&config.vtysh_command, CommandExecutor, BGPParser),
+                DdnsRunner::new(&config.op_ddns_command, CommandExecutor, DdnsParser),
+                LoadBalanceRunner::new(&config.op_command, CommandExecutor, LoadBalanceParser),
+                PPPoERunner::new(&config.op_command, CommandExecutor, PPPoEParser),
+                VersionRunner::new(&config.op_command, CommandExecutor, VersionParser),
             ),
         );
 

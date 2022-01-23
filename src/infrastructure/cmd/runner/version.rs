@@ -9,42 +9,41 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct VersionRunner<P>
+pub struct VersionRunner<E, P>
 where
+    E: Executor + Send + Sync,
     P: Parser<Item = VersionResult> + Send + Sync,
 {
     command: OpCommand,
+    executor: E,
     parser: P,
 }
 
-impl<P> VersionRunner<P>
+impl<E, P> VersionRunner<E, P>
 where
+    E: Executor + Send + Sync,
     P: Parser<Item = VersionResult> + Send + Sync,
 {
-    pub fn new(command: &OpCommand, parser: P) -> Self {
+    pub fn new(command: &OpCommand, executor: E, parser: P) -> Self {
         let command = command.to_owned();
         Self {
             command,
+            executor,
             parser,
         }
     }
 
     async fn version(&self) -> anyhow::Result<VersionResult> {
-        let output = self.output(&self.command, &["show", "version"]).await?;
+        let output = self.executor.output(&self.command, &["show", "version"]).await?;
         let result = self.parser.parse(&output)?;
         Ok(result)
     }
 }
 
-impl<P> Executor for VersionRunner<P>
-where
-    P: Parser<Item = VersionResult> + Send + Sync,
-{
-}
-
 #[async_trait]
-impl<P> Runner for VersionRunner<P>
+impl<E, P> Runner for VersionRunner<E, P>
 where
+    E: Executor + Send + Sync,
     P: Parser<Item = VersionResult> + Send + Sync,
 {
     type Item = VersionResult;

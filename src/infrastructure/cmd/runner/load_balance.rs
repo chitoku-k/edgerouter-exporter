@@ -9,42 +9,41 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct LoadBalanceRunner<P>
+pub struct LoadBalanceRunner<E, P>
 where
+    E: Executor + Send + Sync,
     P: Parser<Item = LoadBalanceGroupResult> + Send + Sync,
 {
     command: OpCommand,
+    executor: E,
     parser: P,
 }
 
-impl<P> LoadBalanceRunner<P>
+impl<E, P> LoadBalanceRunner<E, P>
 where
+    E: Executor + Send + Sync,
     P: Parser<Item = LoadBalanceGroupResult> + Send + Sync,
 {
-    pub fn new(command: &OpCommand, parser: P) -> Self {
+    pub fn new(command: &OpCommand, executor: E, parser: P) -> Self {
         let command = command.to_owned();
         Self {
             command,
+            executor,
             parser,
         }
     }
 
     async fn groups(&self) -> anyhow::Result<LoadBalanceGroupResult> {
-        let output = self.output(&self.command, &["show", "load-balance", "watchdog"]).await?;
+        let output = self.executor.output(&self.command, &["show", "load-balance", "watchdog"]).await?;
         let result = self.parser.parse(&output)?;
         Ok(result)
     }
 }
 
-impl<P> Executor for LoadBalanceRunner<P>
-where
-    P: Parser<Item = LoadBalanceGroupResult> + Send + Sync,
-{
-}
-
 #[async_trait]
-impl<P> Runner for LoadBalanceRunner<P>
+impl<E, P> Runner for LoadBalanceRunner<E, P>
 where
+    E: Executor + Send + Sync,
     P: Parser<Item = LoadBalanceGroupResult> + Send + Sync,
 {
     type Item = LoadBalanceGroupResult;
