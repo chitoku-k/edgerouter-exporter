@@ -1,14 +1,14 @@
-use derive_more::Deref;
+use derive_more::{Deref, From};
 use envy::Error;
 use serde::Deserialize;
 
-#[derive(Clone, Debug, Deref, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deref, Deserialize, From, PartialEq)]
 pub struct OpCommand(String);
 
-#[derive(Clone, Debug, Deref, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deref, Deserialize, From, PartialEq)]
 pub struct OpDdnsCommand(String);
 
-#[derive(Clone, Debug, Deref, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Deref, Deserialize, From, PartialEq)]
 pub struct VtyshCommand(String);
 
 #[derive(Debug, Deserialize, PartialEq)]
