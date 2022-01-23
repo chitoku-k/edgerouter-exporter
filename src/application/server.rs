@@ -1,17 +1,23 @@
 use std::{net::Ipv6Addr, sync::Arc};
 
 use async_trait::async_trait;
-use warp::{Filter, Reply};
+use axum::{
+    routing::get,
+    Router, AddExtensionLayer,
+};
+use axum_server::tls_rustls::RustlsConfig;
+
+use crate::application::metrics;
 
 #[async_trait]
-pub trait Controller {
-    async fn handle(&self) -> Box<dyn Reply>;
+pub trait Controller<T> {
+    async fn handle(&self) -> anyhow::Result<T>;
 }
 
 #[derive(Clone)]
 pub struct Engine<MetricsController>
 where
-    MetricsController: Controller + Send + Sync + Clone + 'static,
+    MetricsController: Controller<String> + Send + Sync + Clone + 'static,
 {
     port: u16,
     tls: Option<(String, String)>,
@@ -20,7 +26,7 @@ where
 
 impl<MetricsController> Engine<MetricsController>
 where
-    MetricsController: Controller + Send + Sync + Clone + 'static,
+    MetricsController: Controller<String> + Send + Sync + Clone + 'static,
 {
     pub fn new(
         port: u16,
@@ -36,35 +42,37 @@ where
         }
     }
 
-    pub async fn start(self: Arc<Self>) {
-        let port = self.port;
-        let tls = self.tls.clone();
+    pub async fn start(self) -> anyhow::Result<()> {
+        let health = Router::new()
+            .route("/", get(|| async { "OK" }));
 
-        let metrics = warp::path("metrics").then(move || {
-            let engine = self.clone();
-            async move {
-                engine.metrics_controller.handle().await
-            }
-        });
+        let metrics = Router::new()
+            .route("/", get(metrics::handle::<MetricsController>))
+            .layer(AddExtensionLayer::new(Arc::new(self.metrics_controller)));
 
-        let server = warp::serve(metrics);
-        match tls {
+        let app = Router::new()
+            .nest("/healthz", health)
+            .nest("/metrics", metrics);
+        let addr = (Ipv6Addr::UNSPECIFIED, self.port).into();
+
+        match &self.tls {
             #[cfg(not(feature="tls"))]
             Some(_) => {
                 panic!("TLS is not enabled.");
             },
             #[cfg(feature="tls")]
             Some((tls_cert, tls_key)) => {
-                server
-                    .tls()
-                    .cert_path(tls_cert)
-                    .key_path(tls_key)
-                    .run((Ipv6Addr::UNSPECIFIED, port)).await
+                axum_server::bind_rustls(addr, RustlsConfig::from_pem_file(tls_cert, tls_key).await?)
+                    .serve(app.into_make_service())
+                    .await?;
             },
             None => {
-                server
-                    .run((Ipv6Addr::UNSPECIFIED, port)).await
+                axum_server::bind(addr)
+                    .serve(app.into_make_service())
+                    .await?;
             },
         }
+
+        Ok(())
     }
 }

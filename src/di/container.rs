@@ -1,7 +1,7 @@
-use std::sync::Arc;
+use log::LevelFilter;
 
 use crate::{
-    application::{metrics::MetricsController, server::Engine},
+    application::{metrics::MetricsHandler, server::Engine},
     infrastructure::{
         cmd::{
             parser::{
@@ -19,19 +19,26 @@ use crate::{
                 version::VersionRunner,
             },
         },
-        config::env::Config,
+        config::env,
     },
 };
 
 pub struct Application;
 
 impl Application {
-    pub async fn start(config: &Config) -> anyhow::Result<()> {
+    pub async fn start() -> anyhow::Result<()> {
+        env_logger::builder()
+            .format_target(false)
+            .format_timestamp_secs()
+            .filter(None, LevelFilter::Info)
+            .init();
+
+        let config = env::get()?;
         let engine = Engine::new(
             config.port,
             config.tls_cert.clone(),
             config.tls_key.clone(),
-            MetricsController::new(
+            MetricsHandler::new(
                 BGPRunner::new(&config.vtysh_command, BGPParser),
                 DdnsRunner::new(&config.op_ddns_command, DdnsParser),
                 LoadBalanceRunner::new(&config.op_command, LoadBalanceParser),
@@ -39,6 +46,7 @@ impl Application {
                 VersionRunner::new(&config.op_command, VersionParser),
             ),
         );
-        Ok(Arc::new(engine).start().await)
+
+        engine.start().await
     }
 }

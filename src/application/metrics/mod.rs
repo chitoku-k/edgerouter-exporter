@@ -1,10 +1,10 @@
+use std::sync::Arc;
+
 use async_trait::async_trait;
-use prometheus_client::{
-    encoding::text::encode,
-    registry::Registry,
-};
+use axum::{extract::Extension, http::StatusCode, response::IntoResponse};
+use derive_more::Constructor;
+use prometheus_client::{encoding::text::encode, registry::Registry};
 use tokio::try_join;
-use warp::{Reply, reply, hyper::StatusCode};
 
 use crate::{
     application::server::Controller,
@@ -28,8 +28,8 @@ pub trait Collector {
     fn collect(self, registry: &mut Registry);
 }
 
-#[derive(Clone)]
-pub struct MetricsController<BGPRunner, DdnsRunner, LoadBalanceRunner, PPPoERunner, VersionRunner>
+#[derive(Clone, Constructor)]
+pub struct MetricsHandler<BGPRunner, DdnsRunner, LoadBalanceRunner, PPPoERunner, VersionRunner>
 where
     BGPRunner: Runner<Item = (BGPStatusResult, BGPStatusResult)> + Send + Sync + Clone,
     DdnsRunner: Runner<Item = DdnsStatusResult> + Send + Sync + Clone,
@@ -44,7 +44,8 @@ where
     version_runner: VersionRunner,
 }
 
-impl<BGPRunner, DdnsRunner, LoadBalanceRunner, PPPoERunner, VersionRunner> MetricsController<BGPRunner, DdnsRunner, LoadBalanceRunner, PPPoERunner, VersionRunner>
+#[async_trait]
+impl<BGPRunner, DdnsRunner, LoadBalanceRunner, PPPoERunner, VersionRunner> Controller<String> for MetricsHandler<BGPRunner, DdnsRunner, LoadBalanceRunner, PPPoERunner, VersionRunner>
 where
     BGPRunner: Runner<Item = (BGPStatusResult, BGPStatusResult)> + Send + Sync + Clone + 'static,
     DdnsRunner: Runner<Item = DdnsStatusResult> + Send + Sync + Clone + 'static,
@@ -52,23 +53,8 @@ where
     PPPoERunner: Runner<Item = PPPoEClientSessionResult> + Send + Sync + Clone + 'static,
     VersionRunner: Runner<Item = VersionResult> + Send + Sync + Clone + 'static,
 {
-    pub fn new(
-        bgp_runner: BGPRunner,
-        ddns_runner: DdnsRunner,
-        load_balance_runner: LoadBalanceRunner,
-        pppoe_runner: PPPoERunner,
-        version_runner: VersionRunner,
-    ) -> Self {
-        Self {
-            bgp_runner,
-            ddns_runner,
-            load_balance_runner,
-            pppoe_runner,
-            version_runner,
-        }
-    }
-
-    async fn collect(&self, mut registry: Registry) -> anyhow::Result<String> {
+    async fn handle(&self) -> anyhow::Result<String> {
+        let mut registry = Registry::default();
         let (
             bgp,
             ddns,
@@ -96,26 +82,17 @@ where
     }
 }
 
-#[async_trait]
-impl<BGPRunner, DdnsRunner, LoadBalanceRunner, PPPoERunner, VersionRunner> Controller for MetricsController<BGPRunner, DdnsRunner, LoadBalanceRunner, PPPoERunner, VersionRunner>
+pub async fn handle<T>(Extension(controller): Extension<Arc<T>>) -> impl IntoResponse
 where
-    BGPRunner: Runner<Item = (BGPStatusResult, BGPStatusResult)> + Send + Sync + Clone + 'static,
-    DdnsRunner: Runner<Item = DdnsStatusResult> + Send + Sync + Clone + 'static,
-    LoadBalanceRunner: Runner<Item = LoadBalanceGroupResult> + Send + Sync + Clone + 'static,
-    PPPoERunner: Runner<Item = PPPoEClientSessionResult> + Send + Sync + Clone + 'static,
-    VersionRunner: Runner<Item = VersionResult> + Send + Sync + Clone + 'static,
+     T: Controller<String>,
 {
-    async fn handle(&self) -> Box<dyn Reply> {
-        let registry = Registry::default();
-
-        match self.collect(registry).await {
-            Ok(r) => {
-                Box::new(reply::with_status(r, StatusCode::OK))
-            },
-            Err(e) => {
-                eprintln!("Internal Server Error: {:?}", e);
-                Box::new(reply::with_status("Internal Server Error", StatusCode::INTERNAL_SERVER_ERROR))
-            },
-        }
+    match controller.handle().await {
+        Ok(s) => {
+            (StatusCode::OK, s)
+        },
+        Err(e) => {
+            error!("Failed to collect metrics: {e}");
+            (StatusCode::INTERNAL_SERVER_ERROR, String::new())
+        },
     }
 }
