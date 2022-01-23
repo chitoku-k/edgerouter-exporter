@@ -36,8 +36,8 @@ impl Application {
         let config = env::get()?;
         let engine = Engine::new(
             config.port,
-            config.tls_cert.clone(),
-            config.tls_key.clone(),
+            config.tls_cert,
+            config.tls_key,
             MetricsHandler::new(
                 BGPRunner::new(&config.vtysh_command, BGPParser),
                 DdnsRunner::new(&config.op_ddns_command, DdnsParser),
