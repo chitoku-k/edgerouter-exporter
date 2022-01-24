@@ -3,7 +3,8 @@ use std::{net::Ipv6Addr, sync::Arc};
 use async_trait::async_trait;
 use axum::{
     routing::get,
-    Router, AddExtensionLayer,
+    AddExtensionLayer,
+    Router,
 };
 use axum_server::tls_rustls::RustlsConfig;
 
@@ -56,11 +57,11 @@ where
         let addr = (Ipv6Addr::UNSPECIFIED, self.port).into();
 
         match &self.tls {
-            #[cfg(not(feature="tls"))]
+            #[cfg(not(feature = "tls"))]
             Some(_) => {
                 panic!("TLS is not enabled.");
             },
-            #[cfg(feature="tls")]
+            #[cfg(feature = "tls")]
             Some((tls_cert, tls_key)) => {
                 axum_server::bind_rustls(addr, RustlsConfig::from_pem_file(tls_cert, tls_key).await?)
                     .serve(app.into_make_service())

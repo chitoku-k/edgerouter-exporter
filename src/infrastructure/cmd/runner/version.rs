@@ -60,7 +60,7 @@ mod tests {
     use indoc::indoc;
     use mockall::{mock, predicate::eq};
 
-    use crate::{infrastructure::cmd::runner::MockExecutor, domain::version::Version};
+    use crate::{domain::version::Version, infrastructure::cmd::runner::MockExecutor};
 
     use super::*;
 

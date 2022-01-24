@@ -5,7 +5,7 @@ use nom::{
     branch::{alt, permutation},
     bytes::complete::{tag, take_till, take_until},
     character::complete::{multispace0, multispace1, newline, space1, u32, u64},
-    combinator::{map, map_res, eof},
+    combinator::{eof, map, map_res},
     error::Error,
     multi::{many0, many1, many_till, separated_list1},
     sequence::{delimited, terminated, tuple},

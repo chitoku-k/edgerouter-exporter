@@ -1,15 +1,15 @@
 use prometheus_client::{
     encoding::text::Encode,
-    registry::Registry,
     metrics::{family::Family, gauge::Gauge},
+    registry::Registry,
 };
 
 use crate::{
     application::metrics::Collector,
     domain::load_balance::{
         LoadBalanceInterface,
-        LoadBalanceStatus,
         LoadBalancePing,
+        LoadBalanceStatus,
     },
     service::load_balance::LoadBalanceGroupResult,
 };

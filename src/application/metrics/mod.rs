@@ -84,7 +84,7 @@ where
 
 pub async fn handle<T>(Extension(controller): Extension<Arc<T>>) -> impl IntoResponse
 where
-     T: Controller<String>,
+    T: Controller<String>,
 {
     match controller.handle().await {
         Ok(s) => {

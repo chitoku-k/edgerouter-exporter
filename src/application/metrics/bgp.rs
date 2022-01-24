@@ -1,7 +1,7 @@
 use prometheus_client::{
     encoding::text::Encode,
-    registry::Registry,
     metrics::{family::Family, gauge::Gauge},
+    registry::Registry,
 };
 
 use crate::{

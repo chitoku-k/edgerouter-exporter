@@ -13,7 +13,7 @@ use nom::{
 };
 
 use crate::{
-    domain::pppoe::{ByteSize, PacketSize, PPPoEClientSession},
+    domain::pppoe::{ByteSize, PPPoEClientSession, PacketSize},
     infrastructure::cmd::parser::{parse_duration, Parser},
     service::pppoe::PPPoEClientSessionResult,
 };
@@ -141,7 +141,7 @@ mod tests {
 
     use cool_asserts::assert_matches;
     use indoc::indoc;
-    use number_prefix::{Prefix, NumberPrefix};
+    use number_prefix::{NumberPrefix, Prefix};
 
     use super::*;
 

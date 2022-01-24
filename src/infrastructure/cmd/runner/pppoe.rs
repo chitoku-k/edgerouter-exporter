@@ -55,7 +55,10 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::{time::Duration, net::{IpAddr, Ipv4Addr}};
+    use std::{
+        net::{IpAddr, Ipv4Addr},
+        time::Duration,
+    };
 
     use cool_asserts::assert_matches;
     use indoc::indoc;
