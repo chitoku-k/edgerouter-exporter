@@ -171,7 +171,7 @@ fn parse_load_balance_groups(input: &str) -> anyhow::Result<LoadBalanceGroupResu
                     ),
                 )),
                 |(name, interfaces)| {
-                    LoadBalanceGroup{
+                    LoadBalanceGroup {
                         name,
                         interfaces,
                     }
