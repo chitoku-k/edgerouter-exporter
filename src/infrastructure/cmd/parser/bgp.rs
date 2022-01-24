@@ -2,10 +2,10 @@ use std::collections::HashMap;
 
 use anyhow::anyhow;
 use nom::{
-    branch::permutation,
+    branch::{alt, permutation},
     bytes::complete::{tag, take_till, take_until},
-    character::complete::{multispace1, newline, space1, u32, u64},
-    combinator::{map, map_res, opt},
+    character::complete::{multispace0, multispace1, newline, space1, u32, u64},
+    combinator::{map, map_res, eof},
     error::Error,
     multi::{many0, many1, many_till, separated_list1},
     sequence::{delimited, terminated, tuple},
@@ -48,7 +48,11 @@ fn parse_bgp_neighbor(header: &[&str], entry: &[&str]) -> anyhow::Result<BGPNeig
 }
 
 fn parse_bgp_status(input: &str) -> anyhow::Result<BGPStatusResult> {
-    match opt(
+    match alt((
+        map(
+            tuple((multispace0, eof)),
+            |_| None,
+        ),
         map(
             permutation((
                 tuple((
@@ -112,7 +116,7 @@ fn parse_bgp_status(input: &str) -> anyhow::Result<BGPStatusResult> {
                 _,
                 sessions,
             )| {
-                BGPStatus {
+                Some(BGPStatus {
                     router_id,
                     local_as,
                     table_version,
@@ -120,10 +124,10 @@ fn parse_bgp_status(input: &str) -> anyhow::Result<BGPStatusResult> {
                     communities,
                     neighbors,
                     sessions,
-                }
+                })
             },
         ),
-    )(input).finish() {
+    ))(input).finish() {
         Ok((_, status)) => Ok(status),
         Err::<_, Error<_>>(e) => Err(anyhow!(e.to_string())),
     }
@@ -140,6 +144,17 @@ mod tests {
     use indoc::indoc;
 
     use super::*;
+
+    #[test]
+    fn invalid() {
+        let parser = BGPParser;
+        let input = "command not found";
+
+        assert_matches!(
+            parser.parse(input),
+            Err(_),
+        );
+    }
 
     #[test]
     fn empty() {
