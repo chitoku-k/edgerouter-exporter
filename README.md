@@ -7,14 +7,27 @@ A Prometheus exporter for EdgeRouter BGP, DDNS, Load Balancers, and PPPoE sessio
 
 ## Requirements
 
+For development, the following dependencies are required:
+
 - [rustup](https://rustup.rs/)
 - [cross](https://github.com/cross-rs/cross)
-- EdgeRouter
 
-## Installation
+In order to build the artifact, use `cross build`:
 
 ```sh
 $ cross build --release --target=mipsel-unknown-linux-gnu
+```
+
+## Installation
+
+Download the latest version of edgerouter-exporter and move it to the directory
+where it persists after the EdgeOS upgrades. Note that the root permission is
+required because it internally calls `ubnt_vtysh`.
+
+```console
+$ curl -sSfLO https://github.com/chitoku-k/edgerouter-exporter/releases/latest/download/edgerouter-exporter
+$ chmod +x edgerouter-exporter
+$ mv edgerouter-exporter /config/scripts
 ```
 
 ```sh
@@ -34,7 +47,7 @@ export VTYSH_COMMAND=/opt/vyatta/sbin/ubnt_vtysh
 ## Usage
 
 ```sh
-$ ./edgerouter-exporter
+$ sudo /config/scripts/edgerouter-exporter
 ```
 
 ## Prometheus Metrics
