@@ -24,5 +24,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Build
-        run: docker build .
+      - name: Set up rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - name: Test
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --target=mipsel-unknown-linux-gnu
+          use-cross: true

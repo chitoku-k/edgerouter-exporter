@@ -800,6 +800,7 @@ dependencies = [
 [[package]]
 name = "prometheus-client"
 version = "0.15.0"
+source = "git+https://github.com/chitoku-k/client_rust?branch=support-mips-and-powerpc#6120834c3598536aff67f307cd6b32c7cba69558"
 dependencies = [
  "atomic-shim",
  "dtoa",
@@ -811,6 +812,7 @@ dependencies = [
 [[package]]
 name = "prometheus-client-derive-text-encode"
 version = "0.2.0"
+source = "git+https://github.com/chitoku-k/client_rust?branch=support-mips-and-powerpc#6120834c3598536aff67f307cd6b32c7cba69558"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -855,6 +857,7 @@ checksum = "f497285884f3fcff424ffc933e56d7cbca511def0c9831a7f9b5f6153e3cc89b"
 [[package]]
 name = "ring"
 version = "0.16.20"
+source = "git+https://github.com/chitoku-k/ring?branch=mips#541153ded60684f0c0eecd8c77afdcb6c365b306"
 dependencies = [
  "cc",
  "libc",
