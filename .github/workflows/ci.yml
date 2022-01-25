@@ -28,7 +28,9 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-      - name: Test
+          target: mipsel-unknown-linux-gnu
+          override: true
+      - name: Build
         uses: actions-rs/cargo@v1
         with:
           command: build

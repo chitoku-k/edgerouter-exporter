@@ -1,0 +1,27 @@
+name: CD Workflow
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Set up rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --target=mipsel-unknown-linux-gnu
+          use-cross: true
+      - name: Upload
+        uses: softprops/action-gh-release@v1
+        with:
+          files: target/mipsel-unknown-linux-gnu/release/edgerouter-exporter
