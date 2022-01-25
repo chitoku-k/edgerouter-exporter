@@ -1,0 +1,71 @@
+[package]
+name = "edgerouter-exporter"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = ["tls"]
+tls = ["axum-server/tls-rustls"]
+
+[dependencies.anyhow]
+version = "1.0.52"
+
+[dependencies.async-trait]
+version = "0.1.52"
+
+[dependencies.axum]
+version = "0.4.4"
+features = ["default", "http2"]
+
+[dependencies.axum-server]
+version = "0.3.3"
+features = ["tokio-rustls"]
+
+[dependencies.chrono]
+version = "0.4.19"
+
+[dependencies.derive_more]
+version = "0.99.0"
+
+[dependencies.env_logger]
+version = "0.9.0"
+
+[dependencies.envy]
+version = "0.4.2"
+
+[dependencies.log]
+version = "0.4.14"
+
+[dependencies.nom]
+version = "7.0.0"
+
+[dependencies.number_prefix]
+version = "0.4.0"
+
+[dependencies.prometheus-client]
+version = "0.15.0"
+
+[dependencies.serde]
+version = "1.0.133"
+features = ["derive"]
+
+[dependencies.tokio]
+version = "1.15.0"
+features = ["full"]
+
+[dev_dependencies.cool_asserts]
+version = "1.1.1"
+
+[dev_dependencies.indoc]
+version = "1.0.3"
+
+[dev_dependencies.mockall]
+version = "0.11.0"
+
+[patch.crates-io.prometheus-client]
+git = "https://github.com/chitoku-k/client_rust"
+branch = "support-mips-and-powerpc"
+
+[patch.crates-io.ring]
+git = "https://github.com/chitoku-k/ring"
+branch = "mips"

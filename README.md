@@ -7,13 +7,14 @@ A Prometheus exporter for EdgeRouter BGP, DDNS, Load Balancers, and PPPoE sessio
 
 ## Requirements
 
-- Go
+- [rustup](https://rustup.rs/)
+- [cross](https://github.com/cross-rs/cross)
 - EdgeRouter
 
 ## Installation
 
 ```sh
-$ CGO_ENABLED=0 GOOS=linux GOARCH=mipsle go build -trimpath
+$ cross build --release --target=mipsel-unknown-linux-gnu
 ```
 
 ```sh

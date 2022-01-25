@@ -1,14 +1,6 @@
 version: 2
 updates:
-- package-ecosystem: gomod
-  directory: "/"
-  schedule:
-    interval: weekly
-    day: saturday
-    time: "00:00"
-    timezone: Asia/Tokyo
-  open-pull-requests-limit: 99
-- package-ecosystem: docker
+- package-ecosystem: cargo
   directory: "/"
   schedule:
     interval: weekly
