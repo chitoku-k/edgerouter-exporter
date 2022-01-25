@@ -11,6 +11,8 @@ pub mod version;
 #[async_trait]
 pub trait Executor {
     async fn output<'a>(&self, command: &str, args: &[&'a str]) -> anyhow::Result<String> {
+        log::debug!("executing {command} with {args:?}");
+
         let output = Command::new(command).args(args).output().await?;
         let result = String::from_utf8(output.stdout)?;
         Ok(result)

@@ -32,6 +32,7 @@ impl Application {
             .format_target(false)
             .format_timestamp_secs()
             .filter(None, LevelFilter::Info)
+            .parse_env("LOG_LEVEL")
             .init();
 
         let config = env::get()?;

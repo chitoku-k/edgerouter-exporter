@@ -91,7 +91,7 @@ where
             (StatusCode::OK, s)
         },
         Err(e) => {
-            error!("Failed to collect metrics: {e}");
+            log::error!("failed to collect metrics: {e}");
             (StatusCode::INTERNAL_SERVER_ERROR, String::new())
         },
     }
