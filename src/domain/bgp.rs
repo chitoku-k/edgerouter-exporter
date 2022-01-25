@@ -5,6 +5,9 @@ use std::{
     time::Duration,
 };
 
+use derive_more::{Deref, DerefMut, IntoIterator};
+
+#[derive(Deref, DerefMut, IntoIterator)]
 pub struct BGPIterator(Chain<
     Flatten<IntoIter<Vec<BGPNeighbor>>>,
     Flatten<IntoIter<Vec<BGPNeighbor>>>,
@@ -44,14 +47,6 @@ impl From<(Option<BGPStatus>, Option<BGPStatus>)> for BGPIterator {
                 bgp6.map(|s| s.neighbors).into_iter().flatten(),
             )
         )
-    }
-}
-
-impl Iterator for BGPIterator {
-    type Item = BGPNeighbor;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.0.next()
     }
 }
 
