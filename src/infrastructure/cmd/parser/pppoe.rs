@@ -139,9 +139,9 @@ mod tests {
         time::Duration,
     };
 
-    use cool_asserts::assert_matches;
     use indoc::indoc;
     use number_prefix::{NumberPrefix, Prefix};
+    use pretty_assertions::assert_eq;
 
     use super::*;
 
@@ -150,10 +150,7 @@ mod tests {
         let parser = PPPoEParser;
         let input = "";
 
-        assert_matches!(
-            parser.parse(input),
-            Err(_),
-        );
+        assert!(parser.parse(input).is_err());
     }
 
     #[test]
@@ -161,10 +158,11 @@ mod tests {
         let parser = PPPoEParser;
         let input = "No active PPPoE client sessions";
 
-        assert_matches!(
-            parser.parse(input),
-            Ok(sessions) if sessions == vec![],
-        );
+        let actual = parser.parse(input);
+        assert!(actual.is_ok());
+
+        let actual = actual.unwrap();
+        assert_eq!(actual, vec![]);
     }
 
     #[test]
@@ -181,32 +179,33 @@ mod tests {
             Total sessions: 2
         "};
 
-        assert_matches!(
-            parser.parse(input),
-            Ok(sessions) if sessions == vec![
-                PPPoEClientSession {
-                    user: "user01".to_string(),
-                    time: Duration::new(3723, 0),
-                    protocol: "PPPoE".to_string(),
-                    interface: "pppoe0".to_string(),
-                    remote_ip: IpAddr::V4(Ipv4Addr::new(192, 0, 2, 255)),
-                    transmit_packets: NumberPrefix::Standalone(384.0).into(),
-                    transmit_bytes: NumberPrefix::Prefixed(Prefix::Kilo, 34.8).into(),
-                    receive_packets: NumberPrefix::Prefixed(Prefix::Kilo, 1.2).into(),
-                    receive_bytes: NumberPrefix::Prefixed(Prefix::Kilo, 58.2).into(),
-                },
-                PPPoEClientSession {
-                    user: "user02".to_string(),
-                    time: Duration::new(363960, 0),
-                    protocol: "PPPoE".to_string(),
-                    interface: "pppoe1".to_string(),
-                    remote_ip: IpAddr::V4(Ipv4Addr::new(198, 51, 100, 255)),
-                    transmit_packets: NumberPrefix::Standalone(768.0).into(),
-                    transmit_bytes: NumberPrefix::Prefixed(Prefix::Kilo, 76.8).into(),
-                    receive_packets: NumberPrefix::Prefixed(Prefix::Kilo, 2.4).into(),
-                    receive_bytes: NumberPrefix::Prefixed(Prefix::Kilo, 116.4).into(),
-                },
-            ],
-        );
+        let actual = parser.parse(input);
+        assert!(actual.is_ok());
+
+        let actual = actual.unwrap();
+        assert_eq!(actual, vec![
+            PPPoEClientSession {
+                user: "user01".to_string(),
+                time: Duration::new(3723, 0),
+                protocol: "PPPoE".to_string(),
+                interface: "pppoe0".to_string(),
+                remote_ip: IpAddr::V4(Ipv4Addr::new(192, 0, 2, 255)),
+                transmit_packets: NumberPrefix::Standalone(384.0).into(),
+                transmit_bytes: NumberPrefix::Prefixed(Prefix::Kilo, 34.8).into(),
+                receive_packets: NumberPrefix::Prefixed(Prefix::Kilo, 1.2).into(),
+                receive_bytes: NumberPrefix::Prefixed(Prefix::Kilo, 58.2).into(),
+            },
+            PPPoEClientSession {
+                user: "user02".to_string(),
+                time: Duration::new(363960, 0),
+                protocol: "PPPoE".to_string(),
+                interface: "pppoe1".to_string(),
+                remote_ip: IpAddr::V4(Ipv4Addr::new(198, 51, 100, 255)),
+                transmit_packets: NumberPrefix::Standalone(768.0).into(),
+                transmit_bytes: NumberPrefix::Prefixed(Prefix::Kilo, 76.8).into(),
+                receive_packets: NumberPrefix::Prefixed(Prefix::Kilo, 2.4).into(),
+                receive_bytes: NumberPrefix::Prefixed(Prefix::Kilo, 116.4).into(),
+            },
+        ]);
     }
 }

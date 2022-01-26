@@ -187,8 +187,8 @@ fn parse_load_balance_groups(input: &str) -> anyhow::Result<LoadBalanceGroupResu
 #[cfg(test)]
 mod tests {
     use chrono::NaiveDate;
-    use cool_asserts::assert_matches;
     use indoc::indoc;
+    use pretty_assertions::assert_eq;
 
     use super::*;
 
@@ -197,10 +197,8 @@ mod tests {
         let parser = LoadBalanceParser;
         let input = "";
 
-        assert_matches!(
-            parser.parse(input),
-            Err(_),
-        );
+        let actual = parser.parse(input);
+        assert!(actual.is_err());
     }
 
     #[test]
@@ -208,10 +206,11 @@ mod tests {
         let parser = LoadBalanceParser;
         let input = "load-balance is not configured";
 
-        assert_matches!(
-            parser.parse(input),
-            Ok(groups) if groups.is_empty(),
-        );
+        let actual = parser.parse(input);
+        assert!(actual.is_ok());
+
+        let actual = actual.unwrap();
+        assert_eq!(actual, vec![]);
     }
 
     #[test]
@@ -219,15 +218,16 @@ mod tests {
         let parser = LoadBalanceParser;
         let input = "Group FAILOVER_01";
 
-        assert_matches!(
-            parser.parse(input),
-            Ok(groups) if groups == vec![
-                LoadBalanceGroup {
-                    name: "FAILOVER_01".to_string(),
-                    interfaces: vec![],
-                },
-            ],
-        );
+        let actual = parser.parse(input);
+        assert!(actual.is_ok());
+
+        let actual = actual.unwrap();
+        assert_eq!(actual, vec![
+            LoadBalanceGroup {
+                name: "FAILOVER_01".to_string(),
+                interfaces: vec![],
+            },
+        ]);
     }
 
     #[test]
@@ -256,40 +256,41 @@ mod tests {
 
         "};
 
-        assert_matches!(
-            parser.parse(input),
-            Ok(groups) if groups == vec![
-                LoadBalanceGroup {
-                    name: "FAILOVER_01".to_string(),
-                    interfaces: vec![
-                        LoadBalanceInterface {
-                            interface: "eth0".to_string(),
-                            status: LoadBalanceStatus::Ok,
-                            failover_only_mode: true,
-                            pings: 1000,
-                            fails: 1,
-                            run_fails: (0, 3),
-                            route_drops: 0,
-                            ping: LoadBalancePing::Reachable("ping.ubnt.com".to_string()),
-                            last_route_drop: None,
-                            last_route_recover: None,
-                        },
-                        LoadBalanceInterface {
-                            interface: "eth1".to_string(),
-                            status: LoadBalanceStatus::WaitOnRecovery(0, 3),
-                            failover_only_mode: false,
-                            pings: 1000,
-                            fails: 10,
-                            run_fails: (3, 3),
-                            route_drops: 1,
-                            ping: LoadBalancePing::Down("ping.ubnt.com".to_string()),
-                            last_route_drop: Some(NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 5)),
-                            last_route_recover: Some(NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 0)),
-                        },
-                    ],
-                },
-            ],
-        );
+        let actual = parser.parse(input);
+        assert!(actual.is_ok());
+
+        let actual = actual.unwrap();
+        assert_eq!(actual, vec![
+            LoadBalanceGroup {
+                name: "FAILOVER_01".to_string(),
+                interfaces: vec![
+                    LoadBalanceInterface {
+                        interface: "eth0".to_string(),
+                        status: LoadBalanceStatus::Ok,
+                        failover_only_mode: true,
+                        pings: 1000,
+                        fails: 1,
+                        run_fails: (0, 3),
+                        route_drops: 0,
+                        ping: LoadBalancePing::Reachable("ping.ubnt.com".to_string()),
+                        last_route_drop: None,
+                        last_route_recover: None,
+                    },
+                    LoadBalanceInterface {
+                        interface: "eth1".to_string(),
+                        status: LoadBalanceStatus::WaitOnRecovery(0, 3),
+                        failover_only_mode: false,
+                        pings: 1000,
+                        fails: 10,
+                        run_fails: (3, 3),
+                        route_drops: 1,
+                        ping: LoadBalancePing::Down("ping.ubnt.com".to_string()),
+                        last_route_drop: Some(NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 5)),
+                        last_route_recover: Some(NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 0)),
+                    },
+                ],
+            },
+        ]);
     }
 
     #[test]
@@ -336,68 +337,69 @@ mod tests {
 
         "};
 
-        assert_matches!(
-            parser.parse(input),
-            Ok(groups) if groups == vec![
-                LoadBalanceGroup {
-                    name: "FAILOVER_01".to_string(),
-                    interfaces: vec![
-                        LoadBalanceInterface {
-                            interface: "eth0".to_string(),
-                            status: LoadBalanceStatus::Ok,
-                            failover_only_mode: true,
-                            pings: 1000,
-                            fails: 1,
-                            run_fails: (0, 3),
-                            route_drops: 0,
-                            ping: LoadBalancePing::Reachable("ping.ubnt.com".to_string()),
-                            last_route_drop: None,
-                            last_route_recover: None,
-                        },
-                        LoadBalanceInterface {
-                            interface: "eth1".to_string(),
-                            status: LoadBalanceStatus::WaitOnRecovery(0, 3),
-                            failover_only_mode: false,
-                            pings: 1000,
-                            fails: 10,
-                            run_fails: (3, 3),
-                            route_drops: 1,
-                            ping: LoadBalancePing::Down("ping.ubnt.com".to_string()),
-                            last_route_drop: Some(NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 5)),
-                            last_route_recover: Some(NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 0)),
-                        },
-                    ],
-                },
-                LoadBalanceGroup {
-                    name: "FAILOVER_02".to_string(),
-                    interfaces: vec![
-                        LoadBalanceInterface {
-                            interface: "eth2".to_string(),
-                            status: LoadBalanceStatus::Ok,
-                            failover_only_mode: false,
-                            pings: 1000,
-                            fails: 0,
-                            run_fails: (0, 3),
-                            route_drops: 0,
-                            ping: LoadBalancePing::Reachable("ping.ubnt.com".to_string()),
-                            last_route_drop: None,
-                            last_route_recover: None,
-                        },
-                        LoadBalanceInterface {
-                            interface: "eth3".to_string(),
-                            status: LoadBalanceStatus::Ok,
-                            failover_only_mode: false,
-                            pings: 1000,
-                            fails: 0,
-                            run_fails: (0, 3),
-                            route_drops: 0,
-                            ping: LoadBalancePing::Reachable("ping.ubnt.com".to_string()),
-                            last_route_drop: Some(NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 5)),
-                            last_route_recover: None,
-                        },
-                    ],
-                },
-            ],
-        );
+        let actual = parser.parse(input);
+        assert!(actual.is_ok());
+
+        let actual = actual.unwrap();
+        assert_eq!(actual, vec![
+            LoadBalanceGroup {
+                name: "FAILOVER_01".to_string(),
+                interfaces: vec![
+                    LoadBalanceInterface {
+                        interface: "eth0".to_string(),
+                        status: LoadBalanceStatus::Ok,
+                        failover_only_mode: true,
+                        pings: 1000,
+                        fails: 1,
+                        run_fails: (0, 3),
+                        route_drops: 0,
+                        ping: LoadBalancePing::Reachable("ping.ubnt.com".to_string()),
+                        last_route_drop: None,
+                        last_route_recover: None,
+                    },
+                    LoadBalanceInterface {
+                        interface: "eth1".to_string(),
+                        status: LoadBalanceStatus::WaitOnRecovery(0, 3),
+                        failover_only_mode: false,
+                        pings: 1000,
+                        fails: 10,
+                        run_fails: (3, 3),
+                        route_drops: 1,
+                        ping: LoadBalancePing::Down("ping.ubnt.com".to_string()),
+                        last_route_drop: Some(NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 5)),
+                        last_route_recover: Some(NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 0)),
+                    },
+                ],
+            },
+            LoadBalanceGroup {
+                name: "FAILOVER_02".to_string(),
+                interfaces: vec![
+                    LoadBalanceInterface {
+                        interface: "eth2".to_string(),
+                        status: LoadBalanceStatus::Ok,
+                        failover_only_mode: false,
+                        pings: 1000,
+                        fails: 0,
+                        run_fails: (0, 3),
+                        route_drops: 0,
+                        ping: LoadBalancePing::Reachable("ping.ubnt.com".to_string()),
+                        last_route_drop: None,
+                        last_route_recover: None,
+                    },
+                    LoadBalanceInterface {
+                        interface: "eth3".to_string(),
+                        status: LoadBalanceStatus::Ok,
+                        failover_only_mode: false,
+                        pings: 1000,
+                        fails: 0,
+                        run_fails: (0, 3),
+                        route_drops: 0,
+                        ping: LoadBalancePing::Reachable("ping.ubnt.com".to_string()),
+                        last_route_drop: Some(NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 5)),
+                        last_route_recover: None,
+                    },
+                ],
+            },
+        ]);
     }
 }

@@ -56,9 +56,9 @@ where
 #[cfg(test)]
 mod tests {
     use chrono::NaiveDate;
-    use cool_asserts::assert_matches;
     use indoc::indoc;
     use mockall::{mock, predicate::eq};
+    use pretty_assertions::assert_eq;
 
     use crate::{
         domain::load_balance::{LoadBalanceGroup, LoadBalanceInterface, LoadBalancePing, LoadBalanceStatus},
@@ -152,39 +152,40 @@ mod tests {
             ]));
 
         let runner = LoadBalanceRunner::new(&command, mock_executor, mock_parser);
-        assert_matches!(
-            runner.run().await,
-            Ok(groups) if groups == vec![
-                LoadBalanceGroup {
-                    name: "FAILOVER_01".to_string(),
-                    interfaces: vec![
-                        LoadBalanceInterface {
-                            interface: "eth0".to_string(),
-                            status: LoadBalanceStatus::Ok,
-                            failover_only_mode: true,
-                            pings: 1000,
-                            fails: 1,
-                            run_fails: (0, 3),
-                            route_drops: 0,
-                            ping: LoadBalancePing::Reachable("ping.ubnt.com".to_string()),
-                            last_route_drop: None,
-                            last_route_recover: None,
-                        },
-                        LoadBalanceInterface {
-                            interface: "eth1".to_string(),
-                            status: LoadBalanceStatus::WaitOnRecovery(0, 3),
-                            failover_only_mode: false,
-                            pings: 1000,
-                            fails: 10,
-                            run_fails: (3, 3),
-                            route_drops: 1,
-                            ping: LoadBalancePing::Down("ping.ubnt.com".to_string()),
-                            last_route_drop: Some(NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 5)),
-                            last_route_recover: Some(NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 0)),
-                        },
-                    ],
-                },
-            ],
-        );
+        let actual = runner.run().await;
+        assert!(actual.is_ok());
+
+        let actual = actual.unwrap();
+        assert_eq!(actual, vec![
+            LoadBalanceGroup {
+                name: "FAILOVER_01".to_string(),
+                interfaces: vec![
+                    LoadBalanceInterface {
+                        interface: "eth0".to_string(),
+                        status: LoadBalanceStatus::Ok,
+                        failover_only_mode: true,
+                        pings: 1000,
+                        fails: 1,
+                        run_fails: (0, 3),
+                        route_drops: 0,
+                        ping: LoadBalancePing::Reachable("ping.ubnt.com".to_string()),
+                        last_route_drop: None,
+                        last_route_recover: None,
+                    },
+                    LoadBalanceInterface {
+                        interface: "eth1".to_string(),
+                        status: LoadBalanceStatus::WaitOnRecovery(0, 3),
+                        failover_only_mode: false,
+                        pings: 1000,
+                        fails: 10,
+                        run_fails: (3, 3),
+                        route_drops: 1,
+                        ping: LoadBalancePing::Down("ping.ubnt.com".to_string()),
+                        last_route_drop: Some(NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 5)),
+                        last_route_recover: Some(NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 0)),
+                    },
+                ],
+            },
+        ]);
     }
 }

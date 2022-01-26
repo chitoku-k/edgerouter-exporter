@@ -54,6 +54,8 @@ impl From<(Option<BGPStatus>, Option<BGPStatus>)> for BGPIterator {
 mod tests {
     use std::net::{Ipv4Addr, Ipv6Addr};
 
+    use pretty_assertions::assert_eq;
+
     use super::*;
 
     #[test]

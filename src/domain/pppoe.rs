@@ -64,7 +64,7 @@ impl From<ByteSize> for u64 {
 mod tests {
     use std::panic;
 
-    use cool_asserts::assert_matches;
+    use pretty_assertions::assert_eq;
 
     use super::*;
 
@@ -89,23 +89,11 @@ mod tests {
 
     #[test]
     fn convert_packet_size_overflow() {
-        assert_matches!(
-            panic::catch_unwind(|| u64::from(PacketSize::from(NumberPrefix::Prefixed(Prefix::Yotta, 10_f32)))),
-            Err(_),
-        );
-        assert_matches!(
-            panic::catch_unwind(|| u64::from(PacketSize::from(NumberPrefix::Prefixed(Prefix::Zetta, 10_f32)))),
-            Err(_),
-        );
+        assert!(panic::catch_unwind(|| u64::from(PacketSize::from(NumberPrefix::Prefixed(Prefix::Yotta, 10_f32)))).is_err());
+        assert!(panic::catch_unwind(|| u64::from(PacketSize::from(NumberPrefix::Prefixed(Prefix::Zetta, 10_f32)))).is_err());
 
-        assert_matches!(
-            panic::catch_unwind(|| u64::from(PacketSize::from(NumberPrefix::Prefixed(Prefix::Yobi, 10_f32)))),
-            Err(_),
-        );
-        assert_matches!(
-            panic::catch_unwind(|| u64::from(PacketSize::from(NumberPrefix::Prefixed(Prefix::Zebi, 10_f32)))),
-            Err(_),
-        );
+        assert!(panic::catch_unwind(|| u64::from(PacketSize::from(NumberPrefix::Prefixed(Prefix::Yobi, 10_f32)))).is_err());
+        assert!(panic::catch_unwind(|| u64::from(PacketSize::from(NumberPrefix::Prefixed(Prefix::Zebi, 10_f32)))).is_err());
     }
 
     #[test]
@@ -129,22 +117,10 @@ mod tests {
 
     #[test]
     fn convert_byte_size_overflow() {
-        assert_matches!(
-            panic::catch_unwind(|| u64::from(ByteSize::from(NumberPrefix::Prefixed(Prefix::Yotta, 10_f32)))),
-            Err(_),
-        );
-        assert_matches!(
-            panic::catch_unwind(|| u64::from(ByteSize::from(NumberPrefix::Prefixed(Prefix::Zetta, 10_f32)))),
-            Err(_),
-        );
+        assert!(panic::catch_unwind(|| u64::from(ByteSize::from(NumberPrefix::Prefixed(Prefix::Yotta, 10_f32)))).is_err());
+        assert!(panic::catch_unwind(|| u64::from(ByteSize::from(NumberPrefix::Prefixed(Prefix::Zetta, 10_f32)))).is_err());
 
-        assert_matches!(
-            panic::catch_unwind(|| u64::from(ByteSize::from(NumberPrefix::Prefixed(Prefix::Yobi, 10_f32)))),
-            Err(_),
-        );
-        assert_matches!(
-            panic::catch_unwind(|| u64::from(ByteSize::from(NumberPrefix::Prefixed(Prefix::Zebi, 10_f32)))),
-            Err(_),
-        );
+        assert!(panic::catch_unwind(|| u64::from(ByteSize::from(NumberPrefix::Prefixed(Prefix::Yobi, 10_f32)))).is_err());
+        assert!(panic::catch_unwind(|| u64::from(ByteSize::from(NumberPrefix::Prefixed(Prefix::Zebi, 10_f32)))).is_err());
     }
 }
