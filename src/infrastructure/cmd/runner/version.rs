@@ -56,9 +56,9 @@ where
 #[cfg(test)]
 mod tests {
     use chrono::NaiveDate;
-    use cool_asserts::assert_matches;
     use indoc::indoc;
     use mockall::{mock, predicate::eq};
+    use pretty_assertions::assert_eq;
 
     use crate::{domain::version::Version, infrastructure::cmd::runner::MockExecutor};
 
@@ -114,17 +114,18 @@ mod tests {
             }));
 
         let runner = VersionRunner::new(&command, mock_executor, mock_parser);
-        assert_matches!(
-            runner.run().await,
-            Ok(version) if version == Version {
-                version: "v2.0.6".to_string(),
-                build_id: "5208541".to_string(),
-                build_on: NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 0),
-                copyright: "2012-2018 Ubiquiti Networks, Inc.".to_string(),
-                hw_model: "EdgeRouter X 5-Port".to_string(),
-                hw_serial_number: "000000000000".to_string(),
-                uptime: "01:00:00 up  1:00,  1 user,  load average: 1.00, 1.00, 1.00".to_string(),
-            },
-        );
+        let actual = runner.run().await;
+        assert!(actual.is_ok());
+
+        let actual = actual.unwrap();
+        assert_eq!(actual, Version {
+            version: "v2.0.6".to_string(),
+            build_id: "5208541".to_string(),
+            build_on: NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 0),
+            copyright: "2012-2018 Ubiquiti Networks, Inc.".to_string(),
+            hw_model: "EdgeRouter X 5-Port".to_string(),
+            hw_serial_number: "000000000000".to_string(),
+            uptime: "01:00:00 up  1:00,  1 user,  load average: 1.00, 1.00, 1.00".to_string(),
+        });
     }
 }

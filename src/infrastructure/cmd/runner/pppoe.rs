@@ -60,10 +60,10 @@ mod tests {
         time::Duration,
     };
 
-    use cool_asserts::assert_matches;
     use indoc::indoc;
     use mockall::{mock, predicate::eq};
     use number_prefix::{NumberPrefix, Prefix};
+    use pretty_assertions::assert_eq;
 
     use crate::{
         domain::pppoe::PPPoEClientSession,
@@ -138,32 +138,33 @@ mod tests {
             ]));
 
         let runner = PPPoERunner::new(&command, mock_executor, mock_parser);
-        assert_matches!(
-            runner.run().await,
-            Ok(sessions) if sessions == vec![
-                PPPoEClientSession {
-                    user: "user01".to_string(),
-                    time: Duration::new(3723, 0),
-                    protocol: "PPPoE".to_string(),
-                    interface: "pppoe0".to_string(),
-                    remote_ip: IpAddr::V4(Ipv4Addr::new(192, 0, 2, 255)),
-                    transmit_packets: NumberPrefix::Standalone(384.0).into(),
-                    transmit_bytes: NumberPrefix::Prefixed(Prefix::Kilo, 34.8).into(),
-                    receive_packets: NumberPrefix::Prefixed(Prefix::Kilo, 1.2).into(),
-                    receive_bytes: NumberPrefix::Prefixed(Prefix::Kilo, 58.2).into(),
-                },
-                PPPoEClientSession {
-                    user: "user02".to_string(),
-                    time: Duration::new(363960, 0),
-                    protocol: "PPPoE".to_string(),
-                    interface: "pppoe1".to_string(),
-                    remote_ip: IpAddr::V4(Ipv4Addr::new(198, 51, 100, 255)),
-                    transmit_packets: NumberPrefix::Standalone(768.0).into(),
-                    transmit_bytes: NumberPrefix::Prefixed(Prefix::Kilo, 76.8).into(),
-                    receive_packets: NumberPrefix::Prefixed(Prefix::Kilo, 2.4).into(),
-                    receive_bytes: NumberPrefix::Prefixed(Prefix::Kilo, 116.4).into(),
-                },
-            ],
-        );
+        let actual = runner.run().await;
+        assert!(actual.is_ok());
+
+        let actual = actual.unwrap();
+        assert_eq!(actual, vec![
+            PPPoEClientSession {
+                user: "user01".to_string(),
+                time: Duration::new(3723, 0),
+                protocol: "PPPoE".to_string(),
+                interface: "pppoe0".to_string(),
+                remote_ip: IpAddr::V4(Ipv4Addr::new(192, 0, 2, 255)),
+                transmit_packets: NumberPrefix::Standalone(384.0).into(),
+                transmit_bytes: NumberPrefix::Prefixed(Prefix::Kilo, 34.8).into(),
+                receive_packets: NumberPrefix::Prefixed(Prefix::Kilo, 1.2).into(),
+                receive_bytes: NumberPrefix::Prefixed(Prefix::Kilo, 58.2).into(),
+            },
+            PPPoEClientSession {
+                user: "user02".to_string(),
+                time: Duration::new(363960, 0),
+                protocol: "PPPoE".to_string(),
+                interface: "pppoe1".to_string(),
+                remote_ip: IpAddr::V4(Ipv4Addr::new(198, 51, 100, 255)),
+                transmit_packets: NumberPrefix::Standalone(768.0).into(),
+                transmit_bytes: NumberPrefix::Prefixed(Prefix::Kilo, 76.8).into(),
+                receive_packets: NumberPrefix::Prefixed(Prefix::Kilo, 2.4).into(),
+                receive_bytes: NumberPrefix::Prefixed(Prefix::Kilo, 116.4).into(),
+            },
+        ]);
     }
 }

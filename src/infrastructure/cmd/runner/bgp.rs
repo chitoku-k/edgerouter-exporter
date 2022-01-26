@@ -70,9 +70,9 @@ where
 mod tests {
     use std::{net::{IpAddr, Ipv4Addr, Ipv6Addr}, time::Duration};
 
-    use cool_asserts::assert_matches;
     use indoc::indoc;
     use mockall::{mock, predicate::eq};
+    use pretty_assertions::assert_eq;
 
     use crate::{
         domain::bgp::{BGPNeighbor, BGPStatus},
@@ -123,10 +123,11 @@ mod tests {
             .returning(|_| Ok(None));
 
         let runner = BGPRunner::new(&command, mock_executor, mock_parser);
-        assert_matches!(
-            runner.run().await,
-            Ok(status) if status == (None, None),
-        );
+        let actual = runner.run().await;
+        assert!(actual.is_ok());
+
+        let actual = actual.unwrap();
+        assert_eq!(actual, (None, None));
     }
 
     #[tokio::test]
@@ -229,61 +230,62 @@ mod tests {
             .returning(|_| Ok(None));
 
         let runner = BGPRunner::new(&command, mock_executor, mock_parser);
-        assert_matches!(
-            runner.run().await,
-            Ok(status) if status == (
-                Some(BGPStatus {
-                    router_id: "192.0.2.1".to_string(),
-                    local_as: 64496,
-                    table_version: 128,
-                    as_paths: 1,
-                    communities: 2,
-                    neighbors: vec![
-                        BGPNeighbor {
-                            neighbor: IpAddr::V4(Ipv4Addr::new(192, 0, 2, 2)),
-                            version: 4,
-                            remote_as: 64497,
-                            messages_received: 1000,
-                            messages_sent: 5000,
-                            table_version: 128,
-                            in_queue: 1,
-                            out_queue: 5,
-                            uptime: Some(Duration::new(4271, 0)),
-                            state: None,
-                            prefixes_received: Some(9),
-                        },
-                        BGPNeighbor {
-                            neighbor: IpAddr::V4(Ipv4Addr::new(192, 0, 2, 3)),
-                            version: 4,
-                            remote_as: 64497,
-                            messages_received: 2000,
-                            messages_sent: 6000,
-                            table_version: 128,
-                            in_queue: 2,
-                            out_queue: 6,
-                            uptime: Some(Duration::new(93780, 0)),
-                            state: None,
-                            prefixes_received: Some(10),
-                        },
-                        BGPNeighbor {
-                            neighbor: IpAddr::V4(Ipv4Addr::new(192, 0, 2, 4)),
-                            version: 4,
-                            remote_as: 64497,
-                            messages_received: 0,
-                            messages_sent: 0,
-                            table_version: 0,
-                            in_queue: 0,
-                            out_queue: 0,
-                            uptime: None,
-                            state: Some("Connect".to_string()),
-                            prefixes_received: None,
-                        },
-                    ],
-                    sessions: 2,
-                }),
-                None,
-            ),
-        );
+        let actual = runner.run().await;
+        assert!(actual.is_ok());
+
+        let actual = actual.unwrap();
+        assert_eq!(actual, (
+            Some(BGPStatus {
+                router_id: "192.0.2.1".to_string(),
+                local_as: 64496,
+                table_version: 128,
+                as_paths: 1,
+                communities: 2,
+                neighbors: vec![
+                    BGPNeighbor {
+                        neighbor: IpAddr::V4(Ipv4Addr::new(192, 0, 2, 2)),
+                        version: 4,
+                        remote_as: 64497,
+                        messages_received: 1000,
+                        messages_sent: 5000,
+                        table_version: 128,
+                        in_queue: 1,
+                        out_queue: 5,
+                        uptime: Some(Duration::new(4271, 0)),
+                        state: None,
+                        prefixes_received: Some(9),
+                    },
+                    BGPNeighbor {
+                        neighbor: IpAddr::V4(Ipv4Addr::new(192, 0, 2, 3)),
+                        version: 4,
+                        remote_as: 64497,
+                        messages_received: 2000,
+                        messages_sent: 6000,
+                        table_version: 128,
+                        in_queue: 2,
+                        out_queue: 6,
+                        uptime: Some(Duration::new(93780, 0)),
+                        state: None,
+                        prefixes_received: Some(10),
+                    },
+                    BGPNeighbor {
+                        neighbor: IpAddr::V4(Ipv4Addr::new(192, 0, 2, 4)),
+                        version: 4,
+                        remote_as: 64497,
+                        messages_received: 0,
+                        messages_sent: 0,
+                        table_version: 0,
+                        in_queue: 0,
+                        out_queue: 0,
+                        uptime: None,
+                        state: Some("Connect".to_string()),
+                        prefixes_received: None,
+                    },
+                ],
+                sessions: 2,
+            }),
+            None,
+        ));
     }
 
     #[tokio::test]
@@ -386,61 +388,62 @@ mod tests {
             })));
 
         let runner = BGPRunner::new(&command, mock_executor, mock_parser);
-        assert_matches!(
-            runner.run().await,
-            Ok(status) if status == (
-                None,
-                Some(BGPStatus {
-                    router_id: "192.0.2.1".to_string(),
-                    local_as: 64496,
-                    table_version: 128,
-                    as_paths: 1,
-                    communities: 2,
-                    neighbors: vec![
-                        BGPNeighbor {
-                            neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0x2)),
-                            version: 4,
-                            remote_as: 64497,
-                            messages_received: 3000,
-                            messages_sent: 7000,
-                            table_version: 128,
-                            in_queue: 3,
-                            out_queue: 7,
-                            uptime: Some(Duration::new(12813, 0)),
-                            state: None,
-                            prefixes_received: Some(11),
-                        },
-                        BGPNeighbor {
-                            neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0x3)),
-                            version: 4,
-                            remote_as: 64497,
-                            messages_received: 4000,
-                            messages_sent: 8000,
-                            table_version: 128,
-                            in_queue: 4,
-                            out_queue: 8,
-                            uptime: Some(Duration::new(363960, 0)),
-                            state: None,
-                            prefixes_received: Some(12),
-                        },
-                        BGPNeighbor {
-                            neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0x4)),
-                            version: 4,
-                            remote_as: 64497,
-                            messages_received: 0,
-                            messages_sent: 0,
-                            table_version: 0,
-                            in_queue: 0,
-                            out_queue: 0,
-                            uptime: None,
-                            state: Some("Connect".to_string()),
-                            prefixes_received: None,
-                        },
-                    ],
-                    sessions: 2,
-                }),
-            ),
-        );
+        let actual = runner.run().await;
+        assert!(actual.is_ok());
+
+        let actual = actual.unwrap();
+        assert_eq!(actual, (
+            None,
+            Some(BGPStatus {
+                router_id: "192.0.2.1".to_string(),
+                local_as: 64496,
+                table_version: 128,
+                as_paths: 1,
+                communities: 2,
+                neighbors: vec![
+                    BGPNeighbor {
+                        neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0x2)),
+                        version: 4,
+                        remote_as: 64497,
+                        messages_received: 3000,
+                        messages_sent: 7000,
+                        table_version: 128,
+                        in_queue: 3,
+                        out_queue: 7,
+                        uptime: Some(Duration::new(12813, 0)),
+                        state: None,
+                        prefixes_received: Some(11),
+                    },
+                    BGPNeighbor {
+                        neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0x3)),
+                        version: 4,
+                        remote_as: 64497,
+                        messages_received: 4000,
+                        messages_sent: 8000,
+                        table_version: 128,
+                        in_queue: 4,
+                        out_queue: 8,
+                        uptime: Some(Duration::new(363960, 0)),
+                        state: None,
+                        prefixes_received: Some(12),
+                    },
+                    BGPNeighbor {
+                        neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0x4)),
+                        version: 4,
+                        remote_as: 64497,
+                        messages_received: 0,
+                        messages_sent: 0,
+                        table_version: 0,
+                        in_queue: 0,
+                        out_queue: 0,
+                        uptime: None,
+                        state: Some("Connect".to_string()),
+                        prefixes_received: None,
+                    },
+                ],
+                sessions: 2,
+            }),
+        ));
     }
 
     #[tokio::test]
@@ -648,108 +651,109 @@ mod tests {
             })));
 
         let runner = BGPRunner::new(&command, mock_executor, mock_parser);
-        assert_matches!(
-            runner.run().await,
-            Ok(status) if status == (
-                Some(BGPStatus {
-                    router_id: "192.0.2.1".to_string(),
-                    local_as: 64496,
-                    table_version: 128,
-                    as_paths: 1,
-                    communities: 2,
-                    neighbors: vec![
-                        BGPNeighbor {
-                            neighbor: IpAddr::V4(Ipv4Addr::new(192, 0, 2, 2)),
-                            version: 4,
-                            remote_as: 64497,
-                            messages_received: 1000,
-                            messages_sent: 5000,
-                            table_version: 128,
-                            in_queue: 1,
-                            out_queue: 5,
-                            uptime: Some(Duration::new(4271, 0)),
-                            state: None,
-                            prefixes_received: Some(9),
-                        },
-                        BGPNeighbor {
-                            neighbor: IpAddr::V4(Ipv4Addr::new(192, 0, 2, 3)),
-                            version: 4,
-                            remote_as: 64497,
-                            messages_received: 2000,
-                            messages_sent: 6000,
-                            table_version: 128,
-                            in_queue: 2,
-                            out_queue: 6,
-                            uptime: Some(Duration::new(93780, 0)),
-                            state: None,
-                            prefixes_received: Some(10),
-                        },
-                        BGPNeighbor {
-                            neighbor: IpAddr::V4(Ipv4Addr::new(192, 0, 2, 4)),
-                            version: 4,
-                            remote_as: 64497,
-                            messages_received: 0,
-                            messages_sent: 0,
-                            table_version: 0,
-                            in_queue: 0,
-                            out_queue: 0,
-                            uptime: None,
-                            state: Some("Connect".to_string()),
-                            prefixes_received: None,
-                        },
-                    ],
-                    sessions: 4,
-                }),
-                Some(BGPStatus {
-                    router_id: "192.0.2.1".to_string(),
-                    local_as: 64496,
-                    table_version: 128,
-                    as_paths: 1,
-                    communities: 2,
-                    neighbors: vec![
-                        BGPNeighbor {
-                            neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0x2)),
-                            version: 4,
-                            remote_as: 64497,
-                            messages_received: 3000,
-                            messages_sent: 7000,
-                            table_version: 128,
-                            in_queue: 3,
-                            out_queue: 7,
-                            uptime: Some(Duration::new(12813, 0)),
-                            state: None,
-                            prefixes_received: Some(11),
-                        },
-                        BGPNeighbor {
-                            neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0x3)),
-                            version: 4,
-                            remote_as: 64497,
-                            messages_received: 4000,
-                            messages_sent: 8000,
-                            table_version: 128,
-                            in_queue: 4,
-                            out_queue: 8,
-                            uptime: Some(Duration::new(363960, 0)),
-                            state: None,
-                            prefixes_received: Some(12),
-                        },
-                        BGPNeighbor {
-                            neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0x4)),
-                            version: 4,
-                            remote_as: 64497,
-                            messages_received: 0,
-                            messages_sent: 0,
-                            table_version: 0,
-                            in_queue: 0,
-                            out_queue: 0,
-                            uptime: None,
-                            state: Some("Connect".to_string()),
-                            prefixes_received: None,
-                        },
-                    ],
-                    sessions: 2,
-                }),
-            ),
-        );
+        let actual = runner.run().await;
+        assert!(actual.is_ok());
+
+        let actual = actual.unwrap();
+        assert_eq!(actual, (
+            Some(BGPStatus {
+                router_id: "192.0.2.1".to_string(),
+                local_as: 64496,
+                table_version: 128,
+                as_paths: 1,
+                communities: 2,
+                neighbors: vec![
+                    BGPNeighbor {
+                        neighbor: IpAddr::V4(Ipv4Addr::new(192, 0, 2, 2)),
+                        version: 4,
+                        remote_as: 64497,
+                        messages_received: 1000,
+                        messages_sent: 5000,
+                        table_version: 128,
+                        in_queue: 1,
+                        out_queue: 5,
+                        uptime: Some(Duration::new(4271, 0)),
+                        state: None,
+                        prefixes_received: Some(9),
+                    },
+                    BGPNeighbor {
+                        neighbor: IpAddr::V4(Ipv4Addr::new(192, 0, 2, 3)),
+                        version: 4,
+                        remote_as: 64497,
+                        messages_received: 2000,
+                        messages_sent: 6000,
+                        table_version: 128,
+                        in_queue: 2,
+                        out_queue: 6,
+                        uptime: Some(Duration::new(93780, 0)),
+                        state: None,
+                        prefixes_received: Some(10),
+                    },
+                    BGPNeighbor {
+                        neighbor: IpAddr::V4(Ipv4Addr::new(192, 0, 2, 4)),
+                        version: 4,
+                        remote_as: 64497,
+                        messages_received: 0,
+                        messages_sent: 0,
+                        table_version: 0,
+                        in_queue: 0,
+                        out_queue: 0,
+                        uptime: None,
+                        state: Some("Connect".to_string()),
+                        prefixes_received: None,
+                    },
+                ],
+                sessions: 4,
+            }),
+            Some(BGPStatus {
+                router_id: "192.0.2.1".to_string(),
+                local_as: 64496,
+                table_version: 128,
+                as_paths: 1,
+                communities: 2,
+                neighbors: vec![
+                    BGPNeighbor {
+                        neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0x2)),
+                        version: 4,
+                        remote_as: 64497,
+                        messages_received: 3000,
+                        messages_sent: 7000,
+                        table_version: 128,
+                        in_queue: 3,
+                        out_queue: 7,
+                        uptime: Some(Duration::new(12813, 0)),
+                        state: None,
+                        prefixes_received: Some(11),
+                    },
+                    BGPNeighbor {
+                        neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0x3)),
+                        version: 4,
+                        remote_as: 64497,
+                        messages_received: 4000,
+                        messages_sent: 8000,
+                        table_version: 128,
+                        in_queue: 4,
+                        out_queue: 8,
+                        uptime: Some(Duration::new(363960, 0)),
+                        state: None,
+                        prefixes_received: Some(12),
+                    },
+                    BGPNeighbor {
+                        neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0x4)),
+                        version: 4,
+                        remote_as: 64497,
+                        messages_received: 0,
+                        messages_sent: 0,
+                        table_version: 0,
+                        in_queue: 0,
+                        out_queue: 0,
+                        uptime: None,
+                        state: Some("Connect".to_string()),
+                        prefixes_received: None,
+                    },
+                ],
+                sessions: 2,
+            }),
+        ));
     }
 }

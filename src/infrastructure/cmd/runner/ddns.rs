@@ -58,9 +58,9 @@ mod tests {
     use std::net::{IpAddr, Ipv4Addr};
 
     use chrono::NaiveDate;
-    use cool_asserts::assert_matches;
     use indoc::indoc;
     use mockall::{mock, predicate::eq};
+    use pretty_assertions::assert_eq;
 
     use crate::{
         domain::ddns::{DdnsStatus, DdnsUpdateStatus},
@@ -130,24 +130,25 @@ mod tests {
             ]));
 
         let runner = DdnsRunner::new(&command, mock_executor, mock_parser);
-        assert_matches!(
-            runner.run().await,
-            Ok(statuses) if statuses == vec![
-                DdnsStatus {
-                    interface: "eth0".to_string(),
-                    ip_address: Some(IpAddr::V4(Ipv4Addr::new(192, 0, 2, 1))),
-                    host_name: "1.example.com".to_string(),
-                    last_update: Some(NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 5)),
-                    update_status: Some(DdnsUpdateStatus::Good),
-                },
-                DdnsStatus {
-                    interface: "eth1".to_string(),
-                    ip_address: None,
-                    host_name: "2.example.com".to_string(),
-                    last_update: Some(NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 6)),
-                    update_status: None,
-                },
-            ],
-        );
+        let actual = runner.run().await;
+        assert!(actual.is_ok());
+
+        let actual = actual.unwrap();
+        assert_eq!(actual, vec![
+            DdnsStatus {
+                interface: "eth0".to_string(),
+                ip_address: Some(IpAddr::V4(Ipv4Addr::new(192, 0, 2, 1))),
+                host_name: "1.example.com".to_string(),
+                last_update: Some(NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 5)),
+                update_status: Some(DdnsUpdateStatus::Good),
+            },
+            DdnsStatus {
+                interface: "eth1".to_string(),
+                ip_address: None,
+                host_name: "2.example.com".to_string(),
+                last_update: Some(NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 6)),
+                update_status: None,
+            },
+        ]);
     }
 }

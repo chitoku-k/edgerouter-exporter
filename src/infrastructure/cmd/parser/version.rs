@@ -94,8 +94,9 @@ fn parse_version(input: &str) -> anyhow::Result<VersionResult> {
 #[cfg(test)]
 mod tests {
     use chrono::NaiveDate;
-    use cool_asserts::assert_matches;
     use indoc::indoc;
+
+    use pretty_assertions::assert_eq;
 
     use super::*;
 
@@ -104,10 +105,7 @@ mod tests {
         let parser = VersionParser;
         let input = "";
 
-        assert_matches!(
-            parser.parse(input),
-            Err(_),
-        );
+        assert!(parser.parse(input).is_err());
     }
 
     #[test]
@@ -123,17 +121,18 @@ mod tests {
             Uptime:       01:00:00 up  1:00,  1 user,  load average: 1.00, 1.00, 1.00
         "};
 
-        assert_matches!(
-            parser.parse(input),
-            Ok(version) if version == Version {
-                version: "v2.0.6".to_string(),
-                build_id: "5208541".to_string(),
-                build_on: NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 0),
-                copyright: "2012-2018 Ubiquiti Networks, Inc.".to_string(),
-                hw_model: "EdgeRouter X 5-Port".to_string(),
-                hw_serial_number: "000000000000".to_string(),
-                uptime: "01:00:00 up  1:00,  1 user,  load average: 1.00, 1.00, 1.00".to_string(),
-            },
-        );
+        let actual = parser.parse(input);
+        assert!(actual.is_ok());
+
+        let actual = actual.unwrap();
+        assert_eq!(actual, Version {
+            version: "v2.0.6".to_string(),
+            build_id: "5208541".to_string(),
+            build_on: NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 0),
+            copyright: "2012-2018 Ubiquiti Networks, Inc.".to_string(),
+            hw_model: "EdgeRouter X 5-Port".to_string(),
+            hw_serial_number: "000000000000".to_string(),
+            uptime: "01:00:00 up  1:00,  1 user,  load average: 1.00, 1.00, 1.00".to_string(),
+        });
     }
 }
