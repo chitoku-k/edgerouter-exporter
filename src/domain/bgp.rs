@@ -7,11 +7,10 @@ use std::{
 
 use derive_more::{Deref, DerefMut, IntoIterator};
 
+type IntoBGPNeighbor = IntoIter<Vec<BGPNeighbor>>;
+
 #[derive(Deref, DerefMut, IntoIterator)]
-pub struct BGPIterator(Chain<
-    Flatten<IntoIter<Vec<BGPNeighbor>>>,
-    Flatten<IntoIter<Vec<BGPNeighbor>>>,
->);
+pub struct BGPIterator(Chain<Flatten<IntoBGPNeighbor>, Flatten<IntoBGPNeighbor>>);
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct BGPStatus {
