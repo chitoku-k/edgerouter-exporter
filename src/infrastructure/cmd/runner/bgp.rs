@@ -36,18 +36,18 @@ where
 
     async fn ipv4(&self) -> anyhow::Result<BGPStatusResult> {
         let output = self.executor.output(&self.command, &["-c", "show ip bgp summary"]).await?;
-        let result = self.parser.parse(&output)?.and_then(|mut status| {
+        let result = self.parser.parse(&output)?.map(|mut status| {
             status.neighbors.retain(|n| n.neighbor.is_ipv4());
-            Some(status)
+            status
         });
         Ok(result)
     }
 
     async fn ipv6(&self) -> anyhow::Result<BGPStatusResult> {
         let output = self.executor.output(&self.command, &["-c", "show bgp ipv6 summary"]).await?;
-        let result = self.parser.parse(&output)?.and_then(|mut status| {
+        let result = self.parser.parse(&output)?.map(|mut status| {
             status.neighbors.retain(|n| n.neighbor.is_ipv6());
-            Some(status)
+            status
         });
         Ok(result)
     }
