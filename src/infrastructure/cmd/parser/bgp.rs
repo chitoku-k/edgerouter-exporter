@@ -4,8 +4,8 @@ use anyhow::anyhow;
 use nom::{
     branch::{alt, permutation},
     bytes::complete::{tag, take_till, take_until},
-    character::complete::{multispace0, multispace1, newline, space1, u32, u64},
-    combinator::{eof, map, map_res},
+    character::complete::{multispace0, multispace1, newline, not_line_ending, space1, u32, u64},
+    combinator::{eof, map, map_res, opt},
     error::Error,
     multi::{many0, many1, many_till, separated_list1},
     sequence::{delimited, terminated, tuple},
@@ -80,6 +80,14 @@ fn parse_bgp_status(input: &str) -> anyhow::Result<BGPStatusResult> {
                     u64,
                     tuple((space1, tag("BGP community entries"), many1(newline))),
                 ),
+                opt(terminated(
+                    u64,
+                    tuple((space1, tag("Configured ebgp ECMP multipath"), not_line_ending, many1(newline))),
+                )),
+                opt(terminated(
+                    u64,
+                    tuple((space1, tag("Configured ibgp ECMP multipath"), not_line_ending, many1(newline))),
+                )),
                 map_res(
                     many_till(
                         terminated(
@@ -112,6 +120,8 @@ fn parse_bgp_status(input: &str) -> anyhow::Result<BGPStatusResult> {
                 table_version,
                 as_paths,
                 communities,
+                ebgp_maximum_paths,
+                ibgp_maximum_paths,
                 neighbors,
                 _,
                 sessions,
@@ -122,6 +132,8 @@ fn parse_bgp_status(input: &str) -> anyhow::Result<BGPStatusResult> {
                     table_version,
                     as_paths,
                     communities,
+                    ebgp_maximum_paths,
+                    ibgp_maximum_paths,
                     neighbors,
                     sessions,
                 })
@@ -167,7 +179,7 @@ mod tests {
     }
 
     #[test]
-    fn neighbors() {
+    fn neighbors_without_maximum_paths() {
         let parser = BGPParser;
         let input = indoc! {"
             BGP router identifier 192.0.2.1, local AS number 64496
@@ -198,6 +210,128 @@ mod tests {
             table_version: 128,
             as_paths: 1,
             communities: 2,
+            ebgp_maximum_paths: None,
+            ibgp_maximum_paths: None,
+            neighbors: vec![
+                BGPNeighbor {
+                    neighbor: IpAddr::V4(Ipv4Addr::new(192, 0, 2, 2)),
+                    version: 4,
+                    remote_as: 64497,
+                    messages_received: 1000,
+                    messages_sent: 5000,
+                    table_version: 128,
+                    in_queue: 1,
+                    out_queue: 5,
+                    uptime: Some(Duration::new(4271, 0)),
+                    state: None,
+                    prefixes_received: Some(9),
+                },
+                BGPNeighbor {
+                    neighbor: IpAddr::V4(Ipv4Addr::new(192, 0, 2, 3)),
+                    version: 4,
+                    remote_as: 64497,
+                    messages_received: 2000,
+                    messages_sent: 6000,
+                    table_version: 128,
+                    in_queue: 2,
+                    out_queue: 6,
+                    uptime: Some(Duration::new(93780, 0)),
+                    state: None,
+                    prefixes_received: Some(10),
+                },
+                BGPNeighbor {
+                    neighbor: IpAddr::V4(Ipv4Addr::new(192, 0, 2, 4)),
+                    version: 4,
+                    remote_as: 64497,
+                    messages_received: 0,
+                    messages_sent: 0,
+                    table_version: 0,
+                    in_queue: 0,
+                    out_queue: 0,
+                    uptime: None,
+                    state: Some("Connect".to_string()),
+                    prefixes_received: None,
+                },
+                BGPNeighbor {
+                    neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0x2)),
+                    version: 4,
+                    remote_as: 64497,
+                    messages_received: 3000,
+                    messages_sent: 7000,
+                    table_version: 128,
+                    in_queue: 3,
+                    out_queue: 7,
+                    uptime: Some(Duration::new(12813, 0)),
+                    state: None,
+                    prefixes_received: Some(0),
+                },
+                BGPNeighbor {
+                    neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0x3)),
+                    version: 4,
+                    remote_as: 64497,
+                    messages_received: 4000,
+                    messages_sent: 8000,
+                    table_version: 128,
+                    in_queue: 4,
+                    out_queue: 8,
+                    uptime: Some(Duration::new(363960, 0)),
+                    state: None,
+                    prefixes_received: Some(0),
+                },
+                BGPNeighbor {
+                    neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0x4)),
+                    version: 4,
+                    remote_as: 64497,
+                    messages_received: 0,
+                    messages_sent: 0,
+                    table_version: 0,
+                    in_queue: 0,
+                    out_queue: 0,
+                    uptime: None,
+                    state: Some("Connect".to_string()),
+                    prefixes_received: None,
+                },
+            ],
+            sessions: 4,
+        }));
+    }
+
+    #[test]
+    fn neighbors_with_maximum_paths() {
+        let parser = BGPParser;
+        let input = indoc! {"
+            BGP router identifier 192.0.2.1, local AS number 64496
+            BGP table version is 128
+            1 BGP AS-PATH entries
+            2 BGP community entries
+            8  Configured ebgp ECMP multipath: Currently set at 8
+            4  Configured ibgp ECMP multipath: Currently set at 4
+
+            Neighbor                 V   AS   MsgRcv    MsgSen TblVer   InQ   OutQ    Up/Down   State/PfxRcd
+            192.0.2.2                4 64497 1000       5000     128      1      5  01:11:11               9
+            192.0.2.3                4 64497 2000       6000     128      2      6  1d02h03m              10
+            192.0.2.4                4 64497    0          0       0      0      0     never     Connect
+            2001:db8::2              4 64497 3000       7000     128      3      7  03:33:33               0
+            2001:db8::3              4 64497 4000       8000     128      4      8  4d05h06m               0
+            2001:db8::4              4 64497    0          0       0      0      0     never     Connect
+
+            Total number of neighbors 6
+
+            Total number of Established sessions 4
+        "};
+
+        let actual = parser.parse(input);
+        assert!(actual.is_ok());
+
+        let actual = actual.unwrap();
+        assert_eq!(actual, Some(BGPStatus {
+            router_id: "192.0.2.1".to_string(),
+            local_as: 64496,
+            table_version: 128,
+            as_paths: 1,
+            communities: 2,
+            ebgp_maximum_paths: Some(8),
+            ibgp_maximum_paths: Some(4),
             neighbors: vec![
                 BGPNeighbor {
                     neighbor: IpAddr::V4(Ipv4Addr::new(192, 0, 2, 2)),
