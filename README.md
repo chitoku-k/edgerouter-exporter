@@ -39,6 +39,7 @@ export TLS_CERT=/path/to/tls/cert
 export TLS_KEY=/path/to/tls/key
 
 # Op command (optional)
+export IP_COMMAND=/bin/ip
 export OP_COMMAND=/opt/vyatta/bin/vyatta-op-cmd-wrapper
 export OP_DDNS_COMMAND=/opt/vyatta/bin/sudo-users/vyatta-op-dynamic-dns.pl
 export VTYSH_COMMAND=/opt/vyatta/sbin/ubnt_vtysh
@@ -167,19 +168,19 @@ edgerouter_load_balancer_run_fail_total{group_name="WAN_FAILOVER",interface_name
 ```
 # HELP edgerouter_pppoe_client_session_receive_bytes_total Total receive bytes for PPPoE client session
 # TYPE edgerouter_pppoe_client_session_receive_bytes_total gauge
-edgerouter_pppoe_client_session_receive_bytes_total{interface_name="pppoe0",ip_address="192.0.2.255",protocol="PPPoE",user="user01"} 79360
+edgerouter_pppoe_client_session_receive_bytes_total{interface_name="pppoe0",ip_address="192.0.2.255",local_ip_address="203.0.113.1",protocol="PPPoE",user="user01"} 79360
 # HELP edgerouter_pppoe_client_session_receive_packets_total Total receive packets for PPPoE client session
 # TYPE edgerouter_pppoe_client_session_receive_packets_total gauge
-edgerouter_pppoe_client_session_receive_packets_total{interface_name="pppoe0",ip_address="192.0.2.255",protocol="PPPoE",user="user01"} 1638
+edgerouter_pppoe_client_session_receive_packets_total{interface_name="pppoe0",ip_address="192.0.2.255",local_ip_address="203.0.113.1",protocol="PPPoE",user="user01"} 1638
 # HELP edgerouter_pppoe_client_session_seconds_total Total seconds for PPPoE client session
 # TYPE edgerouter_pppoe_client_session_seconds_total gauge
-edgerouter_pppoe_client_session_seconds_total{interface_name="pppoe0",ip_address="192.0.2.255",protocol="PPPoE",user="user01"} 18975
+edgerouter_pppoe_client_session_seconds_total{interface_name="pppoe0",ip_address="192.0.2.255",local_ip_address="203.0.113.1",protocol="PPPoE",user="user01"} 18975
 # HELP edgerouter_pppoe_client_session_transmit_bytes_total Total transmit bytes for PPPoE client session
 # TYPE edgerouter_pppoe_client_session_transmit_bytes_total gauge
-edgerouter_pppoe_client_session_transmit_bytes_total{interface_name="pppoe0",ip_address="192.0.2.255",protocol="PPPoE",user="user01"} 39116
+edgerouter_pppoe_client_session_transmit_bytes_total{interface_name="pppoe0",ip_address="192.0.2.255",local_ip_address="203.0.113.1",protocol="PPPoE",user="user01"} 39116
 # HELP edgerouter_pppoe_client_session_transmit_packets_total Total transmit packets for PPPoE client session
 # TYPE edgerouter_pppoe_client_session_transmit_packets_total gauge
-edgerouter_pppoe_client_session_transmit_packets_total{interface_name="pppoe0",ip_address="192.0.2.255",protocol="PPPoE",user="user01"} 412
+edgerouter_pppoe_client_session_transmit_packets_total{interface_name="pppoe0",ip_address="192.0.2.255",local_ip_address="203.0.113.1",protocol="PPPoE",user="user01"} 412
 ```
 
 ### Spec

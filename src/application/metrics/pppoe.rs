@@ -6,7 +6,10 @@ use prometheus_client::{
 
 use crate::{
     application::metrics::Collector,
-    domain::pppoe::PPPoEClientSession,
+    domain::{
+        interface::{AddrInfo, Interface},
+        pppoe::PPPoEClientSession,
+    },
     service::pppoe::PPPoEClientSessionResult,
 };
 
@@ -16,6 +19,7 @@ pub struct PPPoEClientSessionLabel {
     protocol: String,
     interface_name: String,
     ip_address: String,
+    local_ip_address: String,
 }
 
 impl From<PPPoEClientSession> for PPPoEClientSessionLabel {
@@ -24,17 +28,26 @@ impl From<PPPoEClientSession> for PPPoEClientSessionLabel {
         let protocol = s.protocol;
         let interface_name = s.interface;
         let ip_address = s.remote_ip.to_string();
+        let local_ip_address = String::new();
         Self {
             user,
             protocol,
             interface_name,
             ip_address,
+            local_ip_address,
         }
     }
 }
 
-impl Collector for PPPoEClientSessionResult {
-    fn collect(self, registry: &mut Registry) {
+impl PPPoEClientSessionLabel {
+    fn with(mut self, addr: &AddrInfo) -> Self {
+        self.local_ip_address = addr.local.to_string();
+        self
+    }
+}
+
+impl Collector<&[Interface]> for PPPoEClientSessionResult {
+    fn collect(self, registry: &mut Registry, interfaces: &[Interface]) {
         let pppoe_client_session_seconds_total = Family::<PPPoEClientSessionLabel, Gauge>::default();
         registry.register(
             "edgerouter_pppoe_client_session_seconds_total",
@@ -84,7 +97,10 @@ impl Collector for PPPoEClientSessionResult {
                 session.transmit_bytes.clone().into(),
                 session.receive_bytes.clone().into(),
             );
-            let labels = session.into();
+            let labels = match interfaces.iter().flat_map(|i| &i.addr_info).find(|a| a.address == Some(session.remote_ip)) {
+                Some(addr) => PPPoEClientSessionLabel::from(session).with(addr),
+                None => PPPoEClientSessionLabel::from(session),
+            };
 
             pppoe_client_session_seconds_total
                 .get_or_create(&labels)

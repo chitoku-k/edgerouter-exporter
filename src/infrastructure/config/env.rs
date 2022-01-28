@@ -3,6 +3,9 @@ use envy::Error;
 use serde::Deserialize;
 
 #[derive(Clone, Debug, Deref, Deserialize, From, PartialEq)]
+pub struct IpCommand(String);
+
+#[derive(Clone, Debug, Deref, Deserialize, From, PartialEq)]
 pub struct OpCommand(String);
 
 #[derive(Clone, Debug, Deref, Deserialize, From, PartialEq)]
@@ -17,6 +20,9 @@ pub struct Config {
     pub tls_cert: Option<String>,
     pub tls_key: Option<String>,
 
+    #[serde(default = "default_ip_command")]
+    pub ip_command: IpCommand,
+
     #[serde(default = "default_op_command")]
     pub op_command: OpCommand,
 
@@ -29,6 +35,10 @@ pub struct Config {
 
 pub fn get() -> anyhow::Result<Config, Error> {
     envy::from_env()
+}
+
+fn default_ip_command() -> IpCommand {
+    IpCommand("/bin/ip".to_string())
 }
 
 fn default_op_command() -> OpCommand {

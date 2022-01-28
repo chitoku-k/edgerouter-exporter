@@ -31,7 +31,7 @@ impl From<DdnsStatus> for DdnsStatusLabel {
 }
 
 impl Collector for DdnsStatusResult {
-    fn collect(self, registry: &mut Registry) {
+    fn collect(self, registry: &mut Registry, _: ()) {
         let ddns_status = Family::<DdnsStatusLabel, Gauge>::default();
         registry.register(
             "edgerouter_dynamic_dns_status",
