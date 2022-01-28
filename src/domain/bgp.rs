@@ -19,6 +19,8 @@ pub struct BGPStatus {
     pub table_version: u32,
     pub as_paths: u64,
     pub communities: u64,
+    pub ebgp_maximum_paths: Option<u64>,
+    pub ibgp_maximum_paths: Option<u64>,
     pub neighbors: Vec<BGPNeighbor>,
     pub sessions: u64,
 }
@@ -74,6 +76,8 @@ mod tests {
                 table_version: 128,
                 as_paths: 1,
                 communities: 2,
+                ebgp_maximum_paths: Some(8),
+                ibgp_maximum_paths: Some(4),
                 neighbors: vec![
                     BGPNeighbor {
                         neighbor: IpAddr::V4(Ipv4Addr::new(192, 0, 2, 2)),
@@ -123,6 +127,8 @@ mod tests {
                 table_version: 128,
                 as_paths: 1,
                 communities: 2,
+                ebgp_maximum_paths: Some(8),
+                ibgp_maximum_paths: Some(4),
                 neighbors: vec![
                     BGPNeighbor {
                         neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0x2)),
