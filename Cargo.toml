@@ -49,6 +49,9 @@ version = "0.15.0"
 version = "1.0.136"
 features = ["derive"]
 
+[dependencies.serde_json]
+version = "1.0.78"
+
 [dependencies.tokio]
 version = "1.16.1"
 features = ["macros", "net", "process", "rt-multi-thread"]

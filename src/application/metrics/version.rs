@@ -28,7 +28,7 @@ impl From<Version> for VersionLabel {
 }
 
 impl Collector for VersionResult {
-    fn collect(self, registry: &mut Registry) {
+    fn collect(self, registry: &mut Registry, _: ()) {
         let info = Family::<VersionLabel, Gauge>::default();
         registry.register(
             "edgerouter_info",

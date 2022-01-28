@@ -7,6 +7,7 @@ use crate::{
             parser::{
                 bgp::BGPParser,
                 ddns::DdnsParser,
+                interface::InterfaceParser,
                 load_balance::LoadBalanceParser,
                 pppoe::PPPoEParser,
                 version::VersionParser,
@@ -14,6 +15,7 @@ use crate::{
             runner::{
                 bgp::BGPRunner,
                 ddns::DdnsRunner,
+                interface::InterfaceRunner,
                 load_balance::LoadBalanceRunner,
                 pppoe::PPPoERunner,
                 version::VersionRunner,
@@ -43,6 +45,7 @@ impl Application {
             MetricsHandler::new(
                 BGPRunner::new(&config.vtysh_command, CommandExecutor, BGPParser),
                 DdnsRunner::new(&config.op_ddns_command, CommandExecutor, DdnsParser),
+                InterfaceRunner::new(&config.ip_command, CommandExecutor, InterfaceParser),
                 LoadBalanceRunner::new(&config.op_command, CommandExecutor, LoadBalanceParser),
                 PPPoERunner::new(&config.op_command, CommandExecutor, PPPoEParser),
                 VersionRunner::new(&config.op_command, CommandExecutor, VersionParser),
