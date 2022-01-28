@@ -25,7 +25,7 @@ where it persists after the EdgeOS upgrades. Note that the root permission is
 required because it internally calls `ubnt_vtysh`.
 
 ```console
-$ curl -sSfLO https://github.com/chitoku-k/edgerouter-exporter/releases/latest/download/edgerouter-exporter
+$ curl -fLO https://github.com/chitoku-k/edgerouter-exporter/releases/latest/download/edgerouter-exporter
 $ chmod +x edgerouter-exporter
 $ mv edgerouter-exporter /config/scripts
 ```
@@ -46,8 +46,31 @@ export VTYSH_COMMAND=/opt/vyatta/sbin/ubnt_vtysh
 
 ## Usage
 
+To simply run edgerouter-exporter:
+
 ```sh
 $ sudo /config/scripts/edgerouter-exporter
+```
+
+To daemonize edgerouter-exporter:
+
+```sh
+$ cat <<EOF | sudo tee /etc/systemd/system/prometheus-edgerouter-exporter.service
+[Unit]
+Description=Prometheus exporter for EdgeRouter metrics
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Environment=PORT=8080
+ExecStart=/config/scripts/edgerouter-exporter
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+$ sudo systemctl daemon-reload
+$ sudo systemctl enable --now prometheus-edgerouter-exporter.service
 ```
 
 ## Prometheus Metrics
