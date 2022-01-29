@@ -34,5 +34,5 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --release --target=mipsel-unknown-linux-gnu
+          args: --target=mipsel-unknown-linux-gnu
           use-cross: true

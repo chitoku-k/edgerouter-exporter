@@ -15,6 +15,7 @@ For development, the following dependencies are required:
 In order to build the artifact, use `cross build`:
 
 ```sh
+$ export RUSTFLAGS='-C strip=symbols'
 $ cross build --release --target=mipsel-unknown-linux-gnu
 ```
 

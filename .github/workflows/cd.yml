@@ -17,6 +17,8 @@ jobs:
           toolchain: stable
       - name: Build
         uses: actions-rs/cargo@v1
+        env:
+          RUSTFLAGS: -C strip=symbols
         with:
           command: build
           args: --release --target=mipsel-unknown-linux-gnu
