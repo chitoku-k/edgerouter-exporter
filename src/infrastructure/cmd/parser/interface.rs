@@ -67,10 +67,7 @@ mod tests {
             ]
         "#};
 
-        let actual = parser.parse(input);
-        assert!(actual.is_ok());
-
-        let actual = actual.unwrap();
+        let actual = parser.parse(input).unwrap();
         assert_eq!(actual, vec![
             Interface {
                 ifindex: 1,

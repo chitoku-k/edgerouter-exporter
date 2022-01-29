@@ -144,10 +144,7 @@ mod tests {
 
         "};
 
-        let actual = parser.parse(input);
-        assert!(actual.is_ok());
-
-        let actual = actual.unwrap();
+        let actual = parser.parse(input).unwrap();
         assert_eq!(actual, vec![]);
     }
 
@@ -168,10 +165,7 @@ mod tests {
 
         "};
 
-        let actual = parser.parse(input);
-        assert!(actual.is_ok());
-
-        let actual = actual.unwrap();
+        let actual = parser.parse(input).unwrap();
         assert_eq!(actual, vec![
             DdnsStatus {
                 interface: "eth0".to_string(),

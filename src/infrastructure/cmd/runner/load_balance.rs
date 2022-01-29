@@ -107,12 +107,8 @@ mod tests {
         mock_executor
             .expect_output()
             .times(1)
-            .returning(|command, args| {
-                match (command, args) {
-                    ("/opt/vyatta/bin/vyatta-op-cmd-wrapper", &["show", "load-balance", "watchdog"]) => Ok(output.to_string()),
-                    _ => panic!("unexpected args"),
-                }
-            });
+            .withf(|command, args| (command, args) == ("/opt/vyatta/bin/vyatta-op-cmd-wrapper", &["show", "load-balance", "watchdog"]))
+            .returning(|_, _| Ok(output.to_string()));
 
         let mut mock_parser = MockLoadBalanceParser::new();
         mock_parser
@@ -152,10 +148,7 @@ mod tests {
             ]));
 
         let runner = LoadBalanceRunner::new(&command, mock_executor, mock_parser);
-        let actual = runner.run().await;
-        assert!(actual.is_ok());
-
-        let actual = actual.unwrap();
+        let actual = runner.run().await.unwrap();
         assert_eq!(actual, vec![
             LoadBalanceGroup {
                 name: "FAILOVER_01".to_string(),

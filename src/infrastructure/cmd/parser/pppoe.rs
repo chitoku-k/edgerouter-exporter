@@ -158,10 +158,7 @@ mod tests {
         let parser = PPPoEParser;
         let input = "No active PPPoE client sessions";
 
-        let actual = parser.parse(input);
-        assert!(actual.is_ok());
-
-        let actual = actual.unwrap();
+        let actual = parser.parse(input).unwrap();
         assert_eq!(actual, vec![]);
     }
 
@@ -179,10 +176,7 @@ mod tests {
             Total sessions: 2
         "};
 
-        let actual = parser.parse(input);
-        assert!(actual.is_ok());
-
-        let actual = actual.unwrap();
+        let actual = parser.parse(input).unwrap();
         assert_eq!(actual, vec![
             PPPoEClientSession {
                 user: "user01".to_string(),

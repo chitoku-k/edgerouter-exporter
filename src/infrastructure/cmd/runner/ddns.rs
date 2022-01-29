@@ -100,12 +100,8 @@ mod tests {
         mock_executor
             .expect_output()
             .times(1)
-            .returning(|command, args| {
-                match (command, args) {
-                    ("/opt/vyatta/bin/sudo-users/vyatta-op-dynamic-dns.pl", &["--show-status"]) => Ok(output.to_string()),
-                    _ => panic!("unexpected args"),
-                }
-            });
+            .withf(|command, args| (command, args) == ("/opt/vyatta/bin/sudo-users/vyatta-op-dynamic-dns.pl", &["--show-status"]))
+            .returning(|_, _| Ok(output.to_string()));
 
         let mut mock_parser = MockDdnsParser::new();
         mock_parser
@@ -130,10 +126,7 @@ mod tests {
             ]));
 
         let runner = DdnsRunner::new(&command, mock_executor, mock_parser);
-        let actual = runner.run().await;
-        assert!(actual.is_ok());
-
-        let actual = actual.unwrap();
+        let actual = runner.run().await.unwrap();
         assert_eq!(actual, vec![
             DdnsStatus {
                 interface: "eth0".to_string(),
