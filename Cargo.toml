@@ -3,6 +3,14 @@ name = "edgerouter-exporter"
 version = "2.1.0"
 edition = "2021"
 
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+
+[profile.release.package.ring]
+opt-level = 3
+
 [features]
 default = ["tls"]
 tls = ["axum-server/tls-rustls"]
