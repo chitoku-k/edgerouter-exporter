@@ -206,10 +206,7 @@ mod tests {
         let parser = LoadBalanceParser;
         let input = "load-balance is not configured";
 
-        let actual = parser.parse(input);
-        assert!(actual.is_ok());
-
-        let actual = actual.unwrap();
+        let actual = parser.parse(input).unwrap();
         assert_eq!(actual, vec![]);
     }
 
@@ -218,10 +215,7 @@ mod tests {
         let parser = LoadBalanceParser;
         let input = "Group FAILOVER_01";
 
-        let actual = parser.parse(input);
-        assert!(actual.is_ok());
-
-        let actual = actual.unwrap();
+        let actual = parser.parse(input).unwrap();
         assert_eq!(actual, vec![
             LoadBalanceGroup {
                 name: "FAILOVER_01".to_string(),
@@ -256,10 +250,7 @@ mod tests {
 
         "};
 
-        let actual = parser.parse(input);
-        assert!(actual.is_ok());
-
-        let actual = actual.unwrap();
+        let actual = parser.parse(input).unwrap();
         assert_eq!(actual, vec![
             LoadBalanceGroup {
                 name: "FAILOVER_01".to_string(),
@@ -337,10 +328,7 @@ mod tests {
 
         "};
 
-        let actual = parser.parse(input);
-        assert!(actual.is_ok());
-
-        let actual = actual.unwrap();
+        let actual = parser.parse(input).unwrap();
         assert_eq!(actual, vec![
             LoadBalanceGroup {
                 name: "FAILOVER_01".to_string(),

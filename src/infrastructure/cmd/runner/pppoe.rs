@@ -100,12 +100,8 @@ mod tests {
         mock_executor
             .expect_output()
             .times(1)
-            .returning(|command, args| {
-                match (command, args) {
-                    ("/opt/vyatta/bin/vyatta-op-cmd-wrapper", &["show", "pppoe-client"]) => Ok(output.to_string()),
-                    _ => panic!("unexpected args"),
-                }
-            });
+            .withf(|command, args| (command, args) == ("/opt/vyatta/bin/vyatta-op-cmd-wrapper", &["show", "pppoe-client"]))
+            .returning(|_, _| Ok(output.to_string()));
 
         let mut mock_parser = MockPPPoEParser::new();
         mock_parser
@@ -138,10 +134,7 @@ mod tests {
             ]));
 
         let runner = PPPoERunner::new(&command, mock_executor, mock_parser);
-        let actual = runner.run().await;
-        assert!(actual.is_ok());
-
-        let actual = actual.unwrap();
+        let actual = runner.run().await.unwrap();
         assert_eq!(actual, vec![
             PPPoEClientSession {
                 user: "user01".to_string(),

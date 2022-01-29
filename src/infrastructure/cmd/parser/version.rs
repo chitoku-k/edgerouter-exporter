@@ -121,10 +121,7 @@ mod tests {
             Uptime:       01:00:00 up  1:00,  1 user,  load average: 1.00, 1.00, 1.00
         "};
 
-        let actual = parser.parse(input);
-        assert!(actual.is_ok());
-
-        let actual = actual.unwrap();
+        let actual = parser.parse(input).unwrap();
         assert_eq!(actual, Version {
             version: "v2.0.6".to_string(),
             build_id: "5208541".to_string(),

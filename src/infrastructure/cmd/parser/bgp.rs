@@ -171,10 +171,7 @@ mod tests {
         let parser = BGPParser;
         let input = "";
 
-        let actual = parser.parse(input);
-        assert!(actual.is_ok());
-
-        let actual = actual.unwrap();
+        let actual = parser.parse(input).unwrap();
         assert_eq!(actual, None);
     }
 
@@ -200,10 +197,7 @@ mod tests {
             Total number of Established sessions 4
         "};
 
-        let actual = parser.parse(input);
-        assert!(actual.is_ok());
-
-        let actual = actual.unwrap();
+        let actual = parser.parse(input).unwrap();
         assert_eq!(actual, Some(BGPStatus {
             router_id: "192.0.2.1".to_string(),
             local_as: 64496,
@@ -320,10 +314,7 @@ mod tests {
             Total number of Established sessions 4
         "};
 
-        let actual = parser.parse(input);
-        assert!(actual.is_ok());
-
-        let actual = actual.unwrap();
+        let actual = parser.parse(input).unwrap();
         assert_eq!(actual, Some(BGPStatus {
             router_id: "192.0.2.1".to_string(),
             local_as: 64496,

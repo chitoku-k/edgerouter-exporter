@@ -99,21 +99,13 @@ mod tests {
         mock_executor
             .expect_output()
             .times(1)
-            .returning(|command, args| {
-                match (command, args) {
-                    ("/opt/vyatta/sbin/ubnt_vtysh", &["-c", "show ip bgp summary"]) => Ok("".to_string()),
-                    _ => panic!("unexpected args"),
-                }
-            });
+            .withf(|command, args| (command, args) == ("/opt/vyatta/sbin/ubnt_vtysh", &["-c", "show ip bgp summary"]))
+            .returning(|_, _| Ok("".to_string()));
         mock_executor
             .expect_output()
             .times(1)
-            .returning(|command, args| {
-                match (command, args) {
-                    ("/opt/vyatta/sbin/ubnt_vtysh", &["-c", "show bgp ipv6 summary"]) => Ok("".to_string()),
-                    _ => panic!("unexpected args"),
-                }
-            });
+            .withf(|command, args| (command, args) == ("/opt/vyatta/sbin/ubnt_vtysh", &["-c", "show bgp ipv6 summary"]))
+            .returning(|_, _| Ok("".to_string()));
 
         let mut mock_parser = MockBGPParser::new();
         mock_parser
@@ -123,10 +115,7 @@ mod tests {
             .returning(|_| Ok(None));
 
         let runner = BGPRunner::new(&command, mock_executor, mock_parser);
-        let actual = runner.run().await;
-        assert!(actual.is_ok());
-
-        let actual = actual.unwrap();
+        let actual = runner.run().await.unwrap();
         assert_eq!(actual, (None, None));
     }
 
@@ -153,21 +142,13 @@ mod tests {
         mock_executor
             .expect_output()
             .times(1)
-            .returning(|command, args| {
-                match (command, args) {
-                    ("/opt/vyatta/sbin/ubnt_vtysh", &["-c", "show ip bgp summary"]) => Ok(ipv4_output.to_string()),
-                    _ => panic!("unexpected args"),
-                }
-            });
+            .withf(|command, args| (command, args) == ("/opt/vyatta/sbin/ubnt_vtysh", &["-c", "show ip bgp summary"]))
+            .returning(|_, _| Ok(ipv4_output.to_string()));
         mock_executor
             .expect_output()
             .times(1)
-            .returning(|command, args| {
-                match (command, args) {
-                    ("/opt/vyatta/sbin/ubnt_vtysh", &["-c", "show bgp ipv6 summary"]) => Ok("".to_string()),
-                    _ => panic!("unexpected args"),
-                }
-            });
+            .withf(|command, args| (command, args) == ("/opt/vyatta/sbin/ubnt_vtysh", &["-c", "show bgp ipv6 summary"]))
+            .returning(|_, _| Ok("".to_string()));
 
         let mut mock_parser = MockBGPParser::new();
         mock_parser
@@ -232,10 +213,7 @@ mod tests {
             .returning(|_| Ok(None));
 
         let runner = BGPRunner::new(&command, mock_executor, mock_parser);
-        let actual = runner.run().await;
-        assert!(actual.is_ok());
-
-        let actual = actual.unwrap();
+        let actual = runner.run().await.unwrap();
         assert_eq!(actual, (
             Some(BGPStatus {
                 router_id: "192.0.2.1".to_string(),
@@ -315,21 +293,13 @@ mod tests {
         mock_executor
             .expect_output()
             .times(1)
-            .returning(|command, args| {
-                match (command, args) {
-                    ("/opt/vyatta/sbin/ubnt_vtysh", &["-c", "show ip bgp summary"]) => Ok("".to_string()),
-                    _ => panic!("unexpected args"),
-                }
-            });
+            .withf(|command, args| (command, args) == ("/opt/vyatta/sbin/ubnt_vtysh", &["-c", "show ip bgp summary"]))
+            .returning(|_, _| Ok("".to_string()));
         mock_executor
             .expect_output()
             .times(1)
-            .returning(|command, args| {
-                match (command, args) {
-                    ("/opt/vyatta/sbin/ubnt_vtysh", &["-c", "show bgp ipv6 summary"]) => Ok(ipv6_output.to_string()),
-                    _ => panic!("unexpected args"),
-                }
-            });
+            .withf(|command, args| (command, args) == ("/opt/vyatta/sbin/ubnt_vtysh", &["-c", "show bgp ipv6 summary"]))
+            .returning(|_, _| Ok(ipv6_output.to_string()));
 
         let mut mock_parser = MockBGPParser::new();
         mock_parser
@@ -394,10 +364,7 @@ mod tests {
             })));
 
         let runner = BGPRunner::new(&command, mock_executor, mock_parser);
-        let actual = runner.run().await;
-        assert!(actual.is_ok());
-
-        let actual = actual.unwrap();
+        let actual = runner.run().await.unwrap();
         assert_eq!(actual, (
             None,
             Some(BGPStatus {
@@ -495,21 +462,13 @@ mod tests {
         mock_executor
             .expect_output()
             .times(1)
-            .returning(|command, args| {
-                match (command, args) {
-                    ("/opt/vyatta/sbin/ubnt_vtysh", &["-c", "show ip bgp summary"]) => Ok(ipv4_output.to_string()),
-                    _ => panic!("unexpected args"),
-                }
-            });
+            .withf(|command, args| (command, args) == ("/opt/vyatta/sbin/ubnt_vtysh", &["-c", "show ip bgp summary"]))
+            .returning(|_, _| Ok(ipv4_output.to_string()));
         mock_executor
             .expect_output()
             .times(1)
-            .returning(|command, args| {
-                match (command, args) {
-                    ("/opt/vyatta/sbin/ubnt_vtysh", &["-c", "show bgp ipv6 summary"]) => Ok(ipv6_output.to_string()),
-                    _ => panic!("unexpected args"),
-                }
-            });
+            .withf(|command, args| (command, args) == ("/opt/vyatta/sbin/ubnt_vtysh", &["-c", "show bgp ipv6 summary"]))
+            .returning(|_, _| Ok(ipv6_output.to_string()));
 
         let mut mock_parser = MockBGPParser::new();
         mock_parser
@@ -663,10 +622,7 @@ mod tests {
             })));
 
         let runner = BGPRunner::new(&command, mock_executor, mock_parser);
-        let actual = runner.run().await;
-        assert!(actual.is_ok());
-
-        let actual = actual.unwrap();
+        let actual = runner.run().await.unwrap();
         assert_eq!(actual, (
             Some(BGPStatus {
                 router_id: "192.0.2.1".to_string(),
