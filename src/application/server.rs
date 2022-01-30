@@ -16,10 +16,7 @@ pub trait Controller<T> {
 }
 
 #[derive(Clone)]
-pub struct Engine<MetricsController>
-where
-    MetricsController: Controller<String> + Send + Sync + Clone + 'static,
-{
+pub struct Engine<MetricsController> {
     port: u16,
     tls: Option<(String, String)>,
     metrics_controller: MetricsController,

@@ -6,10 +6,7 @@ use prometheus_client::{
 
 use crate::{
     application::metrics::Collector,
-    domain::{
-        interface::{AddrInfo, Interface},
-        pppoe::PPPoEClientSession,
-    },
+    domain::pppoe::PPPoEClientSession,
     service::pppoe::PPPoEClientSessionResult,
 };
 
@@ -28,7 +25,7 @@ impl From<PPPoEClientSession> for PPPoEClientSessionLabel {
         let protocol = s.protocol;
         let interface_name = s.interface;
         let ip_address = s.remote_ip.to_string();
-        let local_ip_address = String::new();
+        let local_ip_address = s.local_ip.map(|i| i.to_string()).unwrap_or_default();
         Self {
             user,
             protocol,
@@ -39,15 +36,8 @@ impl From<PPPoEClientSession> for PPPoEClientSessionLabel {
     }
 }
 
-impl PPPoEClientSessionLabel {
-    fn with(mut self, addr: &AddrInfo) -> Self {
-        self.local_ip_address = addr.local.to_string();
-        self
-    }
-}
-
-impl Collector<&[Interface]> for PPPoEClientSessionResult {
-    fn collect(self, registry: &mut Registry, interfaces: &[Interface]) {
+impl Collector for PPPoEClientSessionResult {
+    fn collect(self, registry: &mut Registry) {
         let pppoe_client_session_seconds_total = Family::<PPPoEClientSessionLabel, Gauge>::default();
         registry.register(
             "edgerouter_pppoe_client_session_seconds_total",
@@ -97,10 +87,7 @@ impl Collector<&[Interface]> for PPPoEClientSessionResult {
                 session.transmit_bytes.clone().into(),
                 session.receive_bytes.clone().into(),
             );
-            let labels = match interfaces.iter().flat_map(|i| &i.addr_info).find(|a| a.address == Some(session.remote_ip)) {
-                Some(addr) => PPPoEClientSessionLabel::from(session).with(addr),
-                None => PPPoEClientSessionLabel::from(session),
-            };
+            let labels = session.into();
 
             pppoe_client_session_seconds_total
                 .get_or_create(&labels)

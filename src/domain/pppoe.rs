@@ -18,6 +18,7 @@ pub struct PPPoEClientSession {
     pub protocol: String,
     pub interface: String,
     pub remote_ip: IpAddr,
+    pub local_ip: Option<IpAddr>,
     pub transmit_packets: PacketSize,
     pub transmit_bytes: ByteSize,
     pub receive_packets: PacketSize,

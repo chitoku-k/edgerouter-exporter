@@ -25,10 +25,11 @@ use crate::{
 pub struct LoadBalanceParser;
 
 impl Parser for LoadBalanceParser {
+    type Input = String;
     type Item = LoadBalanceGroupResult;
 
-    fn parse(&self, input: &str) -> anyhow::Result<Self::Item> {
-        parse_load_balance_groups(input)
+    fn parse(&self, input: Self::Input) -> anyhow::Result<Self::Item> {
+        parse_load_balance_groups(&input)
     }
 }
 
@@ -197,7 +198,7 @@ mod tests {
         let parser = LoadBalanceParser;
         let input = "";
 
-        let actual = parser.parse(input);
+        let actual = parser.parse(input.to_string());
         assert!(actual.is_err());
     }
 
@@ -206,7 +207,7 @@ mod tests {
         let parser = LoadBalanceParser;
         let input = "load-balance is not configured";
 
-        let actual = parser.parse(input).unwrap();
+        let actual = parser.parse(input.to_string()).unwrap();
         assert_eq!(actual, vec![]);
     }
 
@@ -215,7 +216,7 @@ mod tests {
         let parser = LoadBalanceParser;
         let input = "Group FAILOVER_01";
 
-        let actual = parser.parse(input).unwrap();
+        let actual = parser.parse(input.to_string()).unwrap();
         assert_eq!(actual, vec![
             LoadBalanceGroup {
                 name: "FAILOVER_01".to_string(),
@@ -250,7 +251,7 @@ mod tests {
 
         "};
 
-        let actual = parser.parse(input).unwrap();
+        let actual = parser.parse(input.to_string()).unwrap();
         assert_eq!(actual, vec![
             LoadBalanceGroup {
                 name: "FAILOVER_01".to_string(),
@@ -328,7 +329,7 @@ mod tests {
 
         "};
 
-        let actual = parser.parse(input).unwrap();
+        let actual = parser.parse(input.to_string()).unwrap();
         assert_eq!(actual, vec![
             LoadBalanceGroup {
                 name: "FAILOVER_01".to_string(),

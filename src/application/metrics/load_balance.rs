@@ -65,7 +65,7 @@ impl LoadBalanceHealthLabel {
 }
 
 impl Collector for LoadBalanceGroupResult {
-    fn collect(self, registry: &mut Registry, _: ()) {
+    fn collect(self, registry: &mut Registry) {
         let load_balancer_health = Family::<LoadBalanceHealthLabel, Gauge>::default();
         registry.register(
             "edgerouter_load_balancer_health",

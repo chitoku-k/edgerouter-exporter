@@ -31,7 +31,7 @@ impl From<BGPNeighbor> for BGPNeighborLabel {
 }
 
 impl Collector for (BGPStatusResult, BGPStatusResult) {
-    fn collect(self, registry: &mut Registry, _: ()) {
+    fn collect(self, registry: &mut Registry) {
         let bgp_msg_rcv = Family::<BGPNeighborLabel, Gauge>::default();
         registry.register(
             "edgerouter_bgp_message_received_total",
