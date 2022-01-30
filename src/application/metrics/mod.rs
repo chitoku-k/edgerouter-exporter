@@ -11,7 +11,6 @@ use crate::{
     service::{
         bgp::BGPStatusResult,
         ddns::DdnsStatusResult,
-        interface::InterfaceResult,
         load_balance::LoadBalanceGroupResult,
         pppoe::PPPoEClientSessionResult,
         version::VersionResult,
@@ -30,30 +29,20 @@ pub trait Collector {
 }
 
 #[derive(Clone, Constructor)]
-pub struct MetricsHandler<BGPRunner, DdnsRunner, InterfaceRunner, LoadBalanceRunner, PPPoERunner, VersionRunner>
-where
-    BGPRunner: Runner<Item = (BGPStatusResult, BGPStatusResult)> + Send + Sync + Clone,
-    DdnsRunner: Runner<Item = DdnsStatusResult> + Send + Sync + Clone,
-    InterfaceRunner: Runner<Item = InterfaceResult> + Send + Sync + Clone,
-    LoadBalanceRunner: Runner<Item = LoadBalanceGroupResult> + Send + Sync + Clone,
-    PPPoERunner: Runner<Item = PPPoEClientSessionResult> + Send + Sync + Clone,
-    VersionRunner: Runner<Item = VersionResult> + Send + Sync + Clone,
-{
+pub struct MetricsHandler<BGPRunner, DdnsRunner, LoadBalanceRunner, PPPoERunner, VersionRunner> {
     bgp_runner: BGPRunner,
     ddns_runner: DdnsRunner,
-    interface_runner: InterfaceRunner,
     load_balance_runner: LoadBalanceRunner,
     pppoe_runner: PPPoERunner,
     version_runner: VersionRunner,
 }
 
 #[async_trait]
-impl<BGPRunner, DdnsRunner, InterfaceRunner, LoadBalanceRunner, PPPoERunner, VersionRunner> Controller<String>
-    for MetricsHandler<BGPRunner, DdnsRunner, InterfaceRunner, LoadBalanceRunner, PPPoERunner, VersionRunner>
+impl<BGPRunner, DdnsRunner, LoadBalanceRunner, PPPoERunner, VersionRunner> Controller<String>
+    for MetricsHandler<BGPRunner, DdnsRunner, LoadBalanceRunner, PPPoERunner, VersionRunner>
 where
     BGPRunner: Runner<Item = (BGPStatusResult, BGPStatusResult)> + Send + Sync + Clone + 'static,
     DdnsRunner: Runner<Item = DdnsStatusResult> + Send + Sync + Clone + 'static,
-    InterfaceRunner: Runner<Item = InterfaceResult> + Send + Sync + Clone + 'static,
     LoadBalanceRunner: Runner<Item = LoadBalanceGroupResult> + Send + Sync + Clone + 'static,
     PPPoERunner: Runner<Item = PPPoEClientSessionResult> + Send + Sync + Clone + 'static,
     VersionRunner: Runner<Item = VersionResult> + Send + Sync + Clone + 'static,
@@ -63,14 +52,12 @@ where
         let (
             bgp,
             ddns,
-            interfaces,
             load_balance_groups,
             pppoe_client_sessions,
             version,
         ) = try_join!(
             self.bgp_runner.run(),
             self.ddns_runner.run(),
-            self.interface_runner.run(),
             self.load_balance_runner.run(),
             self.pppoe_runner.run(),
             self.version_runner.run(),

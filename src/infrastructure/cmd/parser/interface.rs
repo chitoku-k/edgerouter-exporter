@@ -8,10 +8,11 @@ use crate::{
 pub struct InterfaceParser;
 
 impl Parser for InterfaceParser {
+    type Input = String;
     type Item = InterfaceResult;
 
-    fn parse(&self, input: &str) -> anyhow::Result<Self::Item> {
-        parse_interface(input)
+    fn parse(&self, input: Self::Input) -> anyhow::Result<Self::Item> {
+        parse_interface(&input)
     }
 }
 
@@ -67,7 +68,7 @@ mod tests {
             ]
         "#};
 
-        let actual = parser.parse(input).unwrap();
+        let actual = parser.parse(input.to_string()).unwrap();
         assert_eq!(actual, vec![
             Interface {
                 ifindex: 1,

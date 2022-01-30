@@ -9,11 +9,7 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct LoadBalanceRunner<E, P>
-where
-    E: Executor + Send + Sync,
-    P: Parser<Item = LoadBalanceGroupResult> + Send + Sync,
-{
+pub struct LoadBalanceRunner<E, P> {
     command: OpCommand,
     executor: E,
     parser: P,
@@ -22,7 +18,7 @@ where
 impl<E, P> LoadBalanceRunner<E, P>
 where
     E: Executor + Send + Sync,
-    P: Parser<Item = LoadBalanceGroupResult> + Send + Sync,
+    P: Parser<Input = String, Item = LoadBalanceGroupResult> + Send + Sync,
 {
     pub fn new(command: &OpCommand, executor: E, parser: P) -> Self {
         let command = command.to_owned();
@@ -35,7 +31,7 @@ where
 
     async fn groups(&self) -> anyhow::Result<LoadBalanceGroupResult> {
         let output = self.executor.output(&self.command, &["show", "load-balance", "watchdog"]).await?;
-        let result = self.parser.parse(&output)?;
+        let result = self.parser.parse(output)?;
         Ok(result)
     }
 }
@@ -44,7 +40,7 @@ where
 impl<E, P> Runner for LoadBalanceRunner<E, P>
 where
     E: Executor + Send + Sync,
-    P: Parser<Item = LoadBalanceGroupResult> + Send + Sync,
+    P: Parser<Input = String, Item = LoadBalanceGroupResult> + Send + Sync,
 {
     type Item = LoadBalanceGroupResult;
 
@@ -71,9 +67,10 @@ mod tests {
         LoadBalanceParser {}
 
         impl Parser for LoadBalanceParser {
+            type Input = String;
             type Item = LoadBalanceGroupResult;
 
-            fn parse(&self, input: &str) -> anyhow::Result<<Self as Parser>::Item>;
+            fn parse(&self, input: String) -> anyhow::Result<<Self as Parser>::Item>;
         }
     }
 
@@ -114,7 +111,7 @@ mod tests {
         mock_parser
             .expect_parse()
             .times(1)
-            .with(eq(output))
+            .with(eq(output.to_string()))
             .returning(|_| Ok(vec![
                 LoadBalanceGroup {
                     name: "FAILOVER_01".to_string(),

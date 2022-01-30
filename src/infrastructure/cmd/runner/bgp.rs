@@ -10,11 +10,7 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct BGPRunner<E, P>
-where
-    E: Executor + Send + Sync,
-    P: Parser<Item = BGPStatusResult> + Send + Sync,
-{
+pub struct BGPRunner<E, P> {
     command: VtyshCommand,
     executor: E,
     parser: P,
@@ -23,7 +19,7 @@ where
 impl<E, P> BGPRunner<E, P>
 where
     E: Executor + Send + Sync,
-    P: Parser<Item = BGPStatusResult> + Send + Sync,
+    P: Parser<Input = String, Item = BGPStatusResult> + Send + Sync,
 {
     pub fn new(command: &VtyshCommand, executor: E, parser: P) -> Self {
         let command = command.to_owned();
@@ -36,7 +32,7 @@ where
 
     async fn ipv4(&self) -> anyhow::Result<BGPStatusResult> {
         let output = self.executor.output(&self.command, &["-c", "show ip bgp summary"]).await?;
-        let result = self.parser.parse(&output)?.map(|mut status| {
+        let result = self.parser.parse(output)?.map(|mut status| {
             status.neighbors.retain(|n| n.neighbor.is_ipv4());
             status
         });
@@ -45,7 +41,7 @@ where
 
     async fn ipv6(&self) -> anyhow::Result<BGPStatusResult> {
         let output = self.executor.output(&self.command, &["-c", "show bgp ipv6 summary"]).await?;
-        let result = self.parser.parse(&output)?.map(|mut status| {
+        let result = self.parser.parse(output)?.map(|mut status| {
             status.neighbors.retain(|n| n.neighbor.is_ipv6());
             status
         });
@@ -57,7 +53,7 @@ where
 impl<E, P> Runner for BGPRunner<E, P>
 where
     E: Executor + Send + Sync,
-    P: Parser<Item = BGPStatusResult> + Send + Sync,
+    P: Parser<Input = String, Item = BGPStatusResult> + Send + Sync,
 {
     type Item = (BGPStatusResult, BGPStatusResult);
 
@@ -85,9 +81,10 @@ mod tests {
         BGPParser {}
 
         impl Parser for BGPParser {
+            type Input = String;
             type Item = BGPStatusResult;
 
-            fn parse(&self, input: &str) -> anyhow::Result<<Self as Parser>::Item>;
+            fn parse(&self, input: String) -> anyhow::Result<<Self as Parser>::Item>;
         }
     }
 
@@ -111,7 +108,7 @@ mod tests {
         mock_parser
             .expect_parse()
             .times(2)
-            .with(eq(""))
+            .with(eq("".to_string()))
             .returning(|_| Ok(None));
 
         let runner = BGPRunner::new(&command, mock_executor, mock_parser);
@@ -154,7 +151,7 @@ mod tests {
         mock_parser
             .expect_parse()
             .times(1)
-            .with(eq(ipv4_output))
+            .with(eq(ipv4_output.to_string()))
             .returning(|_| Ok(Some(BGPStatus {
                 router_id: "192.0.2.1".to_string(),
                 local_as: 64496,
@@ -209,7 +206,7 @@ mod tests {
         mock_parser
             .expect_parse()
             .times(1)
-            .with(eq(""))
+            .with(eq("".to_string()))
             .returning(|_| Ok(None));
 
         let runner = BGPRunner::new(&command, mock_executor, mock_parser);
@@ -305,12 +302,12 @@ mod tests {
         mock_parser
             .expect_parse()
             .times(1)
-            .with(eq(""))
+            .with(eq("".to_string()))
             .returning(|_| Ok(None));
         mock_parser
             .expect_parse()
             .times(1)
-            .with(eq(ipv6_output))
+            .with(eq(ipv6_output.to_string()))
             .returning(|_| Ok(Some(BGPStatus {
                 router_id: "192.0.2.1".to_string(),
                 local_as: 64496,
@@ -474,7 +471,7 @@ mod tests {
         mock_parser
             .expect_parse()
             .times(1)
-            .with(eq(ipv4_output))
+            .with(eq(ipv4_output.to_string()))
             .returning(|_| Ok(Some(BGPStatus {
                 router_id: "192.0.2.1".to_string(),
                 local_as: 64496,
@@ -568,7 +565,7 @@ mod tests {
         mock_parser
             .expect_parse()
             .times(1)
-            .with(eq(ipv6_output))
+            .with(eq(ipv6_output.to_string()))
             .returning(|_| Ok(Some(BGPStatus {
                 router_id: "192.0.2.1".to_string(),
                 local_as: 64496,

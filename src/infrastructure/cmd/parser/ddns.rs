@@ -21,10 +21,11 @@ use crate::{
 pub struct DdnsParser;
 
 impl Parser for DdnsParser {
+    type Input = String;
     type Item = DdnsStatusResult;
 
-    fn parse(&self, input: &str) -> anyhow::Result<Self::Item> {
-        parse_ddns_status(input)
+    fn parse(&self, input: Self::Input) -> anyhow::Result<Self::Item> {
+        parse_ddns_status(&input)
     }
 }
 
@@ -133,7 +134,7 @@ mod tests {
         let parser = DdnsParser;
         let input = "";
 
-        assert!(parser.parse(input).is_err());
+        assert!(parser.parse(input.to_string()).is_err());
     }
 
     #[test]
@@ -144,7 +145,7 @@ mod tests {
 
         "};
 
-        let actual = parser.parse(input).unwrap();
+        let actual = parser.parse(input.to_string()).unwrap();
         assert_eq!(actual, vec![]);
     }
 
@@ -165,7 +166,7 @@ mod tests {
 
         "};
 
-        let actual = parser.parse(input).unwrap();
+        let actual = parser.parse(input.to_string()).unwrap();
         assert_eq!(actual, vec![
             DdnsStatus {
                 interface: "eth0".to_string(),

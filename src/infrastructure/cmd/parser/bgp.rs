@@ -22,10 +22,11 @@ use crate::{
 pub struct BGPParser;
 
 impl Parser for BGPParser {
+    type Input = String;
     type Item = BGPStatusResult;
 
-    fn parse(&self, input: &str) -> anyhow::Result<Self::Item> {
-        parse_bgp_status(input)
+    fn parse(&self, input: Self::Input) -> anyhow::Result<Self::Item> {
+        parse_bgp_status(&input)
     }
 }
 
@@ -162,7 +163,7 @@ mod tests {
         let parser = BGPParser;
         let input = "command not found";
 
-        let actual = parser.parse(input);
+        let actual = parser.parse(input.to_string());
         assert!(actual.is_err());
     }
 
@@ -171,7 +172,7 @@ mod tests {
         let parser = BGPParser;
         let input = "";
 
-        let actual = parser.parse(input).unwrap();
+        let actual = parser.parse(input.to_string()).unwrap();
         assert_eq!(actual, None);
     }
 
@@ -197,7 +198,7 @@ mod tests {
             Total number of Established sessions 4
         "};
 
-        let actual = parser.parse(input).unwrap();
+        let actual = parser.parse(input.to_string()).unwrap();
         assert_eq!(actual, Some(BGPStatus {
             router_id: "192.0.2.1".to_string(),
             local_as: 64496,
@@ -314,7 +315,7 @@ mod tests {
             Total number of Established sessions 4
         "};
 
-        let actual = parser.parse(input).unwrap();
+        let actual = parser.parse(input.to_string()).unwrap();
         assert_eq!(actual, Some(BGPStatus {
             router_id: "192.0.2.1".to_string(),
             local_as: 64496,

@@ -25,7 +25,7 @@ impl From<PPPoEClientSession> for PPPoEClientSessionLabel {
         let protocol = s.protocol;
         let interface_name = s.interface;
         let ip_address = s.remote_ip.to_string();
-        let local_ip_address = String::new();
+        let local_ip_address = s.local_ip.map(|i| i.to_string()).unwrap_or_default();
         Self {
             user,
             protocol,
@@ -33,13 +33,6 @@ impl From<PPPoEClientSession> for PPPoEClientSessionLabel {
             ip_address,
             local_ip_address,
         }
-    }
-}
-
-impl PPPoEClientSessionLabel {
-    fn with(mut self, addr: &AddrInfo) -> Self {
-        self.local_ip_address = addr.local.to_string();
-        self
     }
 }
 

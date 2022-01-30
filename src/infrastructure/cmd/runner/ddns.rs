@@ -9,11 +9,7 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct DdnsRunner<E, P>
-where
-    E: Executor + Send + Sync,
-    P: Parser<Item = DdnsStatusResult> + Send + Sync,
-{
+pub struct DdnsRunner<E, P> {
     command: OpDdnsCommand,
     executor: E,
     parser: P,
@@ -22,7 +18,7 @@ where
 impl<E, P> DdnsRunner<E, P>
 where
     E: Executor + Send + Sync,
-    P: Parser<Item = DdnsStatusResult> + Send + Sync,
+    P: Parser<Input = String, Item = DdnsStatusResult> + Send + Sync,
 {
     pub fn new(command: &OpDdnsCommand, executor: E, parser: P) -> Self {
         let command = command.to_owned();
@@ -35,7 +31,7 @@ where
 
     async fn statuses(&self) -> anyhow::Result<DdnsStatusResult> {
         let output = self.executor.output(&self.command, &["--show-status"]).await?;
-        let result = self.parser.parse(&output)?;
+        let result = self.parser.parse(output)?;
         Ok(result)
     }
 }
@@ -44,7 +40,7 @@ where
 impl<E, P> Runner for DdnsRunner<E, P>
 where
     E: Executor + Send + Sync,
-    P: Parser<Item = DdnsStatusResult> + Send + Sync,
+    P: Parser<Input = String, Item = DdnsStatusResult> + Send + Sync,
 {
     type Item = DdnsStatusResult;
 
@@ -73,9 +69,10 @@ mod tests {
         DdnsParser {}
 
         impl Parser for DdnsParser {
+            type Input = String;
             type Item = DdnsStatusResult;
 
-            fn parse(&self, input: &str) -> anyhow::Result<<Self as Parser>::Item>;
+            fn parse(&self, input: String) -> anyhow::Result<<Self as Parser>::Item>;
         }
     }
 
@@ -107,7 +104,7 @@ mod tests {
         mock_parser
             .expect_parse()
             .times(1)
-            .with(eq(output))
+            .with(eq(output.to_string()))
             .returning(|_| Ok(vec![
                 DdnsStatus {
                     interface: "eth0".to_string(),

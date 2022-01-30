@@ -17,9 +17,10 @@ pub mod pppoe;
 pub mod version;
 
 pub trait Parser {
+    type Input;
     type Item;
 
-    fn parse(&self, input: &str) -> anyhow::Result<Self::Item>;
+    fn parse(&self, input: Self::Input) -> anyhow::Result<Self::Item>;
 }
 
 pub fn parse_duration(input: &str) -> IResult<&str, Duration> {
