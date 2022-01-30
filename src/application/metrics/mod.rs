@@ -25,8 +25,8 @@ mod load_balance;
 mod pppoe;
 mod version;
 
-pub trait Collector<T = ()> {
-    fn collect(self, registry: &mut Registry, args: T);
+pub trait Collector {
+    fn collect(self, registry: &mut Registry);
 }
 
 #[derive(Clone, Constructor)]
@@ -76,11 +76,11 @@ where
             self.version_runner.run(),
         )?;
 
-        bgp.collect(&mut registry, ());
-        ddns.collect(&mut registry, ());
-        load_balance_groups.collect(&mut registry, ());
-        pppoe_client_sessions.collect(&mut registry, &interfaces);
-        version.collect(&mut registry, ());
+        bgp.collect(&mut registry);
+        ddns.collect(&mut registry);
+        load_balance_groups.collect(&mut registry);
+        pppoe_client_sessions.collect(&mut registry);
+        version.collect(&mut registry);
 
         let mut buf = vec![];
         encode(&mut buf, &registry)?;

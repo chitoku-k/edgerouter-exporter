@@ -6,10 +6,7 @@ use prometheus_client::{
 
 use crate::{
     application::metrics::Collector,
-    domain::{
-        interface::{AddrInfo, Interface},
-        pppoe::PPPoEClientSession,
-    },
+    domain::pppoe::PPPoEClientSession,
     service::pppoe::PPPoEClientSessionResult,
 };
 
@@ -46,8 +43,8 @@ impl PPPoEClientSessionLabel {
     }
 }
 
-impl Collector<&[Interface]> for PPPoEClientSessionResult {
-    fn collect(self, registry: &mut Registry, interfaces: &[Interface]) {
+impl Collector for PPPoEClientSessionResult {
+    fn collect(self, registry: &mut Registry) {
         let pppoe_client_session_seconds_total = Family::<PPPoEClientSessionLabel, Gauge>::default();
         registry.register(
             "edgerouter_pppoe_client_session_seconds_total",
@@ -97,10 +94,7 @@ impl Collector<&[Interface]> for PPPoEClientSessionResult {
                 session.transmit_bytes.clone().into(),
                 session.receive_bytes.clone().into(),
             );
-            let labels = match interfaces.iter().flat_map(|i| &i.addr_info).find(|a| a.address == Some(session.remote_ip)) {
-                Some(addr) => PPPoEClientSessionLabel::from(session).with(addr),
-                None => PPPoEClientSessionLabel::from(session),
-            };
+            let labels = session.into();
 
             pppoe_client_session_seconds_total
                 .get_or_create(&labels)
