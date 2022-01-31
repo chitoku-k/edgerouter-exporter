@@ -1,11 +1,11 @@
 use prometheus_client::{
     encoding::text::Encode,
-    metrics::{family::Family, gauge::Gauge},
+    metrics::family::Family,
     registry::Registry,
 };
 
 use crate::{
-    application::metrics::Collector,
+    application::metrics::{Collector, Gauge},
     domain::bgp::{BGPIterator, BGPNeighbor},
     service::bgp::BGPStatusResult,
 };

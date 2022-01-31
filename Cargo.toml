@@ -21,6 +21,9 @@ version = "1.0.52"
 [dependencies.async-trait]
 version = "0.1.52"
 
+[dependencies.atomic-shim]
+version = "0.2.0"
+
 [dependencies.axum]
 version = "0.4.4"
 features = ["default", "http2"]
@@ -75,7 +78,7 @@ version = "1.0.0"
 
 [patch.crates-io.prometheus-client]
 git = "https://github.com/chitoku-k/client_rust"
-branch = "support-mips-and-powerpc"
+branch = "drop-atomic64-for-unsupported-platforms"
 
 [patch.crates-io.ring]
 git = "https://github.com/chitoku-k/ring"

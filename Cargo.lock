@@ -252,6 +252,7 @@ version = "2.1.2"
 dependencies = [
  "anyhow",
  "async-trait",
+ "atomic-shim",
  "axum",
  "axum-server",
  "chrono",
@@ -798,9 +799,8 @@ dependencies = [
 [[package]]
 name = "prometheus-client"
 version = "0.15.0"
-source = "git+https://github.com/chitoku-k/client_rust?branch=support-mips-and-powerpc#6120834c3598536aff67f307cd6b32c7cba69558"
+source = "git+https://github.com/chitoku-k/client_rust?branch=drop-atomic64-for-unsupported-platforms#5bfff61b3a964e60ca483353a0df3dd699d6b25f"
 dependencies = [
- "atomic-shim",
  "dtoa",
  "itoa 1.0.1",
  "owning_ref",
@@ -810,7 +810,7 @@ dependencies = [
 [[package]]
 name = "prometheus-client-derive-text-encode"
 version = "0.2.0"
-source = "git+https://github.com/chitoku-k/client_rust?branch=support-mips-and-powerpc#6120834c3598536aff67f307cd6b32c7cba69558"
+source = "git+https://github.com/chitoku-k/client_rust?branch=drop-atomic64-for-unsupported-platforms#5bfff61b3a964e60ca483353a0df3dd699d6b25f"
 dependencies = [
  "proc-macro2",
  "quote",
