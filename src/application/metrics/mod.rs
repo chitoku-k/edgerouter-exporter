@@ -3,7 +3,7 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use axum::{extract::Extension, http::StatusCode, response::IntoResponse};
 use derive_more::Constructor;
-use prometheus_client::{encoding::text::encode, registry::Registry};
+use prometheus_client::{encoding::text::encode, metrics::gauge, registry::Registry};
 use tokio::try_join;
 
 use crate::{
@@ -18,11 +18,14 @@ use crate::{
     },
 };
 
+mod atomic;
 mod bgp;
 mod ddns;
 mod load_balance;
 mod pppoe;
 mod version;
+
+pub type Gauge = gauge::Gauge<u64, atomic::AtomicU64>;
 
 pub trait Collector {
     fn collect(self, registry: &mut Registry);
