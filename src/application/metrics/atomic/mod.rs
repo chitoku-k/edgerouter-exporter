@@ -2,6 +2,7 @@ use std::sync::atomic::Ordering;
 
 use prometheus_client::metrics::gauge;
 
+#[derive(Default)]
 pub struct AtomicU64(atomic_shim::AtomicU64);
 
 impl gauge::Atomic<u64> for AtomicU64 {
@@ -27,11 +28,5 @@ impl gauge::Atomic<u64> for AtomicU64 {
 
     fn get(&self) -> u64 {
         self.0.load(Ordering::Relaxed)
-    }
-}
-
-impl Default for AtomicU64 {
-    fn default() -> Self {
-        Self(Default::default())
     }
 }
