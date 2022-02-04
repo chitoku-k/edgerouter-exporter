@@ -798,8 +798,9 @@ dependencies = [
 
 [[package]]
 name = "prometheus-client"
-version = "0.15.0"
-source = "git+https://github.com/chitoku-k/client_rust?branch=drop-atomic64-for-unsupported-platforms#5bfff61b3a964e60ca483353a0df3dd699d6b25f"
+version = "0.15.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c9a896938cc6018c64f279888b8c7559d3725210d5db9a3a1ee6bc7188d51d34"
 dependencies = [
  "dtoa",
  "itoa 1.0.1",
@@ -810,7 +811,8 @@ dependencies = [
 [[package]]
 name = "prometheus-client-derive-text-encode"
 version = "0.2.0"
-source = "git+https://github.com/chitoku-k/client_rust?branch=drop-atomic64-for-unsupported-platforms#5bfff61b3a964e60ca483353a0df3dd699d6b25f"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e8e12d01b9d66ad9eb4529c57666b6263fc1993cb30261d83ead658fdd932652"
 dependencies = [
  "proc-macro2",
  "quote",
