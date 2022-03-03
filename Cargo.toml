@@ -67,14 +67,14 @@ version = "1.0.79"
 version = "1.16.1"
 features = ["macros", "net", "process", "rt-multi-thread"]
 
-[dev_dependencies.indoc]
-version = "1.0.3"
+[dev-dependencies.indoc]
+version = "1.0.4"
 
-[dev_dependencies.mockall]
+[dev-dependencies.mockall]
 version = "0.11.0"
 
-[dev_dependencies.pretty_assertions]
-version = "1.0.0"
+[dev-dependencies.pretty_assertions]
+version = "1.1.0"
 
 [patch.crates-io.ring]
 git = "https://github.com/chitoku-k/ring"
