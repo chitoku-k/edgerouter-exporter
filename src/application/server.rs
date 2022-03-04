@@ -2,8 +2,8 @@ use std::{net::Ipv6Addr, sync::Arc};
 
 use async_trait::async_trait;
 use axum::{
+    extract::Extension,
     routing::get,
-    AddExtensionLayer,
     Router,
 };
 use axum_server::tls_rustls::RustlsConfig;
@@ -46,7 +46,7 @@ where
 
         let metrics = Router::new()
             .route("/", get(metrics::handle::<MetricsController>))
-            .layer(AddExtensionLayer::new(Arc::new(self.metrics_controller)));
+            .layer(Extension(Arc::new(self.metrics_controller)));
 
         let app = Router::new()
             .nest("/healthz", health)
