@@ -48,7 +48,7 @@ version = "0.4.2"
 version = "0.4.14"
 
 [dependencies.nom]
-version = "7.0.0"
+version = "7.1.1"
 
 [dependencies.number_prefix]
 version = "0.4.0"
