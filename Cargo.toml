@@ -19,7 +19,7 @@ tls = ["axum-server/tls-rustls"]
 version = "1.0.56"
 
 [dependencies.async-trait]
-version = "0.1.52"
+version = "0.1.53"
 
 [dependencies.atomic-shim]
 version = "0.2.0"
