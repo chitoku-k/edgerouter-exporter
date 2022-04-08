@@ -74,7 +74,7 @@ version = "1.0.4"
 version = "0.11.0"
 
 [dev-dependencies.pretty_assertions]
-version = "1.2.0"
+version = "1.2.1"
 
 [patch.crates-io.ring]
 git = "https://github.com/chitoku-k/ring"
