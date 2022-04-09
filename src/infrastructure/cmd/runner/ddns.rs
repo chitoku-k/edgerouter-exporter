@@ -109,14 +109,14 @@ mod tests {
                 DdnsStatus {
                     interface: "eth0".to_string(),
                     ip_address: Some(IpAddr::V4(Ipv4Addr::new(192, 0, 2, 1))),
-                    host_name: "1.example.com".to_string(),
+                    host_name: Some("1.example.com".to_string()),
                     last_update: Some(NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 5)),
                     update_status: Some(DdnsUpdateStatus::Good),
                 },
                 DdnsStatus {
                     interface: "eth1".to_string(),
                     ip_address: None,
-                    host_name: "2.example.com".to_string(),
+                    host_name: Some("2.example.com".to_string()),
                     last_update: Some(NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 6)),
                     update_status: None,
                 },
@@ -128,14 +128,14 @@ mod tests {
             DdnsStatus {
                 interface: "eth0".to_string(),
                 ip_address: Some(IpAddr::V4(Ipv4Addr::new(192, 0, 2, 1))),
-                host_name: "1.example.com".to_string(),
+                host_name: Some("1.example.com".to_string()),
                 last_update: Some(NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 5)),
                 update_status: Some(DdnsUpdateStatus::Good),
             },
             DdnsStatus {
                 interface: "eth1".to_string(),
                 ip_address: None,
-                host_name: "2.example.com".to_string(),
+                host_name: Some("2.example.com".to_string()),
                 last_update: Some(NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 6)),
                 update_status: None,
             },
