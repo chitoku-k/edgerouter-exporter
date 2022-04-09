@@ -49,49 +49,60 @@ fn parse_ddns_status(input: &str) -> anyhow::Result<DdnsStatusResult> {
                             map_res(not_line_ending, &str::parse),
                             newline,
                         )),
-                        delimited(
+                        opt(delimited(
                             tuple((tag("host-name"), space0, tag(":"), space1)),
                             map(not_line_ending, &str::to_string),
                             newline,
-                        ),
+                        )),
                         opt(delimited(
                             tuple((tag("last update"), space0, tag(":"), space1)),
                             map_res(not_line_ending, |s| NaiveDateTime::parse_from_str(s, "%a %b %e %H:%M:%S %Y")),
                             newline,
                         )),
-                        delimited(
-                            tuple((tag("update-status"), space0, tag(":"), space1)),
-                            opt(
-                                map(alphanumeric1::<&str, _>, |s| {
-                                    match s.to_ascii_lowercase().as_str() {
-                                        "abuse" => DdnsUpdateStatus::Abuse,
-                                        "badagent" => DdnsUpdateStatus::BadAgent,
-                                        "badauth" => DdnsUpdateStatus::BadAuth,
-                                        "badsys" => DdnsUpdateStatus::BadSystemParameter,
-                                        "blocked" => DdnsUpdateStatus::Blocked,
-                                        "dnserr" => DdnsUpdateStatus::DNSError,
-                                        "failed" => DdnsUpdateStatus::Failed,
-                                        "good" => DdnsUpdateStatus::Good,
-                                        "illegal" => DdnsUpdateStatus::Illegal,
-                                        "noaccess" => DdnsUpdateStatus::NoAccess,
-                                        "nochg" | "nochange" => DdnsUpdateStatus::NoChange,
-                                        "noconnect" => DdnsUpdateStatus::NoConnect,
-                                        "noerror" => DdnsUpdateStatus::NoError,
-                                        "nofqdn" | "notfqdn" => DdnsUpdateStatus::NoFQDN,
-                                        "nohost" => DdnsUpdateStatus::NoHost,
-                                        "noservice" => DdnsUpdateStatus::NoService,
-                                        "!active" => DdnsUpdateStatus::NotActive,
-                                        "!donator" => DdnsUpdateStatus::NotDonator,
-                                        "notdyn" => DdnsUpdateStatus::NotDynamicHost,
-                                        "!yours" => DdnsUpdateStatus::NotYours,
-                                        "numhost" => DdnsUpdateStatus::NumHost,
-                                        "toosoon" => DdnsUpdateStatus::TooSoon,
-                                        "unauth" => DdnsUpdateStatus::Unauthenticated,
-                                        _ => DdnsUpdateStatus::Unknown(s.to_string()),
-                                    }
-                                }),
-                            ),
-                            newline,
+                        map(
+                            opt(delimited(
+                                tuple((tag("update-status"), space0, tag(":"), space1)),
+                                opt(
+                                    map(alphanumeric1::<&str, _>, |s| {
+                                        match s.to_ascii_lowercase().as_str() {
+                                            "abuse" => DdnsUpdateStatus::Abuse,
+                                            "badagent" => DdnsUpdateStatus::BadAgent,
+                                            "badauth" => DdnsUpdateStatus::BadAuth,
+                                            "badsys" => DdnsUpdateStatus::BadSystemParameter,
+                                            "blocked" => DdnsUpdateStatus::Blocked,
+                                            "dnserr" => DdnsUpdateStatus::DNSError,
+                                            "failed" => DdnsUpdateStatus::Failed,
+                                            "good" => DdnsUpdateStatus::Good,
+                                            "illegal" => DdnsUpdateStatus::Illegal,
+                                            "noaccess" => DdnsUpdateStatus::NoAccess,
+                                            "nochg" | "nochange" => DdnsUpdateStatus::NoChange,
+                                            "noconnect" => DdnsUpdateStatus::NoConnect,
+                                            "noerror" => DdnsUpdateStatus::NoError,
+                                            "nofqdn" | "notfqdn" => DdnsUpdateStatus::NoFQDN,
+                                            "nohost" => DdnsUpdateStatus::NoHost,
+                                            "noservice" => DdnsUpdateStatus::NoService,
+                                            "!active" => DdnsUpdateStatus::NotActive,
+                                            "!donator" => DdnsUpdateStatus::NotDonator,
+                                            "notdyn" => DdnsUpdateStatus::NotDynamicHost,
+                                            "!yours" => DdnsUpdateStatus::NotYours,
+                                            "numhost" => DdnsUpdateStatus::NumHost,
+                                            "toosoon" => DdnsUpdateStatus::TooSoon,
+                                            "unauth" => DdnsUpdateStatus::Unauthenticated,
+                                            _ => DdnsUpdateStatus::Unknown(s.to_string()),
+                                        }
+                                    }),
+                                ),
+                                newline,
+                            )),
+                            |o| o.flatten(),
+                        ),
+                        map(
+                            opt(delimited(
+                                tag("["),
+                                not_line_ending,
+                                newline,
+                            )),
+                            |o| o.is_some(),
                         ),
                     )),
                     |(
@@ -100,6 +111,7 @@ fn parse_ddns_status(input: &str) -> anyhow::Result<DdnsStatusResult> {
                         host_name,
                         last_update,
                         update_status,
+                        _,
                     )| {
                         DdnsStatus {
                             interface,
@@ -150,6 +162,37 @@ mod tests {
     }
 
     #[test]
+    fn no_statuses() {
+        let parser = DdnsParser;
+        let input = indoc! {"
+            interface    : eth0 
+            [ Status will be updated within 60 seconds ]
+
+            interface    : eth1 
+            [ Status will be updated within 60 seconds ]
+
+        "};
+
+        let actual = parser.parse(input.to_string()).unwrap();
+        assert_eq!(actual, vec![
+            DdnsStatus {
+                interface: "eth0".to_string(),
+                ip_address: None,
+                host_name: None,
+                last_update: None,
+                update_status: None,
+            },
+            DdnsStatus {
+                interface: "eth1".to_string(),
+                ip_address: None,
+                host_name: None,
+                last_update: None,
+                update_status: None,
+            },
+        ]);
+    }
+
+    #[test]
     fn statuses() {
         let parser = DdnsParser;
         let input = indoc! {"
@@ -171,14 +214,14 @@ mod tests {
             DdnsStatus {
                 interface: "eth0".to_string(),
                 ip_address: Some(IpAddr::V4(Ipv4Addr::new(192, 0, 2, 1))),
-                host_name: "1.example.com".to_string(),
+                host_name: Some("1.example.com".to_string()),
                 last_update: Some(NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 5)),
                 update_status: Some(DdnsUpdateStatus::Good),
             },
             DdnsStatus {
                 interface: "eth1".to_string(),
                 ip_address: None,
-                host_name: "2.example.com".to_string(),
+                host_name: Some("2.example.com".to_string()),
                 last_update: Some(NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 6)),
                 update_status: None,
             },

@@ -21,7 +21,7 @@ impl From<DdnsStatus> for DdnsStatusLabel {
     fn from(s: DdnsStatus) -> Self {
         let interface_name = s.interface;
         let ip_address = s.ip_address.map(|a| a.to_string()).unwrap_or_default();
-        let hostname = s.host_name;
+        let hostname = s.host_name.unwrap_or_default();
         Self {
             interface_name,
             ip_address,
