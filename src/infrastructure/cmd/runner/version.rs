@@ -20,8 +20,7 @@ where
     E: Executor + Send + Sync,
     P: Parser<Input = String, Item = VersionResult> + Send + Sync,
 {
-    pub fn new(command: &OpCommand, executor: E, parser: P) -> Self {
-        let command = command.to_owned();
+    pub fn new(command: OpCommand, executor: E, parser: P) -> Self {
         Self {
             command,
             executor,
@@ -106,7 +105,7 @@ mod tests {
                 uptime: "01:00:00 up  1:00,  1 user,  load average: 1.00, 1.00, 1.00".to_string(),
             }));
 
-        let runner = VersionRunner::new(&command, mock_executor, mock_parser);
+        let runner = VersionRunner::new(command, mock_executor, mock_parser);
         let actual = runner.run().await.unwrap();
         assert_eq!(actual, Version {
             version: "v2.0.6".to_string(),

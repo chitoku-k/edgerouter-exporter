@@ -20,8 +20,7 @@ where
     E: Executor + Send + Sync,
     P: Parser<Input = String, Item = LoadBalanceGroupResult> + Send + Sync,
 {
-    pub fn new(command: &OpCommand, executor: E, parser: P) -> Self {
-        let command = command.to_owned();
+    pub fn new(command: OpCommand, executor: E, parser: P) -> Self {
         Self {
             command,
             executor,
@@ -144,7 +143,7 @@ mod tests {
                 },
             ]));
 
-        let runner = LoadBalanceRunner::new(&command, mock_executor, mock_parser);
+        let runner = LoadBalanceRunner::new(command, mock_executor, mock_parser);
         let actual = runner.run().await.unwrap();
         assert_eq!(actual, vec![
             LoadBalanceGroup {
