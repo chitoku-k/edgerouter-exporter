@@ -11,6 +11,7 @@ use crate::{
     service::{
         bgp::BGPStatusResult,
         ddns::DdnsStatusResult,
+        ipsec::IPsecResult,
         load_balance::LoadBalanceGroupResult,
         pppoe::PPPoEClientSessionResult,
         version::VersionResult,
@@ -21,6 +22,7 @@ use crate::{
 mod atomic;
 mod bgp;
 mod ddns;
+mod ipsec;
 mod load_balance;
 mod pppoe;
 mod version;
@@ -32,20 +34,22 @@ pub trait Collector {
 }
 
 #[derive(Clone, Constructor)]
-pub struct MetricsHandler<BGPRunner, DdnsRunner, LoadBalanceRunner, PPPoERunner, VersionRunner> {
+pub struct MetricsHandler<BGPRunner, DdnsRunner, IPsecRunner, LoadBalanceRunner, PPPoERunner, VersionRunner> {
     bgp_runner: BGPRunner,
     ddns_runner: DdnsRunner,
+    ipsec_runner: IPsecRunner,
     load_balance_runner: LoadBalanceRunner,
     pppoe_runner: PPPoERunner,
     version_runner: VersionRunner,
 }
 
 #[async_trait]
-impl<BGPRunner, DdnsRunner, LoadBalanceRunner, PPPoERunner, VersionRunner> Controller<String>
-    for MetricsHandler<BGPRunner, DdnsRunner, LoadBalanceRunner, PPPoERunner, VersionRunner>
+impl<BGPRunner, DdnsRunner, IPsecRunner, LoadBalanceRunner, PPPoERunner, VersionRunner> Controller<String>
+    for MetricsHandler<BGPRunner, DdnsRunner, IPsecRunner, LoadBalanceRunner, PPPoERunner, VersionRunner>
 where
     BGPRunner: Runner<Item = (BGPStatusResult, BGPStatusResult)> + Send + Sync + Clone + 'static,
     DdnsRunner: Runner<Item = DdnsStatusResult> + Send + Sync + Clone + 'static,
+    IPsecRunner: Runner<Item = IPsecResult> + Send + Sync + Clone + 'static,
     LoadBalanceRunner: Runner<Item = LoadBalanceGroupResult> + Send + Sync + Clone + 'static,
     PPPoERunner: Runner<Item = PPPoEClientSessionResult> + Send + Sync + Clone + 'static,
     VersionRunner: Runner<Item = VersionResult> + Send + Sync + Clone + 'static,
@@ -55,12 +59,14 @@ where
         let (
             bgp,
             ddns,
+            ipsec_sas,
             load_balance_groups,
             pppoe_client_sessions,
             version,
         ) = try_join!(
             self.bgp_runner.run(),
             self.ddns_runner.run(),
+            self.ipsec_runner.run(),
             self.load_balance_runner.run(),
             self.pppoe_runner.run(),
             self.version_runner.run(),
@@ -68,6 +74,7 @@ where
 
         bgp.collect(&mut registry);
         ddns.collect(&mut registry);
+        ipsec_sas.collect(&mut registry);
         load_balance_groups.collect(&mut registry);
         pppoe_client_sessions.collect(&mut registry);
         version.collect(&mut registry);

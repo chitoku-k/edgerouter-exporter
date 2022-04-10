@@ -3,6 +3,9 @@ use envy::Error;
 use serde::Deserialize;
 
 #[derive(Clone, Debug, Deref, Deserialize, From, PartialEq)]
+pub struct ViciPath(String);
+
+#[derive(Clone, Debug, Deref, Deserialize, From, PartialEq)]
 pub struct IpCommand(String);
 
 #[derive(Clone, Debug, Deref, Deserialize, From, PartialEq)]
@@ -20,6 +23,9 @@ pub struct Config {
     pub tls_cert: Option<String>,
     pub tls_key: Option<String>,
 
+    #[serde(default = "default_vici_path")]
+    pub vici_path: ViciPath,
+
     #[serde(default = "default_ip_command")]
     pub ip_command: IpCommand,
 
@@ -35,6 +41,10 @@ pub struct Config {
 
 pub fn get() -> anyhow::Result<Config, Error> {
     envy::from_env()
+}
+
+fn default_vici_path() -> ViciPath {
+    ViciPath("/run/charon.vici".to_string())
 }
 
 fn default_ip_command() -> IpCommand {

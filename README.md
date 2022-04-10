@@ -35,9 +35,15 @@ $ mv edgerouter-exporter /config/scripts
 # Port number (required)
 export PORT=8080
 
+# Log level (optional; one of trace, debug, info, warn, and error)
+export LOG_LEVEL=info
+
 # TLS certificate and private key (optional; if not specified, exporter is served over HTTP)
 export TLS_CERT=/path/to/tls/cert
 export TLS_KEY=/path/to/tls/key
+
+# Path to Unix socket for VICI (optional)
+export VICI_PATH=/run/charon.vici
 
 # Op command (optional)
 export IP_COMMAND=/bin/ip
@@ -135,6 +141,38 @@ edgerouter_dynamic_dns_status{hostname="1.example.com",interface_name="eth0",ip_
 edgerouter_dynamic_dns_status{hostname="2.example.com",interface_name="eth1",ip_address="192.0.2.2"} 0
 ```
 
+### IPsec VPN
+
+Metrics and labels are designed to be compliant with [IPsec Exporter][] but note
+that the results might not fundamentally equal as both implementations vary.
+
+```
+# HELP ipsec_up Result of IPsec metrics scrape.
+# TYPE ipsec_up gauge
+ipsec_up{tunnel="peer-1.example.com-tunnel-1"} 1
+ipsec_up{tunnel="peer-2.example.com-tunnel-1"} 1
+# HELP ipsec_status Status of IPsec tunnel.
+# TYPE ipsec_status gauge
+ipsec_status{tunnel="peer-1.example.com-tunnel-1"} 0
+ipsec_status{tunnel="peer-2.example.com-tunnel-1"} 0
+# HELP ipsec_in_bytes Total receive bytes for IPsec tunnel.
+# TYPE ipsec_in_bytes gauge
+ipsec_in_bytes{tunnel="peer-1.example.com-tunnel-1"} 1000
+ipsec_in_bytes{tunnel="peer-2.example.com-tunnel-1"} 2000
+# HELP ipsec_out_bytes Total transmit bytes for IPsec tunnel.
+# TYPE ipsec_out_bytes gauge
+ipsec_out_bytes{tunnel="peer-1.example.com-tunnel-1"} 3000
+ipsec_out_bytes{tunnel="peer-2.example.com-tunnel-1"} 4000
+# HELP ipsec_in_packets Total receive packets for IPsec tunnel.
+# TYPE ipsec_in_packets gauge
+ipsec_in_packets{tunnel="peer-1.example.com-tunnel-1"} 5000
+ipsec_in_packets{tunnel="peer-2.example.com-tunnel-1"} 6000
+# HELP ipsec_out_packets Total transmit packets for IPsec tunnel.
+# TYPE ipsec_out_packets gauge
+ipsec_out_packets{tunnel="peer-1.example.com-tunnel-1"} 7000
+ipsec_out_packets{tunnel="peer-2.example.com-tunnel-1"} 8000
+```
+
 ### Load Balancers
 
 ```
@@ -193,3 +231,4 @@ edgerouter_pppoe_client_session_transmit_packets_total{interface_name="pppoe0",i
 
 [workflow-link]:    https://github.com/chitoku-k/edgerouter-exporter/actions?query=branch:master
 [workflow-badge]:   https://img.shields.io/github/workflow/status/chitoku-k/edgerouter-exporter/CI%20Workflow/master.svg?style=flat-square
+[IPsec Exporter]:   https://github.com/dennisstritzke/ipsec_exporter
