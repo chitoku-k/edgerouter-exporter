@@ -21,8 +21,7 @@ where
     E: Executor + Send + Sync,
     P: Parser<Input = String, Item = BGPStatusResult> + Send + Sync,
 {
-    pub fn new(command: &VtyshCommand, executor: E, parser: P) -> Self {
-        let command = command.to_owned();
+    pub fn new(command: VtyshCommand, executor: E, parser: P) -> Self {
         Self {
             command,
             executor,
@@ -111,7 +110,7 @@ mod tests {
             .with(eq("".to_string()))
             .returning(|_| Ok(None));
 
-        let runner = BGPRunner::new(&command, mock_executor, mock_parser);
+        let runner = BGPRunner::new(command, mock_executor, mock_parser);
         let actual = runner.run().await.unwrap();
         assert_eq!(actual, (None, None));
     }
@@ -209,7 +208,7 @@ mod tests {
             .with(eq("".to_string()))
             .returning(|_| Ok(None));
 
-        let runner = BGPRunner::new(&command, mock_executor, mock_parser);
+        let runner = BGPRunner::new(command, mock_executor, mock_parser);
         let actual = runner.run().await.unwrap();
         assert_eq!(actual, (
             Some(BGPStatus {
@@ -360,7 +359,7 @@ mod tests {
                 sessions: 2,
             })));
 
-        let runner = BGPRunner::new(&command, mock_executor, mock_parser);
+        let runner = BGPRunner::new(command, mock_executor, mock_parser);
         let actual = runner.run().await.unwrap();
         assert_eq!(actual, (
             None,
@@ -618,7 +617,7 @@ mod tests {
                 sessions: 2,
             })));
 
-        let runner = BGPRunner::new(&command, mock_executor, mock_parser);
+        let runner = BGPRunner::new(command, mock_executor, mock_parser);
         let actual = runner.run().await.unwrap();
         assert_eq!(actual, (
             Some(BGPStatus {

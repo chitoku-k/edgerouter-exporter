@@ -31,20 +31,20 @@ impl Parser for BGPParser {
 }
 
 fn parse_bgp_neighbor(header: &[&str], entry: &[&str]) -> anyhow::Result<BGPNeighbor> {
-    let entry: HashMap<_, _> = header.iter().cloned().zip(entry.iter().cloned()).collect();
+    let entry: HashMap<_, _> = header.iter().zip(entry.iter()).collect();
 
     Ok(BGPNeighbor {
-        neighbor: entry.get("Neighbor").ok_or_else(|| anyhow!("cannot find neighbor"))?.parse()?,
-        version: entry.get("V").ok_or_else(|| anyhow!("cannot find version"))?.parse()?,
-        remote_as: entry.get("AS").ok_or_else(|| anyhow!("cannot find remote_as"))?.parse()?,
-        messages_received: entry.get("MsgRcv").ok_or_else(|| anyhow!("cannot find messages_received"))?.parse()?,
-        messages_sent: entry.get("MsgSen").ok_or_else(|| anyhow!("cannot find messages_sent"))?.parse()?,
-        table_version: entry.get("TblVer").ok_or_else(|| anyhow!("cannot find table_version"))?.parse()?,
-        in_queue: entry.get("InQ").ok_or_else(|| anyhow!("cannot find in_queue"))?.parse()?,
-        out_queue: entry.get("OutQ").ok_or_else(|| anyhow!("cannot find out_queue"))?.parse()?,
-        uptime: entry.get("Up/Down").and_then(|v| parse_duration(v).ok()).map(|(_, u)| u),
-        state: entry.get("State/PfxRcd").filter(|v| v.chars().all(|c| !c.is_ascii_digit())).map(|v| v.to_string()),
-        prefixes_received: entry.get("State/PfxRcd").and_then(|v| v.parse().ok()),
+        neighbor: entry.get(&"Neighbor").ok_or_else(|| anyhow!("cannot find neighbor"))?.parse()?,
+        version: entry.get(&"V").ok_or_else(|| anyhow!("cannot find version"))?.parse()?,
+        remote_as: entry.get(&"AS").ok_or_else(|| anyhow!("cannot find remote_as"))?.parse()?,
+        messages_received: entry.get(&"MsgRcv").ok_or_else(|| anyhow!("cannot find messages_received"))?.parse()?,
+        messages_sent: entry.get(&"MsgSen").ok_or_else(|| anyhow!("cannot find messages_sent"))?.parse()?,
+        table_version: entry.get(&"TblVer").ok_or_else(|| anyhow!("cannot find table_version"))?.parse()?,
+        in_queue: entry.get(&"InQ").ok_or_else(|| anyhow!("cannot find in_queue"))?.parse()?,
+        out_queue: entry.get(&"OutQ").ok_or_else(|| anyhow!("cannot find out_queue"))?.parse()?,
+        uptime: entry.get(&"Up/Down").and_then(|v| parse_duration(v).ok()).map(|(_, u)| u),
+        state: entry.get(&"State/PfxRcd").filter(|v| v.chars().all(|c| !c.is_ascii_digit())).map(|v| v.to_string()),
+        prefixes_received: entry.get(&"State/PfxRcd").and_then(|v| v.parse().ok()),
     })
 }
 

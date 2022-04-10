@@ -18,8 +18,7 @@ pub struct IPsecRunner {
 }
 
 impl IPsecRunner {
-    pub fn new(path: &ViciPath) -> Self {
-        let path = path.to_owned();
+    pub fn new(path: ViciPath) -> Self {
         Self {
             path,
         }

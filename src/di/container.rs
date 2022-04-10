@@ -43,12 +43,12 @@ impl Application {
             config.tls_cert,
             config.tls_key,
             MetricsHandler::new(
-                BGPRunner::new(&config.vtysh_command, CommandExecutor, BGPParser),
-                DdnsRunner::new(&config.op_ddns_command, CommandExecutor, DdnsParser),
-                IPsecRunner::new(&config.vici_path),
-                LoadBalanceRunner::new(&config.op_command, CommandExecutor, LoadBalanceParser),
-                PPPoERunner::new(&config.op_command, &config.ip_command, CommandExecutor, PPPoEParser, InterfaceParser),
-                VersionRunner::new(&config.op_command, CommandExecutor, VersionParser),
+                BGPRunner::new(config.vtysh_command, CommandExecutor, BGPParser),
+                DdnsRunner::new(config.op_ddns_command, CommandExecutor, DdnsParser),
+                IPsecRunner::new(config.vici_path),
+                LoadBalanceRunner::new(config.op_command.clone(), CommandExecutor, LoadBalanceParser),
+                PPPoERunner::new(config.op_command.clone(), config.ip_command, CommandExecutor, PPPoEParser, InterfaceParser),
+                VersionRunner::new(config.op_command, CommandExecutor, VersionParser),
             ),
         );
 

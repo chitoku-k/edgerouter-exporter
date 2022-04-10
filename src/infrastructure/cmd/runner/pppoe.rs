@@ -29,14 +29,12 @@ where
     InterfaceParser: Parser<Input = String, Item = InterfaceResult> + Send + Sync,
 {
     pub fn new(
-        op_command: &OpCommand,
-        ip_command: &IpCommand,
+        op_command: OpCommand,
+        ip_command: IpCommand,
         executor: E,
         pppoe_parser: PPPoEParser,
         interface_parser: InterfaceParser,
     ) -> Self {
-        let op_command = op_command.to_owned();
-        let ip_command = ip_command.to_owned();
         Self {
             op_command,
             ip_command,
@@ -318,7 +316,7 @@ mod tests {
                 },
             ]));
 
-        let runner = PPPoERunner::new(&op_command, &ip_command, mock_executor, mock_pppoe_parser, mock_interface_parser);
+        let runner = PPPoERunner::new(op_command, ip_command, mock_executor, mock_pppoe_parser, mock_interface_parser);
         let actual = runner.run().await.unwrap();
         assert_eq!(actual, vec![
             PPPoEClientSession {
