@@ -44,8 +44,12 @@ version = "0.9.0"
 [dependencies.envy]
 version = "0.4.2"
 
-[dependencies.notify]
-version = "4.0.17"
+[dependencies.futures]
+version = "0.3.21"
+
+[dependencies.indexmap]
+version = "1.8.0"
+features = ["serde"]
 
 [dependencies.log]
 version = "0.4.16"
@@ -53,11 +57,17 @@ version = "0.4.16"
 [dependencies.nom]
 version = "7.1.1"
 
+[dependencies.notify]
+version = "4.0.17"
+
 [dependencies.number_prefix]
 version = "0.4.0"
 
 [dependencies.prometheus-client]
 version = "0.15.1"
+
+[dependencies.rsvici]
+version = "0.1.1"
 
 [dependencies.serde]
 version = "1.0.136"
@@ -67,7 +77,7 @@ features = ["derive"]
 version = "1.0.79"
 
 [dependencies.tokio]
-version = "1.16.1"
+version = "1.17.0"
 features = ["macros", "net", "process", "rt-multi-thread"]
 
 [dev-dependencies.indoc]

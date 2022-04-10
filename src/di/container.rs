@@ -3,6 +3,7 @@ use log::LevelFilter;
 use crate::{
     application::{metrics::MetricsHandler, server::Engine},
     infrastructure::{
+        client::runner::ipsec::IPsecRunner,
         cmd::{
             parser::{
                 bgp::BGPParser,
@@ -44,6 +45,7 @@ impl Application {
             MetricsHandler::new(
                 BGPRunner::new(&config.vtysh_command, CommandExecutor, BGPParser),
                 DdnsRunner::new(&config.op_ddns_command, CommandExecutor, DdnsParser),
+                IPsecRunner::new(&config.vici_path),
                 LoadBalanceRunner::new(&config.op_command, CommandExecutor, LoadBalanceParser),
                 PPPoERunner::new(&config.op_command, &config.ip_command, CommandExecutor, PPPoEParser, InterfaceParser),
                 VersionRunner::new(&config.op_command, CommandExecutor, VersionParser),
