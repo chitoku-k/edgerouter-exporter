@@ -75,31 +75,46 @@ impl Collector for (BGPStatusResult, BGPStatusResult) {
         );
 
         for neighbor in BGPIterator::from(self) {
-            let labels = neighbor.clone().into();
+            let (
+                messages_received,
+                messages_sent,
+                in_queue,
+                out_queue,
+                uptime,
+                prefixes_received,
+            ) = (
+                neighbor.messages_received,
+                neighbor.messages_sent,
+                neighbor.in_queue,
+                neighbor.out_queue,
+                neighbor.uptime.map(|d| d.as_secs()).unwrap_or_default(),
+                neighbor.prefixes_received.unwrap_or_default(),
+            );
+            let labels = neighbor.into();
 
             bgp_msg_rcv
                 .get_or_create(&labels)
-                .set(neighbor.messages_received);
+                .set(messages_received);
 
             bgp_msg_sen
                 .get_or_create(&labels)
-                .set(neighbor.messages_sent);
+                .set(messages_sent);
 
             bgp_in_q
                 .get_or_create(&labels)
-                .set(neighbor.in_queue);
+                .set(in_queue);
 
             bgp_out_q
                 .get_or_create(&labels)
-                .set(neighbor.out_queue);
+                .set(out_queue);
 
             bgp_session_seconds_total
                 .get_or_create(&labels)
-                .set(neighbor.uptime.map(|d| d.as_secs()).unwrap_or_default());
+                .set(uptime);
 
             bgp_pfx_rcd
                 .get_or_create(&labels)
-                .set(neighbor.prefixes_received.unwrap_or_default());
+                .set(prefixes_received);
         }
     }
 }

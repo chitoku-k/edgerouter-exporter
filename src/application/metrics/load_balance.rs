@@ -132,18 +132,18 @@ impl Collector for LoadBalanceGroupResult {
                     ping_total,
                     ping_fail_total,
                     ping_gateway,
-                ) = match interface.ping.clone() {
+                ) = match &interface.ping {
                     LoadBalancePing::Reachable(gateway) => (
                         1,
                         interface.pings,
                         interface.fails,
-                        gateway,
+                        gateway.clone(),
                     ),
                     LoadBalancePing::Down(gateway) | LoadBalancePing::Unknown(_, gateway) => (
                         0,
                         interface.pings,
                         interface.fails,
-                        gateway,
+                        gateway.clone(),
                     ),
                 };
 
