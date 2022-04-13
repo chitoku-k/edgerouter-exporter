@@ -52,7 +52,7 @@ pub struct ChildSA {
     pub state: ChildSAState,
     pub mode: String,
     pub protocol: Option<String>,
-    pub encr_alg: String,
+    pub encr_alg: Option<String>,
     pub encr_keysize: Option<u32>,
     pub integ_alg: String,
     pub integ_keysize: Option<u32>,
