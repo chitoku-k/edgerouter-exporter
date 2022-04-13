@@ -1,10 +1,8 @@
 use std::{net::Ipv6Addr, sync::Arc};
 #[cfg(feature = "tls")]
-use std::{
-    sync::mpsc::channel,
-    time::Duration,
-};
+use std::{sync::mpsc::channel, time::Duration};
 
+use anyhow::Context;
 use async_trait::async_trait;
 use axum::{
     extract::Extension,
@@ -12,11 +10,11 @@ use axum::{
     Router,
 };
 #[cfg(feature = "tls")]
-use axum_server::tls_rustls::RustlsConfig;
-#[cfg(feature = "tls")]
-use notify::{DebouncedEvent, Watcher};
-#[cfg(feature = "tls")]
-use tokio::task::JoinHandle;
+use {
+    axum_server::tls_rustls::RustlsConfig,
+    notify::{DebouncedEvent, Watcher},
+    tokio::task::JoinHandle,
+};
 
 use crate::application::metrics;
 
@@ -70,17 +68,19 @@ where
             },
             #[cfg(feature = "tls")]
             Some((tls_cert, tls_key)) => {
-                let config = RustlsConfig::from_pem_file(&tls_cert, &tls_key).await?;
+                let config = RustlsConfig::from_pem_file(&tls_cert, &tls_key).await.context("error loading TLS certificates")?;
                 enable_auto_reload(config.clone(), tls_cert, tls_key);
 
                 axum_server::bind_rustls(addr, config)
                     .serve(app.into_make_service())
-                    .await?;
+                    .await
+                    .context("error starting server")?;
             },
             None => {
                 axum_server::bind(addr)
                     .serve(app.into_make_service())
-                    .await?;
+                    .await
+                    .context("error starting server")?;
             },
         }
 

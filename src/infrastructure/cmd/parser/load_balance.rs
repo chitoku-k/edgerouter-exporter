@@ -1,13 +1,14 @@
-use anyhow::anyhow;
+use anyhow::Context;
 use chrono::NaiveDateTime;
 use nom::{
     branch::{alt, permutation},
+    error::Error,
     bytes::complete::{tag, take_till},
     character::complete::{alphanumeric1, line_ending, newline, not_line_ending, space0, space1, u64},
     combinator::{map, map_res, opt},
     multi::{many0, many1},
     sequence::{delimited, separated_pair, terminated, tuple},
-    Finish,
+    Finish, IResult,
 };
 
 use crate::{
@@ -30,11 +31,15 @@ impl Parser for LoadBalanceParser {
 
     fn parse(&self, input: Self::Input) -> anyhow::Result<Self::Item> {
         parse_load_balance_groups(&input)
+            .finish()
+            .map(|(_, groups)| groups)
+            .map_err(|e| Error::new(e.input.to_string(), e.code))
+            .context("failed to parse load-balance groups")
     }
 }
 
-fn parse_load_balance_groups(input: &str) -> anyhow::Result<LoadBalanceGroupResult> {
-    match alt((
+fn parse_load_balance_groups(input: &str) -> IResult<&str, LoadBalanceGroupResult> {
+    alt((
         map(tag("load-balance is not configured"), |_| vec![]),
         many1(
             map(
@@ -179,10 +184,7 @@ fn parse_load_balance_groups(input: &str) -> anyhow::Result<LoadBalanceGroupResu
                 },
             ),
         ),
-    ))(input).finish() {
-        Ok((_, groups)) => Ok(groups),
-        Err::<_, nom::error::Error<_>>(e) => Err(anyhow!(e.to_string())),
-    }
+    ))(input)
 }
 
 #[cfg(test)]

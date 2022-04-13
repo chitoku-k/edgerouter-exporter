@@ -1,4 +1,4 @@
-use anyhow::anyhow;
+use anyhow::Context;
 use chrono::NaiveDateTime;
 use nom::{
     branch::permutation,
@@ -7,7 +7,7 @@ use nom::{
     combinator::{map, map_res},
     error::Error,
     sequence::{delimited, tuple},
-    Finish,
+    Finish, IResult,
 };
 
 use crate::{
@@ -25,11 +25,15 @@ impl Parser for VersionParser {
 
     fn parse(&self, input: Self::Input) -> anyhow::Result<Self::Item> {
         parse_version(&input)
+            .finish()
+            .map(|(_, version)| version)
+            .map_err(|e| Error::new(e.input.to_string(), e.code))
+            .context("failed to parse version")
     }
 }
 
-fn parse_version(input: &str) -> anyhow::Result<VersionResult> {
-    match map(
+fn parse_version(input: &str) -> IResult<&str, VersionResult> {
+    map(
         permutation((
             delimited(
                 tuple((tag("Version:"), space1)),
@@ -86,10 +90,7 @@ fn parse_version(input: &str) -> anyhow::Result<VersionResult> {
                 uptime,
             }
         },
-    )(input).finish() {
-        Ok((_, version)) => Ok(version),
-        Err::<_, Error<_>>(e) => Err(anyhow!(e.to_string())),
-    }
+    )(input)
 }
 
 #[cfg(test)]

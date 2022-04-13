@@ -1,3 +1,4 @@
+use anyhow::{anyhow, Context};
 use derive_more::{Deref, From};
 use envy::Error;
 use serde::Deserialize;
@@ -39,8 +40,13 @@ pub struct Config {
     pub vtysh_command: VtyshCommand,
 }
 
-pub fn get() -> anyhow::Result<Config, Error> {
+pub fn get() -> anyhow::Result<Config> {
     envy::from_env()
+        .map_err(|e| match e {
+            Error::MissingValue(field) => anyhow!("missing value for {}", field.to_ascii_uppercase()),
+            Error::Custom(e) => anyhow!(e),
+        })
+        .context("error reading environment variables")
 }
 
 fn default_vici_path() -> ViciPath {
