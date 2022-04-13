@@ -80,10 +80,10 @@ impl Collector for IPsecResult {
                 in_packets,
                 out_packets,
             ) = (
-                child_sa.map(|c| c.bytes_in).unwrap_or_default(),
-                child_sa.map(|c| c.bytes_out).unwrap_or_default(),
-                child_sa.map(|c| c.packets_in).unwrap_or_default(),
-                child_sa.map(|c| c.packets_out).unwrap_or_default(),
+                child_sa.and_then(|c| c.bytes_in).unwrap_or_default(),
+                child_sa.and_then(|c| c.bytes_out).unwrap_or_default(),
+                child_sa.and_then(|c| c.packets_in).unwrap_or_default(),
+                child_sa.and_then(|c| c.packets_out).unwrap_or_default(),
             );
             let status = match (&sa.state, child_sa.map(|c| &c.state)) {
                 (SAState::Unknown, _) | (_, Some(ChildSAState::Unknown) | None) => 3,
