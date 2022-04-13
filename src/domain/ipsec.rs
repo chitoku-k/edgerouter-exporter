@@ -15,7 +15,7 @@ pub struct SA {
     pub remote_id: String,
     pub remote_xauth_id: Option<String>,
     pub remote_eap_id: Option<String>,
-    pub encr_alg: String,
+    pub encr_alg: Option<String>,
     pub encr_keysize: Option<u32>,
     pub integ_alg: String,
     pub integ_keysize: Option<u32>,
