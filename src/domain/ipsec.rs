@@ -66,8 +66,8 @@ pub struct ChildSA {
     pub packets_out: Option<u64>,
     pub use_out: Option<u64>,
     pub rekey_time: Option<u64>,
-    pub life_time: u64,
-    pub install_time: u64,
+    pub life_time: Option<u64>,
+    pub install_time: Option<u64>,
     pub local_ts: Vec<String>,
     pub remote_ts: Vec<String>,
 }
