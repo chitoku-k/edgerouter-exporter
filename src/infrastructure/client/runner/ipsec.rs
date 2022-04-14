@@ -1,6 +1,6 @@
 use std::io::ErrorKind;
 
-use anyhow::{anyhow, Context};
+use anyhow::{Context, Error};
 use async_trait::async_trait;
 use futures::TryStreamExt;
 use indexmap::IndexMap;
@@ -33,7 +33,7 @@ impl IPsecRunner {
                 return Ok(IndexMap::new());
             },
             Err(e) => {
-                return Err(anyhow!(e).context("error connecting to strongSwan"));
+                return Err(Error::from(e).context("error connecting to strongSwan"));
             },
         };
 

@@ -14,7 +14,7 @@ use nom::{
 
 use crate::{
     domain::bgp::{BGPNeighbor, BGPStatus},
-    infrastructure::cmd::parser::{parse_duration, Parser},
+    infrastructure::cmd::parser::{Duration, Parser},
     service::bgp::BGPStatusResult,
 };
 
@@ -37,18 +37,33 @@ impl Parser for BGPParser {
 fn parse_bgp_neighbor(header: &[&str], entry: &[&str]) -> anyhow::Result<BGPNeighbor> {
     let entry: HashMap<_, _> = header.iter().zip(entry.iter()).collect();
 
+    let state_or_pfx_rcd = entry.get(&"State/PfxRcd").context("cannot find State/PfxRcd")?;
+    let (state, prefixes_received) = match state_or_pfx_rcd.parse().ok() {
+        Some(prefixes_received) => (None, Some(prefixes_received)),
+        None => (Some(state_or_pfx_rcd.to_string()), None),
+    };
+
     Ok(BGPNeighbor {
-        neighbor: entry.get(&"Neighbor").context("cannot find neighbor")?.parse()?,
-        version: entry.get(&"V").context("cannot find version")?.parse()?,
-        remote_as: entry.get(&"AS").context("cannot find remote_as")?.parse()?,
-        messages_received: entry.get(&"MsgRcv").context("cannot find messages_received")?.parse()?,
-        messages_sent: entry.get(&"MsgSen").context("cannot find messages_sent")?.parse()?,
-        table_version: entry.get(&"TblVer").context("cannot find table_version")?.parse()?,
-        in_queue: entry.get(&"InQ").context("cannot find in_queue")?.parse()?,
-        out_queue: entry.get(&"OutQ").context("cannot find out_queue")?.parse()?,
-        uptime: entry.get(&"Up/Down").and_then(|v| parse_duration(v).ok()).map(|(_, u)| u),
-        state: entry.get(&"State/PfxRcd").filter(|v| v.chars().all(|c| !c.is_ascii_digit())).map(|v| v.to_string()),
-        prefixes_received: entry.get(&"State/PfxRcd").and_then(|v| v.parse().ok()),
+        neighbor: entry.get(&"Neighbor").context("cannot find Neighbor")?
+            .parse().context("cannot parse Neighbor")?,
+        version: entry.get(&"V").context("cannot find V")?
+            .parse().context("cannot parse V")?,
+        remote_as: entry.get(&"AS").context("cannot find AS")?
+            .parse().context("cannot parse AS")?,
+        messages_received: entry.get(&"MsgRcv").context("cannot find MsgRcv")?
+            .parse().context("cannot parse MsgRcv")?,
+        messages_sent: entry.get(&"MsgSen").context("cannot find MsgSen")?
+            .parse().context("cannot parse MsgSen")?,
+        table_version: entry.get(&"TblVer").context("cannot find TblVer")?
+            .parse().context("cannot parse TblVer")?,
+        in_queue: entry.get(&"InQ").context("cannot find InQ")?
+            .parse().context("cannot parse InQ")?,
+        out_queue: entry.get(&"OutQ").context("cannot find OutQ")?
+            .parse().context("cannot parse OutQ")?,
+        uptime: entry.get(&"Up/Down").context("cannot find Up/Down")?
+            .parse().ok().map(Duration::into),
+        state,
+        prefixes_received,
     })
 }
 
