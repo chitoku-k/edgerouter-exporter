@@ -1,3 +1,5 @@
+use anyhow::Context;
+
 use crate::{
     domain::interface::Interface,
     infrastructure::cmd::parser::Parser,
@@ -17,7 +19,7 @@ impl Parser for InterfaceParser {
 }
 
 fn parse_interface(input: &str) -> anyhow::Result<Vec<Interface>> {
-    let interfaces = serde_json::from_str(input)?;
+    let interfaces = serde_json::from_str(input).context("error parsing interfaces")?;
     Ok(interfaces)
 }
 

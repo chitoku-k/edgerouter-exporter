@@ -33,6 +33,7 @@ impl Application {
         env_logger::builder()
             .format_target(false)
             .format_timestamp_secs()
+            .format_indent(None)
             .filter(None, LevelFilter::Info)
             .parse_env("LOG_LEVEL")
             .init();

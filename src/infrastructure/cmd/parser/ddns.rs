@@ -1,4 +1,4 @@
-use anyhow::anyhow;
+use anyhow::Context;
 use chrono::NaiveDateTime;
 use nom::{
     branch::{alt, permutation},
@@ -8,7 +8,7 @@ use nom::{
     error::Error,
     multi::many1,
     sequence::{delimited, terminated, tuple},
-    Finish,
+    Finish, IResult,
 };
 
 use crate::{
@@ -26,11 +26,15 @@ impl Parser for DdnsParser {
 
     fn parse(&self, input: Self::Input) -> anyhow::Result<Self::Item> {
         parse_ddns_status(&input)
+            .finish()
+            .map(|(_, status)| status)
+            .map_err(|e| Error::new(e.input.to_string(), e.code))
+            .context("failed to parse DDNS status")
     }
 }
 
-fn parse_ddns_status(input: &str) -> anyhow::Result<DdnsStatusResult> {
-    match alt((
+fn parse_ddns_status(input: &str) -> IResult<&str, DdnsStatusResult> {
+    alt((
         terminated(
             map(tag("Dynamic DNS not configured"), |_| vec![]),
             multispace0,
@@ -125,10 +129,7 @@ fn parse_ddns_status(input: &str) -> anyhow::Result<DdnsStatusResult> {
                 many1(line_ending),
             ),
         ),
-    ))(input).finish() {
-        Ok((_, statuses)) => Ok(statuses),
-        Err::<_, Error<_>>(e) => Err(anyhow!(e.to_string())),
-    }
+    ))(input)
 }
 
 #[cfg(test)]

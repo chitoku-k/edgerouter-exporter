@@ -1,5 +1,6 @@
 use std::io::ErrorKind;
 
+use anyhow::{Context, Error};
 use async_trait::async_trait;
 use futures::TryStreamExt;
 use indexmap::IndexMap;
@@ -28,16 +29,16 @@ impl IPsecRunner {
         let mut client = match rsvici::unix::connect(self.path.as_str()).await {
             Ok(client) => client,
             Err(e) if e.kind() == ErrorKind::NotFound => {
-                log::debug!("failed to connect to strongSwan: {e}");
+                log::debug!("failed to connect to strongSwan at {}: {e}", self.path.as_str());
                 return Ok(IndexMap::new());
             },
             Err(e) => {
-                return Err(e.into());
+                return Err(Error::from(e).context("error connecting to strongSwan"));
             },
         };
 
         let stream = client.stream_request("list-sas", "list-sa", ());
-        let items: Vec<SAs> = stream.try_collect().await?;
+        let items: Vec<SAs> = stream.try_collect().await.context("error retrieving IPsec SAs")?;
         let sas = items.into_iter().flatten().collect();
 
         Ok(sas)

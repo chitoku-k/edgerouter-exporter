@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use anyhow::anyhow;
+use anyhow::Context;
 use nom::{
     branch::alt,
     bytes::complete::{tag, take, take_till, take_while},
@@ -9,7 +9,7 @@ use nom::{
     error::Error,
     multi::many0,
     sequence::{delimited, terminated, tuple},
-    Finish,
+    Finish, IResult,
 };
 
 use crate::{
@@ -30,11 +30,15 @@ impl Parser for PPPoEParser {
 
     fn parse(&self, (input, interfaces): Self::Input) -> anyhow::Result<Self::Item> {
         parse_pppoe_client_sessions(&input, &interfaces)
+            .finish()
+            .map(|(_, sessions)| sessions)
+            .map_err(|e| Error::new(e.input.to_string(), e.code))
+            .context("failed to parse PPPoE client sessions")
     }
 }
 
-fn parse_pppoe_client_sessions(input: &str, interfaces: &[Interface]) -> anyhow::Result<PPPoEClientSessionResult> {
-    match alt((
+fn parse_pppoe_client_sessions<'a>(input: &'a str, interfaces: &'a [Interface]) -> IResult<&'a str, PPPoEClientSessionResult> {
+    alt((
         map(tag("No active PPPoE client sessions"), |_| vec![]),
         delimited(
             tuple((
@@ -164,10 +168,7 @@ fn parse_pppoe_client_sessions(input: &str, interfaces: &[Interface]) -> anyhow:
                 multispace1,
             )),
         ),
-    ))(input).finish() {
-        Ok((_, sessions)) => Ok(sessions),
-        Err::<_, Error<_>>(e) => Err(anyhow!(e.to_string())),
-    }
+    ))(input)
 }
 
 #[cfg(test)]

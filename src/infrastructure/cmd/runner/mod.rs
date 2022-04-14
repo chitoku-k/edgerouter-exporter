@@ -1,3 +1,4 @@
+use anyhow::Context;
 use async_trait::async_trait;
 use tokio::process::Command;
 
@@ -13,7 +14,7 @@ pub trait Executor {
     async fn output<'a>(&self, command: &str, args: &[&'a str]) -> anyhow::Result<String> {
         log::debug!("executing {command} with {args:?}");
 
-        let output = Command::new(command).args(args).output().await?;
+        let output = Command::new(command).args(args).output().await.context(format!("error executing {command} with {args:?}"))?;
         let result = String::from_utf8(output.stdout)?;
         Ok(result)
     }
