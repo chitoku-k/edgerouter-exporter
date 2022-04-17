@@ -19,7 +19,7 @@ pub struct SA {
     pub encr_keysize: Option<u32>,
     pub integ_alg: Option<String>,
     pub integ_keysize: Option<u32>,
-    pub prf_alg: String,
+    pub prf_alg: Option<String>,
     pub dh_group: Option<String>,
     pub established: u64,
     pub rekey_time: Option<u64>,
