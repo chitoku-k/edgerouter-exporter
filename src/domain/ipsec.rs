@@ -1,29 +1,31 @@
 use indexmap::IndexMap;
 use serde::Deserialize;
 
+// See https://github.com/strongswan/strongswan/blob/5.9.5/src/libcharon/plugins/vici/vici_query.c#L378-L498
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub struct SA {
     pub uniqueid: u32,
     pub version: String,
     pub state: SAState,
-    pub local_host: Option<String>,
-    pub local_port: Option<u32>,
+    pub local_host: String,
+    pub local_port: u32,
     pub local_id: String,
-    pub remote_host: Option<String>,
+    pub remote_host: String,
     pub remote_port: u32,
     pub remote_id: String,
     pub remote_xauth_id: Option<String>,
     pub remote_eap_id: Option<String>,
+    pub initiator: Option<bool>,
     pub encr_alg: Option<String>,
     pub encr_keysize: Option<u32>,
     pub integ_alg: Option<String>,
     pub integ_keysize: Option<u32>,
     pub prf_alg: Option<String>,
     pub dh_group: Option<String>,
-    pub established: u64,
+    pub established: Option<u64>,
     pub rekey_time: Option<u64>,
-    pub reauth_time: u64,
+    pub reauth_time: Option<u64>,
     pub child_sas: IndexMap<String, ChildSA>,
 }
 
@@ -43,6 +45,7 @@ pub enum SAState {
     Unknown,
 }
 
+// See https://github.com/strongswan/strongswan/blob/5.9.5/src/libcharon/plugins/vici/vici_query.c#L262-L310
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub struct ChildSA {
