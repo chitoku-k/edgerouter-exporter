@@ -37,7 +37,7 @@ impl Parser for PPPoEParser {
     }
 }
 
-fn parse_pppoe_client_sessions<'a>(input: &'a str, interfaces: &'a [Interface]) -> IResult<&'a str, PPPoEClientSessionResult> {
+fn parse_pppoe_client_sessions<'a>(input: &'a str, interfaces: &[Interface]) -> IResult<&'a str, PPPoEClientSessionResult> {
     alt((
         map(tag("No active PPPoE client sessions"), |_| vec![]),
         delimited(
