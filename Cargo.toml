@@ -48,7 +48,7 @@ version = "0.4.2"
 version = "0.3.21"
 
 [dependencies.indexmap]
-version = "1.9.0"
+version = "1.9.1"
 features = ["serde"]
 
 [dependencies.log]
