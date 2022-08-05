@@ -14,8 +14,8 @@ jobs:
           - id: mipsel
             name: mipsel-unknown-linux-gnu
             args: []
-          - id: mips64
-            name: mips64-unknown-linux-gnuabi64
+          - id: mips
+            name: mips-unknown-linux-gnu
             args: [--no-default-features]
     steps:
       - name: Checkout repository
