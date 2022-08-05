@@ -8,6 +8,15 @@ jobs:
   release:
     name: Release
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - id: mipsel
+            name: mipsel-unknown-linux-gnu
+            args: []
+          - id: mips64
+            name: mips64-unknown-linux-gnuabi64
+            args: [--no-default-features]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -21,9 +30,12 @@ jobs:
           RUSTFLAGS: -C strip=symbols
         with:
           command: build
-          args: --release --target=mipsel-unknown-linux-gnu
+          args: --release --target=${{ matrix.target.name }} ${{ join(matrix.target.args, ' ') }}
           use-cross: true
+      - name: Rename
+        run: |
+          mv target/${{ matrix.target.name }}/release/edgerouter-exporter{,-${{ matrix.target.id }}}
       - name: Upload
         uses: softprops/action-gh-release@v1
         with:
-          files: target/mipsel-unknown-linux-gnu/release/edgerouter-exporter
+          files: target/${{ matrix.target.name }}/release/edgerouter-exporter-${{ matrix.target.id }}

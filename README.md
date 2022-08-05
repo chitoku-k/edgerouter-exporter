@@ -12,11 +12,23 @@ For development, the following dependencies are required:
 - [rustup](https://rustup.rs/)
 - [cross](https://github.com/cross-rs/cross)
 
-In order to build the artifact, use `cross build`:
+In order to build the artifact, use `cross build`. To find which arcitecture
+your model is running, refer to [EdgeRouter - Hardware Offloading].
+
+### MediaTek-based devices
 
 ```sh
 $ export RUSTFLAGS='-C strip=symbols'
 $ cross build --release --target=mipsel-unknown-linux-gnu
+```
+
+### Cavium-based devices
+
+:warning: Due to lack of MIPS support by [ring], TLS is not supported.
+
+```sh
+$ export RUSTFLAGS='-C strip=symbols'
+$ cross build --release --target=mips64-unknown-linux-gnuabi64 --no-default-features
 ```
 
 ## Installation
@@ -25,11 +37,25 @@ Download the latest version of edgerouter-exporter and move it to the directory
 where it persists after the EdgeOS upgrades. Note that the root permission is
 required because it internally calls `ubnt_vtysh`.
 
+### MediaTek-based devices
+
 ```console
-$ curl -fLO https://github.com/chitoku-k/edgerouter-exporter/releases/latest/download/edgerouter-exporter
+$ curl -fL -o edgerouter-exporter https://github.com/chitoku-k/edgerouter-exporter/releases/latest/download/edgerouter-exporter-mipsel
 $ chmod +x edgerouter-exporter
 $ mv edgerouter-exporter /config/scripts
 ```
+
+### Cavium-based devices
+
+:warning: Due to lack of MIPS support by [ring], TLS is not supported.
+
+```console
+$ curl -fL -o edgerouter-exporter https://github.com/chitoku-k/edgerouter-exporter/releases/latest/download/edgerouter-exporter-mips64
+$ chmod +x edgerouter-exporter
+$ mv edgerouter-exporter /config/scripts
+```
+
+### Configuration
 
 ```sh
 # Port number (required)
@@ -229,6 +255,8 @@ edgerouter_pppoe_client_session_transmit_packets_total{interface_name="pppoe0",i
 | 200    | Success.                            |
 | 500    | Unexpected error calling a command. |
 
-[workflow-link]:    https://github.com/chitoku-k/edgerouter-exporter/actions?query=branch:master
-[workflow-badge]:   https://img.shields.io/github/workflow/status/chitoku-k/edgerouter-exporter/CI%20Workflow/master.svg?style=flat-square
-[IPsec Exporter]:   https://github.com/dennisstritzke/ipsec_exporter
+[workflow-link]:                    https://github.com/chitoku-k/edgerouter-exporter/actions?query=branch:master
+[workflow-badge]:                   https://img.shields.io/github/workflow/status/chitoku-k/edgerouter-exporter/CI%20Workflow/master.svg?style=flat-square
+[IPsec Exporter]:                   https://github.com/dennisstritzke/ipsec_exporter
+[EdgeRouter - Hardware Offloading]: https://help.ui.com/hc/en-us/articles/115006567467-EdgeRouter-Hardware-Offloading
+[ring]:                             https://github.com/briansmith/ring

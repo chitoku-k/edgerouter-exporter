@@ -13,7 +13,7 @@ opt-level = 3
 
 [features]
 default = ["tls"]
-tls = ["axum-server/tls-rustls"]
+tls = ["axum-server/tls-rustls", "axum-server/tokio-rustls"]
 
 [dependencies.anyhow]
 version = "1.0.59"
@@ -30,7 +30,6 @@ features = ["default", "http2"]
 
 [dependencies.axum-server]
 version = "0.4.1"
-features = ["tokio-rustls"]
 
 [dependencies.chrono]
 version = "0.4.20"
