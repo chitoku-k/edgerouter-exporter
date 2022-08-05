@@ -21,6 +21,15 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target:
+          - id: mipsel
+            name: mipsel-unknown-linux-gnu
+            args: []
+          - id: mips64
+            name: mips64-unknown-linux-gnuabi64
+            args: [--no-default-features]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -28,11 +37,9 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          target: mipsel-unknown-linux-gnu
-          override: true
       - name: Build
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --target=mipsel-unknown-linux-gnu
+          args: --release --target=${{ matrix.target.name }} ${{ join(matrix.target.args, ' ') }}
           use-cross: true
