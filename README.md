@@ -12,7 +12,7 @@ For development, the following dependencies are required:
 - [rustup](https://rustup.rs/)
 - [cross](https://github.com/cross-rs/cross)
 
-In order to build the artifact, use `cross build`. To find which arcitecture
+In order to build the artifact, use `cross build`. To find on which architecture
 your model is running, refer to [EdgeRouter - Hardware Offloading].
 
 ### MediaTek-based devices
@@ -28,7 +28,7 @@ $ cross build --release --target=mipsel-unknown-linux-gnu
 
 ```sh
 $ export RUSTFLAGS='-C strip=symbols'
-$ cross build --release --target=mips64-unknown-linux-gnuabi64 --no-default-features
+$ cross build --release --target=mips-unknown-linux-gnu --no-default-features
 ```
 
 ## Installation
@@ -36,6 +36,8 @@ $ cross build --release --target=mips64-unknown-linux-gnuabi64 --no-default-feat
 Download the latest version of edgerouter-exporter and move it to the directory
 where it persists after the EdgeOS upgrades. Note that the root permission is
 required because it internally calls `ubnt_vtysh`.
+
+To find on which architecture your model is running, refer to [EdgeRouter - Hardware Offloading].
 
 ### MediaTek-based devices
 
@@ -50,7 +52,7 @@ $ mv edgerouter-exporter /config/scripts
 :warning: Due to lack of MIPS support by [ring], TLS is not supported.
 
 ```console
-$ curl -fL -o edgerouter-exporter https://github.com/chitoku-k/edgerouter-exporter/releases/latest/download/edgerouter-exporter-mips64
+$ curl -fL -o edgerouter-exporter https://github.com/chitoku-k/edgerouter-exporter/releases/latest/download/edgerouter-exporter-mips
 $ chmod +x edgerouter-exporter
 $ mv edgerouter-exporter /config/scripts
 ```
