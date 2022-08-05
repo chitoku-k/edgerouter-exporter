@@ -33,7 +33,7 @@ version = "0.4.1"
 features = ["tokio-rustls"]
 
 [dependencies.chrono]
-version = "0.4.19"
+version = "0.4.20"
 
 [dependencies.derive_more]
 version = "0.99.0"
