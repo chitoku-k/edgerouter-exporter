@@ -16,7 +16,7 @@ default = ["tls"]
 tls = ["axum-server/tls-rustls", "axum-server/tokio-rustls"]
 
 [dependencies.anyhow]
-version = "1.0.61"
+version = "1.0.62"
 
 [dependencies.async-trait]
 version = "0.1.57"
