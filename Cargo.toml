@@ -26,7 +26,8 @@ version = "0.2.0"
 
 [dependencies.axum]
 version = "0.5.15"
-features = ["default", "http2"]
+features = ["http1", "http2"]
+default-features = false
 
 [dependencies.axum-server]
 version = "0.4.2"
@@ -71,9 +72,6 @@ version = "0.1.1"
 [dependencies.serde]
 version = "1.0.143"
 features = ["derive"]
-
-[dependencies.serde_json]
-version = "1.0.83"
 
 [dependencies.tokio]
 version = "1.19.2"

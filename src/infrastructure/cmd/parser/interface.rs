@@ -1,7 +1,19 @@
+use std::net::IpAddr;
+
 use anyhow::Context;
+use nom::{
+    branch::alt,
+    bytes::complete::{tag, take_till, take_while},
+    character::complete::{multispace1, space0, space1, u32},
+    combinator::{map, map_res},
+    error::Error,
+    multi::many0,
+    sequence::{separated_pair, terminated, tuple},
+    Finish, IResult,
+};
 
 use crate::{
-    domain::interface::Interface,
+    domain::interface::{AddrInfo, Interface},
     infrastructure::cmd::parser::Parser,
     service::interface::InterfaceResult,
 };
@@ -14,13 +26,99 @@ impl Parser for InterfaceParser {
     type Item = InterfaceResult;
 
     fn parse(&self, input: Self::Input) -> anyhow::Result<Self::Item> {
-        parse_interface(&input)
+        parse_interfaces(&input)
+            .finish()
+            .map(|(_, interfaces)| interfaces)
+            .map_err(|e| Error::new(e.input.to_string(), e.code))
+            .context("failed to parse interfaces")
     }
 }
 
-fn parse_interface(input: &str) -> anyhow::Result<Vec<Interface>> {
-    let interfaces = serde_json::from_str(input).context("error parsing interfaces")?;
-    Ok(interfaces)
+fn parse_cidr(input: &str) -> IResult<&str, (IpAddr, u32)> {
+    separated_pair(
+        parse_ip_address,
+        tag("/"),
+        u32,
+    )(input)
+}
+
+fn parse_ip_address(input: &str) -> IResult<&str, IpAddr> {
+    alt((
+        map_res(take_while(|c| c == '.' || char::is_digit(c, 10)), &str::parse),
+        map_res(take_while(|c| c == ':' || char::is_digit(c, 16)), &str::parse),
+    ))(input)
+}
+
+fn parse_interfaces(input: &str) -> IResult<&str, InterfaceResult> {
+    many0(
+        terminated(
+            map(
+                tuple((
+                    terminated(
+                        map(take_till(|c| c == ' '), &str::to_string),
+                        space1,
+                    ),
+                    terminated(
+                        map(take_till(|c| c == ' '), &str::to_string),
+                        space1,
+                    ),
+                    many0(
+                        terminated(
+                            alt((
+                                map(
+                                    separated_pair(
+                                        parse_ip_address,
+                                        tuple((space1, tag("peer"), space1)),
+                                        parse_cidr,
+                                    ),
+                                    |(local, (address, prefixlen))| {
+                                        AddrInfo {
+                                            local,
+                                            address: Some(address),
+                                            prefixlen,
+                                        }
+                                    },
+                                ),
+                                map(
+                                    parse_cidr,
+                                    |(local, prefixlen)| {
+                                        AddrInfo {
+                                            local,
+                                            address: None,
+                                            prefixlen,
+                                        }
+                                    },
+                                ),
+                                map(
+                                    parse_ip_address,
+                                    |local| {
+                                        let prefixlen = match local {
+                                            IpAddr::V4(_) => 32,
+                                            IpAddr::V6(_) => 128,
+                                        };
+                                        AddrInfo {
+                                            local,
+                                            address: None,
+                                            prefixlen,
+                                        }
+                                    },
+                                ),
+                            )),
+                            space0,
+                        ),
+                    ),
+                )),
+                |(ifname, operstate, addr_info)| {
+                    Interface {
+                        ifname,
+                        operstate,
+                        addr_info,
+                    }
+                },
+            ),
+            multispace1,
+        ),
+    )(input)
 }
 
 #[cfg(test)]
@@ -38,86 +136,42 @@ mod tests {
     fn interfaces() {
         let parser = InterfaceParser;
         let input = indoc! {r#"
-            [{
-                    "ifindex": 1,
-                    "ifname": "lo",
-                    "flags": ["LOOPBACK","UP","LOWER_UP"],
-                    "mtu": 65536,
-                    "qdisc": "noqueue",
-                    "operstate": "UNKNOWN",
-                    "group": "default",
-                    "txqlen": 1000,
-                    "link_type": "loopback",
-                    "address": "00:00:00:00:00:00",
-                    "broadcast": "00:00:00:00:00:00",
-                    "addr_info": [{
-                            "family": "inet",
-                            "local": "127.0.0.1",
-                            "prefixlen": 8,
-                            "scope": "host",
-                            "label": "lo",
-                            "valid_life_time": 4294967295,
-                            "preferred_life_time": 4294967295
-                        },{
-                            "family": "inet6",
-                            "local": "::1",
-                            "prefixlen": 128,
-                            "scope": "host",
-                            "valid_life_time": 4294967295,
-                            "preferred_life_time": 4294967295
-                        }]
-                }
-            ]
+            lo               UNKNOWN        127.0.0.1/8 ::1/128 
+            imq0             DOWN           
+            pppoe0           UP             203.0.113.1 peer 192.0.2.255/32 
         "#};
 
         let actual = parser.parse(input.to_string()).unwrap();
         assert_eq!(actual, vec![
             Interface {
-                ifindex: 1,
                 ifname: "lo".to_string(),
-                link: None,
-                flags: vec![
-                    "LOOPBACK".to_string(),
-                    "UP".to_string(),
-                    "LOWER_UP".to_string(),
-                ],
-                mtu: 65536,
-                qdisc: "noqueue".to_string(),
                 operstate: "UNKNOWN".to_string(),
-                group: "default".to_string(),
-                txqlen: 1000,
-                link_type: "loopback".to_string(),
-                address: Some("00:00:00:00:00:00".to_string()),
-                link_pointtopoint: None,
-                broadcast: Some("00:00:00:00:00:00".to_string()),
                 addr_info: vec![
                     AddrInfo {
-                        family: "inet".to_string(),
                         local: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
                         address: None,
                         prefixlen: 8,
-                        broadcast: None,
-                        scope: "host".to_string(),
-                        dynamic: None,
-                        mngtmpaddr: None,
-                        noprefixroute: None,
-                        label: Some("lo".to_string()),
-                        valid_life_time: 4294967295,
-                        preferred_life_time: 4294967295,
                     },
                     AddrInfo {
-                        family: "inet6".to_string(),
                         local: IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1)),
                         address: None,
                         prefixlen: 128,
-                        broadcast: None,
-                        scope: "host".to_string(),
-                        dynamic: None,
-                        mngtmpaddr: None,
-                        noprefixroute: None,
-                        label: None,
-                        valid_life_time: 4294967295,
-                        preferred_life_time: 4294967295,
+                    },
+                ],
+            },
+            Interface {
+                ifname: "imq0".to_string(),
+                operstate: "DOWN".to_string(),
+                addr_info: vec![],
+            },
+            Interface {
+                ifname: "pppoe0".to_string(),
+                operstate: "UP".to_string(),
+                addr_info: vec![
+                    AddrInfo {
+                        local: IpAddr::V4(Ipv4Addr::new(203, 0, 113, 1)),
+                        address: Some(IpAddr::V4(Ipv4Addr::new(192, 0, 2, 255))),
+                        prefixlen: 32,
                     },
                 ],
             },
