@@ -1,12 +1,12 @@
 use chrono::NaiveDateTime;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct LoadBalanceGroup {
     pub name: String,
     pub interfaces: Vec<LoadBalanceInterface>,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct LoadBalanceInterface {
     pub interface: String,
     pub status: LoadBalanceStatus,
@@ -20,7 +20,7 @@ pub struct LoadBalanceInterface {
     pub last_route_recover: Option<NaiveDateTime>,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum LoadBalanceStatus {
     Ok,
     Running,
@@ -28,7 +28,7 @@ pub enum LoadBalanceStatus {
     Unknown(String),
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum LoadBalancePing {
     Reachable(String),
     Down(String),

@@ -2,7 +2,7 @@ use std::net::IpAddr;
 
 use chrono::NaiveDateTime;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DdnsStatus {
     pub interface: String,
     pub ip_address: Option<IpAddr>,
@@ -11,7 +11,7 @@ pub struct DdnsStatus {
     pub update_status: Option<DdnsUpdateStatus>,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum DdnsUpdateStatus {
     Abuse,
     BadAgent,

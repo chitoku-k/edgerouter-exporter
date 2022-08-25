@@ -10,7 +10,7 @@ use crate::{
     service::pppoe::PPPoEClientSessionResult,
 };
 
-#[derive(Clone, Hash, PartialEq, Eq, Encode)]
+#[derive(Clone, Encode, Eq, Hash, PartialEq)]
 pub struct PPPoEClientSessionLabel {
     user: String,
     protocol: String,

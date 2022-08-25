@@ -10,7 +10,7 @@ use crate::{
     service::bgp::BGPStatusResult,
 };
 
-#[derive(Clone, Hash, PartialEq, Eq, Encode)]
+#[derive(Clone, Encode, Eq, Hash, PartialEq)]
 pub struct BGPNeighborLabel {
     neighbor: String,
     r#as: String,
