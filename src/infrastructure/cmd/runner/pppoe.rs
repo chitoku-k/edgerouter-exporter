@@ -51,7 +51,7 @@ where
     }
 
     async fn interfaces(&self) -> anyhow::Result<InterfaceResult> {
-        let output = self.executor.output(&self.ip_command, &["--json", "addr", "show"]).await?;
+        let output = self.executor.output(&self.ip_command, &["--brief", "addr", "show"]).await?;
         let result = self.interface_parser.parse(output)?;
         Ok(result)
     }
@@ -131,85 +131,41 @@ mod tests {
             Total sessions: 2
         "};
         let interface_output = indoc! {r#"
-            [{
-                    "ifindex": 1,
-                    "ifname": "lo",
-                    "flags": ["LOOPBACK","UP","LOWER_UP"],
-                    "mtu": 65536,
-                    "qdisc": "noqueue",
-                    "operstate": "UNKNOWN",
-                    "group": "default",
-                    "txqlen": 1000,
-                    "link_type": "loopback",
-                    "address": "00:00:00:00:00:00",
-                    "broadcast": "00:00:00:00:00:00",
-                    "addr_info": [{
-                            "family": "inet",
-                            "local": "127.0.0.1",
-                            "prefixlen": 8,
-                            "scope": "host",
-                            "label": "lo",
-                            "valid_life_time": 4294967295,
-                            "preferred_life_time": 4294967295
-                        },{
-                            "family": "inet6",
-                            "local": "::1",
-                            "prefixlen": 128,
-                            "scope": "host",
-                            "valid_life_time": 4294967295,
-                            "preferred_life_time": 4294967295
-                        }]
-                }
-            ]
+            lo               UNKNOWN        127.0.0.1/8 ::1/128 
+            imq0             DOWN           
+            pppoe0           UP             203.0.113.1 peer 192.0.2.255/32 
         "#};
 
         let interfaces = vec![
             Interface {
-                ifindex: 1,
                 ifname: "lo".to_string(),
-                link: None,
-                flags: vec![
-                    "LOOPBACK".to_string(),
-                    "UP".to_string(),
-                    "LOWER_UP".to_string(),
-                ],
-                mtu: 65536,
-                qdisc: "noqueue".to_string(),
                 operstate: "UNKNOWN".to_string(),
-                group: "default".to_string(),
-                txqlen: 1000,
-                link_type: "loopback".to_string(),
-                address: Some("00:00:00:00:00:00".to_string()),
-                link_pointtopoint: None,
-                broadcast: Some("00:00:00:00:00:00".to_string()),
                 addr_info: vec![
                     AddrInfo {
-                        family: "inet".to_string(),
                         local: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
                         address: None,
                         prefixlen: 8,
-                        broadcast: None,
-                        scope: "host".to_string(),
-                        dynamic: None,
-                        mngtmpaddr: None,
-                        noprefixroute: None,
-                        label: Some("lo".to_string()),
-                        valid_life_time: 4294967295,
-                        preferred_life_time: 4294967295,
                     },
                     AddrInfo {
-                        family: "inet6".to_string(),
                         local: IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1)),
                         address: None,
                         prefixlen: 128,
-                        broadcast: None,
-                        scope: "host".to_string(),
-                        dynamic: None,
-                        mngtmpaddr: None,
-                        noprefixroute: None,
-                        label: None,
-                        valid_life_time: 4294967295,
-                        preferred_life_time: 4294967295,
+                    },
+                ],
+            },
+            Interface {
+                ifname: "imq0".to_string(),
+                operstate: "DOWN".to_string(),
+                addr_info: vec![],
+            },
+            Interface {
+                ifname: "pppoe0".to_string(),
+                operstate: "UP".to_string(),
+                addr_info: vec![
+                    AddrInfo {
+                        local: IpAddr::V4(Ipv4Addr::new(203, 0, 113, 1)),
+                        address: Some(IpAddr::V4(Ipv4Addr::new(192, 0, 2, 255))),
+                        prefixlen: 32,
                     },
                 ],
             },
@@ -224,7 +180,7 @@ mod tests {
         mock_executor
             .expect_output()
             .times(1)
-            .withf(|command, args| (command, args) == ("/bin/ip", &["--json", "addr", "show"]))
+            .withf(|command, args| (command, args) == ("/bin/ip", &["--brief", "addr", "show"]))
             .returning(|_, _| Ok(interface_output.to_string()));
 
         let mut mock_pppoe_parser = MockPPPoEParser::new();
@@ -266,51 +222,34 @@ mod tests {
             .with(eq(interface_output.to_string()))
             .returning(|_| Ok(vec![
                 Interface {
-                    ifindex: 1,
                     ifname: "lo".to_string(),
-                    link: None,
-                    flags: vec![
-                        "LOOPBACK".to_string(),
-                        "UP".to_string(),
-                        "LOWER_UP".to_string(),
-                    ],
-                    mtu: 65536,
-                    qdisc: "noqueue".to_string(),
                     operstate: "UNKNOWN".to_string(),
-                    group: "default".to_string(),
-                    txqlen: 1000,
-                    link_type: "loopback".to_string(),
-                    address: Some("00:00:00:00:00:00".to_string()),
-                    link_pointtopoint: None,
-                    broadcast: Some("00:00:00:00:00:00".to_string()),
                     addr_info: vec![
                         AddrInfo {
-                            family: "inet".to_string(),
                             local: IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
                             address: None,
                             prefixlen: 8,
-                            broadcast: None,
-                            scope: "host".to_string(),
-                            dynamic: None,
-                            mngtmpaddr: None,
-                            noprefixroute: None,
-                            label: Some("lo".to_string()),
-                            valid_life_time: 4294967295,
-                            preferred_life_time: 4294967295,
                         },
                         AddrInfo {
-                            family: "inet6".to_string(),
                             local: IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1)),
                             address: None,
                             prefixlen: 128,
-                            broadcast: None,
-                            scope: "host".to_string(),
-                            dynamic: None,
-                            mngtmpaddr: None,
-                            noprefixroute: None,
-                            label: None,
-                            valid_life_time: 4294967295,
-                            preferred_life_time: 4294967295,
+                        },
+                    ],
+                },
+                Interface {
+                    ifname: "imq0".to_string(),
+                    operstate: "DOWN".to_string(),
+                    addr_info: vec![],
+                },
+                Interface {
+                    ifname: "pppoe0".to_string(),
+                    operstate: "UP".to_string(),
+                    addr_info: vec![
+                        AddrInfo {
+                            local: IpAddr::V4(Ipv4Addr::new(203, 0, 113, 1)),
+                            address: Some(IpAddr::V4(Ipv4Addr::new(192, 0, 2, 255))),
+                            prefixlen: 32,
                         },
                     ],
                 },
