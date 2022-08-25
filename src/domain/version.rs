@@ -1,6 +1,6 @@
 use chrono::NaiveDateTime;
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Version {
     pub version: String,
     pub build_id: String,

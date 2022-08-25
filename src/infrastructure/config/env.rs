@@ -3,22 +3,22 @@ use derive_more::{Deref, From};
 use envy::Error;
 use serde::Deserialize;
 
-#[derive(Clone, Debug, Deref, Deserialize, From, PartialEq)]
+#[derive(Clone, Debug, Deref, Deserialize, Eq, From, PartialEq)]
 pub struct ViciPath(String);
 
-#[derive(Clone, Debug, Deref, Deserialize, From, PartialEq)]
+#[derive(Clone, Debug, Deref, Deserialize, Eq, From, PartialEq)]
 pub struct IpCommand(String);
 
-#[derive(Clone, Debug, Deref, Deserialize, From, PartialEq)]
+#[derive(Clone, Debug, Deref, Deserialize, Eq, From, PartialEq)]
 pub struct OpCommand(String);
 
-#[derive(Clone, Debug, Deref, Deserialize, From, PartialEq)]
+#[derive(Clone, Debug, Deref, Deserialize, Eq, From, PartialEq)]
 pub struct OpDdnsCommand(String);
 
-#[derive(Clone, Debug, Deref, Deserialize, From, PartialEq)]
+#[derive(Clone, Debug, Deref, Deserialize, Eq, From, PartialEq)]
 pub struct VtyshCommand(String);
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, Eq, PartialEq)]
 pub struct Config {
     pub port: u16,
     pub tls_cert: Option<String>,

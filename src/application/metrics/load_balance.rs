@@ -18,13 +18,13 @@ pub struct LoadBalanceHealthLabelBuilder {
     interface_name: String,
 }
 
-#[derive(Clone, Hash, PartialEq, Eq, Encode)]
+#[derive(Clone, Encode, Eq, Hash, PartialEq)]
 pub struct LoadBalanceHealthLabel {
     group_name: String,
     interface_name: String,
 }
 
-#[derive(Clone, Hash, PartialEq, Eq, Encode)]
+#[derive(Clone, Encode, Eq, Hash, PartialEq)]
 pub struct LoadBalancePingLabel {
     group_name: String,
     interface_name: String,

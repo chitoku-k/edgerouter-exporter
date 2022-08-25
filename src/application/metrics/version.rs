@@ -10,7 +10,7 @@ use crate::{
     service::version::VersionResult,
 };
 
-#[derive(Clone, Hash, PartialEq, Eq, Encode)]
+#[derive(Clone, Encode, Eq, Hash, PartialEq)]
 pub struct VersionLabel {
     version: String,
     build_id: String,

@@ -2,7 +2,7 @@ use indexmap::IndexMap;
 use serde::Deserialize;
 
 // See https://github.com/strongswan/strongswan/blob/5.9.5/src/libcharon/plugins/vici/vici_query.c#L378-L498
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub struct SA {
     pub uniqueid: u32,
@@ -30,7 +30,7 @@ pub struct SA {
 }
 
 // See https://github.com/strongswan/strongswan/blob/5.9.5/src/libcharon/sa/ike_sa.h#L287-L365
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum SAState {
     Created,
@@ -46,7 +46,7 @@ pub enum SAState {
 }
 
 // See https://github.com/strongswan/strongswan/blob/5.9.5/src/libcharon/plugins/vici/vici_query.c#L262-L310
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub struct ChildSA {
     pub name: String,
@@ -76,7 +76,7 @@ pub struct ChildSA {
 }
 
 // See https://github.com/strongswan/strongswan/blob/5.9.5/src/libcharon/sa/child_sa.h#L37-L96
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Debug, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum ChildSAState {
     Created,

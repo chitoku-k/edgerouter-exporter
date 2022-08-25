@@ -12,7 +12,7 @@ type IntoBGPNeighbor = IntoIter<Vec<BGPNeighbor>>;
 #[derive(Deref, DerefMut, IntoIterator)]
 pub struct BGPIterator(Chain<Flatten<IntoBGPNeighbor>, Flatten<IntoBGPNeighbor>>);
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BGPStatus {
     pub router_id: String,
     pub local_as: u32,
@@ -25,7 +25,7 @@ pub struct BGPStatus {
     pub sessions: u64,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BGPNeighbor {
     pub neighbor: IpAddr,
     pub version: u32,

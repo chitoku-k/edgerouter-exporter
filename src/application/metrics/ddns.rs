@@ -10,7 +10,7 @@ use crate::{
     service::ddns::DdnsStatusResult,
 };
 
-#[derive(Clone, Hash, PartialEq, Eq, Encode)]
+#[derive(Clone, Encode, Eq, Hash, PartialEq)]
 pub struct DdnsStatusLabel {
     interface_name: String,
     ip_address: String,

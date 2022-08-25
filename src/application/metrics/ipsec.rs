@@ -10,7 +10,7 @@ use crate::{
     service::ipsec::IPsecResult,
 };
 
-#[derive(Clone, Hash, PartialEq, Eq, Encode)]
+#[derive(Clone, Encode, Eq, Hash, PartialEq)]
 pub struct IPsecTunnelLabel {
     tunnel: String,
 }
