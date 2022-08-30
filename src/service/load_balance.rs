@@ -1,3 +1,4 @@
-use crate::domain::load_balance::LoadBalanceGroup;
+use crate::domain::load_balance::{LoadBalanceStatus, LoadBalanceWatchdog};
 
-pub type LoadBalanceGroupResult = Vec<LoadBalanceGroup>;
+pub type LoadBalanceStatusResult = Vec<LoadBalanceStatus>;
+pub type LoadBalanceWatchdogResult = Vec<LoadBalanceWatchdog>;

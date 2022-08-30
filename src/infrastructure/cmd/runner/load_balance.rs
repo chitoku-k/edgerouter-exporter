@@ -5,69 +5,120 @@ use crate::{
         cmd::{parser::Parser, runner::Executor},
         config::env::OpCommand,
     },
-    service::{load_balance::LoadBalanceGroupResult, Runner},
+    service::{
+        load_balance::{LoadBalanceStatusResult, LoadBalanceWatchdogResult},
+        Runner,
+    },
 };
 
 #[derive(Clone)]
-pub struct LoadBalanceRunner<E, P> {
+pub struct LoadBalanceRunner<E, StatusParser, WatchdogParser> {
     command: OpCommand,
     executor: E,
-    parser: P,
+    status_parser: StatusParser,
+    watchdog_parser: WatchdogParser,
 }
 
-impl<E, P> LoadBalanceRunner<E, P>
+impl<E, StatusParser, WatchdogParser> LoadBalanceRunner<E, StatusParser, WatchdogParser>
 where
     E: Executor + Send + Sync,
-    P: Parser<Input = String, Item = LoadBalanceGroupResult> + Send + Sync,
+    StatusParser: Parser<Input = String, Item = LoadBalanceStatusResult> + Send + Sync,
+    WatchdogParser: Parser<Input = String, Item = LoadBalanceWatchdogResult> + Send + Sync,
 {
-    pub fn new(command: OpCommand, executor: E, parser: P) -> Self {
+    pub fn new(command: OpCommand, executor: E, status_parser: StatusParser, watchdog_parser: WatchdogParser) -> Self {
         Self {
             command,
             executor,
-            parser,
+            status_parser,
+            watchdog_parser,
         }
     }
 
-    async fn groups(&self) -> anyhow::Result<LoadBalanceGroupResult> {
+    async fn status(&self) -> anyhow::Result<LoadBalanceStatusResult> {
+        let output = self.executor.output(&self.command, &["show", "load-balance", "status"]).await?;
+        let result = self.status_parser.parse(output)?;
+        Ok(result)
+    }
+
+    async fn watchdog(&self) -> anyhow::Result<LoadBalanceWatchdogResult> {
         let output = self.executor.output(&self.command, &["show", "load-balance", "watchdog"]).await?;
-        let result = self.parser.parse(output)?;
+        let result = self.watchdog_parser.parse(output)?;
         Ok(result)
     }
 }
 
 #[async_trait]
-impl<E, P> Runner for LoadBalanceRunner<E, P>
+impl<E, StatusParser, WatchdogParser> Runner for LoadBalanceRunner<E, StatusParser, WatchdogParser>
 where
     E: Executor + Send + Sync,
-    P: Parser<Input = String, Item = LoadBalanceGroupResult> + Send + Sync,
+    StatusParser: Parser<Input = String, Item = LoadBalanceStatusResult> + Send + Sync,
+    WatchdogParser: Parser<Input = String, Item = LoadBalanceWatchdogResult> + Send + Sync,
 {
-    type Item = LoadBalanceGroupResult;
+    type Item = LoadBalanceStatusResult;
 
     async fn run(&self) -> anyhow::Result<Self::Item> {
-        self.groups().await
+        let mut statuses = self.status().await?;
+        let watchdogs = self.watchdog().await?;
+
+        for status in &mut statuses {
+            for interface in &mut status.interfaces {
+                interface.watchdog = watchdogs
+                    .iter()
+                    .find(|w| w.name == status.name)
+                    .map(|w| w.interfaces.as_slice())
+                    .unwrap_or_default()
+                    .iter()
+                    .find(|i| i.interface == interface.interface)
+                    .cloned();
+            }
+        }
+
+        Ok(statuses)
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeMap;
+
     use chrono::NaiveDate;
     use indoc::indoc;
     use mockall::{mock, predicate::eq};
+    use number_prefix::NumberPrefix;
     use pretty_assertions::assert_eq;
 
     use crate::{
-        domain::load_balance::{LoadBalanceGroup, LoadBalanceInterface, LoadBalancePing, LoadBalanceStatus},
+        domain::load_balance::{
+            LoadBalancePing,
+            LoadBalanceStatus,
+            LoadBalanceStatusInterface,
+            LoadBalanceStatusStatus,
+            LoadBalanceWatchdog,
+            LoadBalanceWatchdogInterface,
+            LoadBalanceWatchdogStatus,
+        },
         infrastructure::cmd::{parser::Parser, runner::MockExecutor},
     };
 
     use super::*;
 
     mock! {
-        LoadBalanceParser {}
+        LoadBalanceStatusParser {}
 
-        impl Parser for LoadBalanceParser {
+        impl Parser for LoadBalanceStatusParser {
             type Input = String;
-            type Item = LoadBalanceGroupResult;
+            type Item = LoadBalanceStatusResult;
+
+            fn parse(&self, input: String) -> anyhow::Result<<Self as Parser>::Item>;
+        }
+    }
+
+    mock! {
+        LoadBalanceWatchdogParser {}
+
+        impl Parser for LoadBalanceWatchdogParser {
+            type Input = String;
+            type Item = LoadBalanceWatchdogResult;
 
             fn parse(&self, input: String) -> anyhow::Result<<Self as Parser>::Item>;
         }
@@ -76,7 +127,44 @@ mod tests {
     #[tokio::test]
     async fn groups() {
         let command = OpCommand::from("/opt/vyatta/bin/vyatta-op-cmd-wrapper".to_string());
-        let output = indoc! {"
+        let status_output = indoc! {"
+            Group FAILOVER_01
+                Balance Local  : false
+                Lock Local DNS : false
+                Conntrack Flush: false
+                Sticky Bits    : 0x00000000
+
+              interface   : eth0
+              reachable   : true
+              status      : active
+              gateway     : 
+              route table : 1
+              weight      : 100%
+              fo_priority : 60
+              flows
+                  WAN Out   : 2000
+                  WAN In    : 2100
+                  Local ICMP: 1000
+                  Local DNS : 0
+                  Local Data: 0
+
+              interface   : eth1
+              reachable   : false
+              status      : inactive
+              gateway     : 
+              route table : 2
+              weight      : 0%
+              fo_priority : 60
+              flows
+                  WAN Out   : 3000
+                  WAN In    : 3100
+                  Local ICMP: 1000
+                  Local DNS : 0
+                  Local Data: 0
+
+        "};
+
+        let watchdog_output = indoc! {"
             Group FAILOVER_01
               eth0
               status: OK
@@ -103,21 +191,82 @@ mod tests {
         mock_executor
             .expect_output()
             .times(1)
-            .withf(|command, args| (command, args) == ("/opt/vyatta/bin/vyatta-op-cmd-wrapper", &["show", "load-balance", "watchdog"]))
-            .returning(|_, _| Ok(output.to_string()));
+            .withf(|command, args| (command, args) == ("/opt/vyatta/bin/vyatta-op-cmd-wrapper", &["show", "load-balance", "status"]))
+            .returning(|_, _| Ok(status_output.to_string()));
 
-        let mut mock_parser = MockLoadBalanceParser::new();
-        mock_parser
+        mock_executor
+            .expect_output()
+            .times(1)
+            .withf(|command, args| (command, args) == ("/opt/vyatta/bin/vyatta-op-cmd-wrapper", &["show", "load-balance", "watchdog"]))
+            .returning(|_, _| Ok(watchdog_output.to_string()));
+
+        let mut mock_status_parser = MockLoadBalanceStatusParser::new();
+        mock_status_parser
             .expect_parse()
             .times(1)
-            .with(eq(output.to_string()))
+            .with(eq(status_output.to_string()))
             .returning(|_| Ok(vec![
-                LoadBalanceGroup {
+                LoadBalanceStatus {
+                    name: "FAILOVER_01".to_string(),
+                    balance_local: false,
+                    lock_local_dns: false,
+                    conntrack_flush: false,
+                    sticky_bits: 0,
+                    interfaces: vec![
+                        LoadBalanceStatusInterface {
+                            interface: "eth0".to_string(),
+                            reachable: true,
+                            status: LoadBalanceStatusStatus::Active,
+                            gateway: None,
+                            route_table: 1,
+                            weight: 1.0,
+                            fo_priority: 60,
+                            flows: {
+                                let mut flows = BTreeMap::new();
+                                flows.insert("WAN Out".to_string(), NumberPrefix::Standalone(2000).into());
+                                flows.insert("WAN In".to_string(), NumberPrefix::Standalone(2100).into());
+                                flows.insert("Local ICMP".to_string(), NumberPrefix::Standalone(1000).into());
+                                flows.insert("Local DNS".to_string(), NumberPrefix::Standalone(0).into());
+                                flows.insert("Local Data".to_string(), NumberPrefix::Standalone(0).into());
+                                flows
+                            },
+                            watchdog: None,
+                        },
+                        LoadBalanceStatusInterface {
+                            interface: "eth1".to_string(),
+                            reachable: false,
+                            status: LoadBalanceStatusStatus::Inactive,
+                            gateway: None,
+                            route_table: 2,
+                            weight: 0.0,
+                            fo_priority: 60,
+                            flows: {
+                                let mut flows = BTreeMap::new();
+                                flows.insert("WAN Out".to_string(), NumberPrefix::Standalone(3000).into());
+                                flows.insert("WAN In".to_string(), NumberPrefix::Standalone(3100).into());
+                                flows.insert("Local ICMP".to_string(), NumberPrefix::Standalone(1000).into());
+                                flows.insert("Local DNS".to_string(), NumberPrefix::Standalone(0).into());
+                                flows.insert("Local Data".to_string(), NumberPrefix::Standalone(0).into());
+                                flows
+                            },
+                            watchdog: None,
+                        },
+                    ],
+                },
+            ]));
+
+        let mut mock_watchdog_parser = MockLoadBalanceWatchdogParser::new();
+        mock_watchdog_parser
+            .expect_parse()
+            .times(1)
+            .with(eq(watchdog_output.to_string()))
+            .returning(|_| Ok(vec![
+                LoadBalanceWatchdog {
                     name: "FAILOVER_01".to_string(),
                     interfaces: vec![
-                        LoadBalanceInterface {
+                        LoadBalanceWatchdogInterface {
                             interface: "eth0".to_string(),
-                            status: LoadBalanceStatus::Ok,
+                            status: LoadBalanceWatchdogStatus::Ok,
                             failover_only_mode: true,
                             pings: 1000,
                             fails: 1,
@@ -127,9 +276,9 @@ mod tests {
                             last_route_drop: None,
                             last_route_recover: None,
                         },
-                        LoadBalanceInterface {
+                        LoadBalanceWatchdogInterface {
                             interface: "eth1".to_string(),
-                            status: LoadBalanceStatus::WaitOnRecovery(0, 3),
+                            status: LoadBalanceWatchdogStatus::WaitOnRecovery(0, 3),
                             failover_only_mode: false,
                             pings: 1000,
                             fails: 10,
@@ -143,35 +292,75 @@ mod tests {
                 },
             ]));
 
-        let runner = LoadBalanceRunner::new(command, mock_executor, mock_parser);
+        let runner = LoadBalanceRunner::new(command, mock_executor, mock_status_parser, mock_watchdog_parser);
         let actual = runner.run().await.unwrap();
         assert_eq!(actual, vec![
-            LoadBalanceGroup {
+            LoadBalanceStatus {
                 name: "FAILOVER_01".to_string(),
+                balance_local: false,
+                lock_local_dns: false,
+                conntrack_flush: false,
+                sticky_bits: 0,
                 interfaces: vec![
-                    LoadBalanceInterface {
+                    LoadBalanceStatusInterface {
                         interface: "eth0".to_string(),
-                        status: LoadBalanceStatus::Ok,
-                        failover_only_mode: true,
-                        pings: 1000,
-                        fails: 1,
-                        run_fails: (0, 3),
-                        route_drops: 0,
-                        ping: LoadBalancePing::Reachable("ping.ubnt.com".to_string()),
-                        last_route_drop: None,
-                        last_route_recover: None,
+                        reachable: true,
+                        status: LoadBalanceStatusStatus::Active,
+                        gateway: None,
+                        route_table: 1,
+                        weight: 1.0,
+                        fo_priority: 60,
+                        flows: {
+                            let mut flows = BTreeMap::new();
+                            flows.insert("WAN Out".to_string(), NumberPrefix::Standalone(2000).into());
+                            flows.insert("WAN In".to_string(), NumberPrefix::Standalone(2100).into());
+                            flows.insert("Local ICMP".to_string(), NumberPrefix::Standalone(1000).into());
+                            flows.insert("Local DNS".to_string(), NumberPrefix::Standalone(0).into());
+                            flows.insert("Local Data".to_string(), NumberPrefix::Standalone(0).into());
+                            flows
+                        },
+                        watchdog: Some(LoadBalanceWatchdogInterface {
+                            interface: "eth0".to_string(),
+                            status: LoadBalanceWatchdogStatus::Ok,
+                            failover_only_mode: true,
+                            pings: 1000,
+                            fails: 1,
+                            run_fails: (0, 3),
+                            route_drops: 0,
+                            ping: LoadBalancePing::Reachable("ping.ubnt.com".to_string()),
+                            last_route_drop: None,
+                            last_route_recover: None,
+                        }),
                     },
-                    LoadBalanceInterface {
+                    LoadBalanceStatusInterface {
                         interface: "eth1".to_string(),
-                        status: LoadBalanceStatus::WaitOnRecovery(0, 3),
-                        failover_only_mode: false,
-                        pings: 1000,
-                        fails: 10,
-                        run_fails: (3, 3),
-                        route_drops: 1,
-                        ping: LoadBalancePing::Down("ping.ubnt.com".to_string()),
-                        last_route_drop: Some(NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 5)),
-                        last_route_recover: Some(NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 0)),
+                        reachable: false,
+                        status: LoadBalanceStatusStatus::Inactive,
+                        gateway: None,
+                        route_table: 2,
+                        weight: 0.0,
+                        fo_priority: 60,
+                        flows: {
+                            let mut flows = BTreeMap::new();
+                            flows.insert("WAN Out".to_string(), NumberPrefix::Standalone(3000).into());
+                            flows.insert("WAN In".to_string(), NumberPrefix::Standalone(3100).into());
+                            flows.insert("Local ICMP".to_string(), NumberPrefix::Standalone(1000).into());
+                            flows.insert("Local DNS".to_string(), NumberPrefix::Standalone(0).into());
+                            flows.insert("Local Data".to_string(), NumberPrefix::Standalone(0).into());
+                            flows
+                        },
+                        watchdog: Some(LoadBalanceWatchdogInterface {
+                            interface: "eth1".to_string(),
+                            status: LoadBalanceWatchdogStatus::WaitOnRecovery(0, 3),
+                            failover_only_mode: false,
+                            pings: 1000,
+                            fails: 10,
+                            run_fails: (3, 3),
+                            route_drops: 1,
+                            ping: LoadBalancePing::Down("ping.ubnt.com".to_string()),
+                            last_route_drop: Some(NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 5)),
+                            last_route_recover: Some(NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 0)),
+                        }),
                     },
                 ],
             },
