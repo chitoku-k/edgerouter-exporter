@@ -1,10 +1,12 @@
+use std::str::FromStr;
+
 use anyhow::Context;
 use chrono::NaiveDateTime;
 use nom::{
     branch::{alt, permutation},
     error::Error,
     bytes::complete::{tag, take_till},
-    character::complete::{alphanumeric1, line_ending, newline, not_line_ending, space0, space1, u64},
+    character::complete::{alphanumeric1, line_ending, newline, not_line_ending, space0, space1, u32, u64},
     combinator::{map, map_res, opt},
     multi::{many0, many1},
     sequence::{delimited, separated_pair, terminated, tuple},
@@ -13,24 +15,44 @@ use nom::{
 
 use crate::{
     domain::load_balance::{
-        LoadBalanceGroup,
-        LoadBalanceInterface,
+        FlowSize,
         LoadBalancePing,
         LoadBalanceStatus,
+        LoadBalanceStatusInterface,
+        LoadBalanceStatusStatus,
+        LoadBalanceWatchdog,
+        LoadBalanceWatchdogInterface,
+        LoadBalanceWatchdogStatus,
     },
     infrastructure::cmd::parser::Parser,
-    service::load_balance::LoadBalanceGroupResult,
+    service::load_balance::{LoadBalanceStatusResult, LoadBalanceWatchdogResult},
 };
 
 #[derive(Clone)]
-pub struct LoadBalanceParser;
+pub struct LoadBalanceStatusParser;
 
-impl Parser for LoadBalanceParser {
+#[derive(Clone)]
+pub struct LoadBalanceWatchdogParser;
+
+impl Parser for LoadBalanceStatusParser {
     type Input = String;
-    type Item = LoadBalanceGroupResult;
+    type Item = LoadBalanceStatusResult;
 
     fn parse(&self, input: Self::Input) -> anyhow::Result<Self::Item> {
-        parse_load_balance_groups(&input)
+        parse_load_balance_status(&input)
+            .finish()
+            .map(|(_, status)| status)
+            .map_err(|e| Error::new(e.input.to_string(), e.code))
+            .context("failed to parse load-balance status")
+    }
+}
+
+impl Parser for LoadBalanceWatchdogParser {
+    type Input = String;
+    type Item = LoadBalanceWatchdogResult;
+
+    fn parse(&self, input: Self::Input) -> anyhow::Result<Self::Item> {
+        parse_load_balance_watchdog(&input)
             .finish()
             .map(|(_, groups)| groups)
             .map_err(|e| Error::new(e.input.to_string(), e.code))
@@ -38,7 +60,172 @@ impl Parser for LoadBalanceParser {
     }
 }
 
-fn parse_load_balance_groups(input: &str) -> IResult<&str, LoadBalanceGroupResult> {
+fn parse_load_balance_status(input: &str) -> IResult<&str, LoadBalanceStatusResult> {
+    alt((
+        map(tag("load-balance is not configured"), |_| vec![]),
+        many1(
+            map(
+                tuple((
+                    delimited(
+                        tuple((tag("Group"), space1)),
+                        map(not_line_ending, &str::to_string),
+                        opt(newline),
+                    ),
+                    terminated(
+                        permutation((
+                            delimited(
+                                tuple((space1, tag("Balance Local"), space0, tag(":"), space0)),
+                                map_res(not_line_ending, &str::parse),
+                                newline,
+                            ),
+                            delimited(
+                                tuple((space1, tag("Lock Local DNS"), space0, tag(":"), space0)),
+                                map_res(not_line_ending, &str::parse),
+                                newline,
+                            ),
+                            delimited(
+                                tuple((space1, tag("Conntrack Flush"), space0, tag(":"), space1)),
+                                map_res(not_line_ending, &str::parse),
+                                newline,
+                            ),
+                            delimited(
+                                tuple((space1, tag("Sticky Bits"), space0, tag(":"), space1, tag("0x"))),
+                                map_res(not_line_ending, |s| u32::from_str_radix(s, 16)),
+                                newline,
+                            ),
+                        )),
+                        many1(line_ending),
+                    ),
+                    many0(
+                        map(
+                            tuple((
+                                delimited(
+                                    tuple((space1, tag("interface"), space0, tag(":"), space1)),
+                                    map(not_line_ending, &str::to_string),
+                                    newline,
+                                ),
+                                permutation((
+                                    delimited(
+                                        tuple((space1, tag("reachable"), space0, tag(":"), space1)),
+                                        map_res(not_line_ending, &str::parse),
+                                        newline,
+                                    ),
+                                    delimited(
+                                        tuple((space1, tag("status"), space0, tag(":"), space1)),
+                                        map(
+                                            not_line_ending,
+                                            |s| match s {
+                                                "inactive" => LoadBalanceStatusStatus::Inactive,
+                                                "active" => LoadBalanceStatusStatus::Active,
+                                                "failover" => LoadBalanceStatusStatus::Failover,
+                                                s => LoadBalanceStatusStatus::Unknown(s.to_string()),
+                                            },
+                                        ),
+                                        newline,
+                                    ),
+                                    delimited(
+                                        tuple((space1, tag("gateway"), space0, tag(":"), space1)),
+                                        map(
+                                            not_line_ending,
+                                            |s: &str| {
+                                                if s.is_empty() {
+                                                    None
+                                                } else {
+                                                    Some(s.to_string())
+                                                }
+                                            },
+                                        ),
+                                        newline,
+                                    ),
+                                    delimited(
+                                        tuple((space1, tag("route table"), space0, tag(":"), space1)),
+                                        u32,
+                                        newline,
+                                    ),
+                                    delimited(
+                                        tuple((space1, tag("weight"), space0, tag(":"), space1)),
+                                        map(u32, |u| u as f64 / 100.0),
+                                        tuple((tag("%"), newline)),
+                                    ),
+                                    delimited(
+                                        tuple((space1, tag("fo_priority"), space0, tag(":"), space1)),
+                                        u32,
+                                        newline,
+                                    ),
+                                    delimited(
+                                        tuple((space1, tag("flows"), newline)),
+                                        map(
+                                            many0(
+                                                tuple((
+                                                    delimited(
+                                                        space0,
+                                                        map(take_till(|c| c == ':'), |s: &str| s.trim_end().to_string()),
+                                                        tuple((tag(":"), space1)),
+                                                    ),
+                                                    terminated(
+                                                        map_res(not_line_ending, FlowSize::from_str),
+                                                        newline,
+                                                    ),
+                                                )),
+                                            ),
+                                            |v| v.into_iter().collect(),
+                                        ),
+                                        many1(newline),
+                                    ),
+                                )),
+                            )),
+                            |(
+                                interface,
+                                (
+                                    reachable,
+                                    status,
+                                    gateway,
+                                    route_table,
+                                    weight,
+                                    fo_priority,
+                                    flows,
+                                ),
+                            )| {
+                                LoadBalanceStatusInterface {
+                                    interface,
+                                    reachable,
+                                    status,
+                                    gateway,
+                                    route_table,
+                                    weight,
+                                    fo_priority,
+                                    flows,
+                                    watchdog: None,
+                                }
+                            }
+                        ),
+                    ),
+                )),
+                |(
+                    name,
+                    (
+                        balance_local,
+                        lock_local_dns,
+                        conntrack_flush,
+                        sticky_bits,
+                    ),
+                    interfaces,
+                )| {
+                    LoadBalanceStatus {
+                        name,
+                        balance_local,
+                        lock_local_dns,
+                        conntrack_flush,
+                        sticky_bits,
+                        interfaces,
+                    }
+                },
+            ),
+        ),
+    ))(input)
+}
+
+fn parse_load_balance_watchdog(input: &str) -> IResult<&str, LoadBalanceWatchdogResult> {
     alt((
         map(tag("load-balance is not configured"), |_| vec![]),
         many1(
@@ -75,14 +262,14 @@ fn parse_load_balance_groups(input: &str) -> IResult<&str, LoadBalanceGroupResul
                                                         ),
                                                         space0,
                                                     ),
-                                                    |(m, n)| LoadBalanceStatus::WaitOnRecovery(m, n),
+                                                    |(m, n)| LoadBalanceWatchdogStatus::WaitOnRecovery(m, n),
                                                 ),
                                                 map(
                                                     terminated(alphanumeric1::<&str, _>, space0),
                                                     |s| match s {
-                                                        "OK" => LoadBalanceStatus::Ok,
-                                                        "Running" => LoadBalanceStatus::Running,
-                                                        _ => LoadBalanceStatus::Unknown(s.to_string()),
+                                                        "OK" => LoadBalanceWatchdogStatus::Ok,
+                                                        "Running" => LoadBalanceWatchdogStatus::Running,
+                                                        _ => LoadBalanceWatchdogStatus::Unknown(s.to_string()),
                                                     },
                                                 ),
                                             )),
@@ -158,7 +345,7 @@ fn parse_load_balance_groups(input: &str) -> IResult<&str, LoadBalanceGroupResul
                                         last_route_recover,
                                     ),
                                 )| {
-                                    LoadBalanceInterface {
+                                    LoadBalanceWatchdogInterface {
                                         interface,
                                         status,
                                         failover_only_mode,
@@ -177,7 +364,7 @@ fn parse_load_balance_groups(input: &str) -> IResult<&str, LoadBalanceGroupResul
                     ),
                 )),
                 |(name, interfaces)| {
-                    LoadBalanceGroup {
+                    LoadBalanceWatchdog {
                         name,
                         interfaces,
                     }
@@ -189,15 +376,24 @@ fn parse_load_balance_groups(input: &str) -> IResult<&str, LoadBalanceGroupResul
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeMap;
+
     use chrono::NaiveDate;
     use indoc::indoc;
+    use number_prefix::NumberPrefix;
     use pretty_assertions::assert_eq;
 
     use super::*;
 
     #[test]
     fn empty() {
-        let parser = LoadBalanceParser;
+        let parser = LoadBalanceStatusParser;
+        let input = "";
+
+        let actual = parser.parse(input.to_string());
+        assert!(actual.is_err());
+
+        let parser = LoadBalanceWatchdogParser;
         let input = "";
 
         let actual = parser.parse(input.to_string());
@@ -206,7 +402,13 @@ mod tests {
 
     #[test]
     fn no_config() {
-        let parser = LoadBalanceParser;
+        let parser = LoadBalanceStatusParser;
+        let input = "load-balance is not configured";
+
+        let actual = parser.parse(input.to_string()).unwrap();
+        assert_eq!(actual, vec![]);
+
+        let parser = LoadBalanceWatchdogParser;
         let input = "load-balance is not configured";
 
         let actual = parser.parse(input.to_string()).unwrap();
@@ -215,12 +417,34 @@ mod tests {
 
     #[test]
     fn no_interfaces() {
-        let parser = LoadBalanceParser;
+        let parser = LoadBalanceStatusParser;
+        let input = indoc! {"
+            Group FAILOVER_01
+                Balance Local  : false
+                Lock Local DNS : false
+                Conntrack Flush: false
+                Sticky Bits    : 0x00000000
+
+        "};
+
+        let actual = parser.parse(input.to_string()).unwrap();
+        assert_eq!(actual, vec![
+            LoadBalanceStatus {
+                name: "FAILOVER_01".to_string(),
+                balance_local: false,
+                lock_local_dns: false,
+                conntrack_flush: false,
+                sticky_bits: 0,
+                interfaces: vec![],
+            },
+        ]);
+
+        let parser = LoadBalanceWatchdogParser;
         let input = "Group FAILOVER_01";
 
         let actual = parser.parse(input.to_string()).unwrap();
         assert_eq!(actual, vec![
-            LoadBalanceGroup {
+            LoadBalanceWatchdog {
                 name: "FAILOVER_01".to_string(),
                 interfaces: vec![],
             },
@@ -229,7 +453,96 @@ mod tests {
 
     #[test]
     fn single_group() {
-        let parser = LoadBalanceParser;
+        let parser = LoadBalanceStatusParser;
+        let input = indoc! {"
+            Group FAILOVER_01
+                Balance Local  : false
+                Lock Local DNS : false
+                Conntrack Flush: false
+                Sticky Bits    : 0x00000000
+
+              interface   : eth0
+              reachable   : true
+              status      : active
+              gateway     : 
+              route table : 1
+              weight      : 100%
+              fo_priority : 60
+              flows
+                  WAN Out   : 2000
+                  WAN In    : 2100
+                  Local ICMP: 1000
+                  Local DNS : 0
+                  Local Data: 0
+
+              interface   : eth1
+              reachable   : false
+              status      : inactive
+              gateway     : 
+              route table : 2
+              weight      : 0%
+              fo_priority : 60
+              flows
+                  WAN Out   : 3000
+                  WAN In    : 3100
+                  Local ICMP: 1000
+                  Local DNS : 0
+                  Local Data: 0
+
+        "};
+
+        let actual = parser.parse(input.to_string()).unwrap();
+        assert_eq!(actual, vec![
+            LoadBalanceStatus {
+                name: "FAILOVER_01".to_string(),
+                balance_local: false,
+                lock_local_dns: false,
+                conntrack_flush: false,
+                sticky_bits: 0,
+                interfaces: vec![
+                    LoadBalanceStatusInterface {
+                        interface: "eth0".to_string(),
+                        reachable: true,
+                        status: LoadBalanceStatusStatus::Active,
+                        gateway: None,
+                        route_table: 1,
+                        weight: 1.0,
+                        fo_priority: 60,
+                        flows: {
+                            let mut flows = BTreeMap::new();
+                            flows.insert("WAN Out".to_string(), NumberPrefix::Standalone(2000).into());
+                            flows.insert("WAN In".to_string(), NumberPrefix::Standalone(2100).into());
+                            flows.insert("Local ICMP".to_string(), NumberPrefix::Standalone(1000).into());
+                            flows.insert("Local DNS".to_string(), NumberPrefix::Standalone(0).into());
+                            flows.insert("Local Data".to_string(), NumberPrefix::Standalone(0).into());
+                            flows
+                        },
+                        watchdog: None,
+                    },
+                    LoadBalanceStatusInterface {
+                        interface: "eth1".to_string(),
+                        reachable: false,
+                        status: LoadBalanceStatusStatus::Inactive,
+                        gateway: None,
+                        route_table: 2,
+                        weight: 0.0,
+                        fo_priority: 60,
+                        flows: {
+                            let mut flows = BTreeMap::new();
+                            flows.insert("WAN Out".to_string(), NumberPrefix::Standalone(3000).into());
+                            flows.insert("WAN In".to_string(), NumberPrefix::Standalone(3100).into());
+                            flows.insert("Local ICMP".to_string(), NumberPrefix::Standalone(1000).into());
+                            flows.insert("Local DNS".to_string(), NumberPrefix::Standalone(0).into());
+                            flows.insert("Local Data".to_string(), NumberPrefix::Standalone(0).into());
+                            flows
+                        },
+                        watchdog: None,
+                    },
+                ],
+            },
+        ]);
+
+        let parser = LoadBalanceWatchdogParser;
         let input = indoc! {"
             Group FAILOVER_01
               eth0
@@ -255,12 +568,12 @@ mod tests {
 
         let actual = parser.parse(input.to_string()).unwrap();
         assert_eq!(actual, vec![
-            LoadBalanceGroup {
+            LoadBalanceWatchdog {
                 name: "FAILOVER_01".to_string(),
                 interfaces: vec![
-                    LoadBalanceInterface {
+                    LoadBalanceWatchdogInterface {
                         interface: "eth0".to_string(),
-                        status: LoadBalanceStatus::Ok,
+                        status: LoadBalanceWatchdogStatus::Ok,
                         failover_only_mode: true,
                         pings: 1000,
                         fails: 1,
@@ -270,9 +583,9 @@ mod tests {
                         last_route_drop: None,
                         last_route_recover: None,
                     },
-                    LoadBalanceInterface {
+                    LoadBalanceWatchdogInterface {
                         interface: "eth1".to_string(),
-                        status: LoadBalanceStatus::WaitOnRecovery(0, 3),
+                        status: LoadBalanceWatchdogStatus::WaitOnRecovery(0, 3),
                         failover_only_mode: false,
                         pings: 1000,
                         fails: 10,
@@ -289,7 +602,210 @@ mod tests {
 
     #[test]
     fn multiple_groups() {
-        let parser = LoadBalanceParser;
+        let parser = LoadBalanceStatusParser;
+        let input = indoc! {"
+            Group FAILOVER_01
+                Balance Local  : false
+                Lock Local DNS : false
+                Conntrack Flush: false
+                Sticky Bits    : 0x00000000
+
+              interface   : eth0
+              reachable   : true
+              status      : active
+              gateway     : 
+              route table : 1
+              weight      : 100%
+              fo_priority : 60
+              flows
+                  WAN Out   : 2000
+                  WAN In    : 2100
+                  Local ICMP: 1000
+                  Local DNS : 0
+                  Local Data: 0
+
+              interface   : eth1
+              reachable   : false
+              status      : inactive
+              gateway     : 
+              route table : 2
+              weight      : 0%
+              fo_priority : 60
+              flows
+                  WAN Out   : 3000
+                  WAN In    : 3100
+                  Local ICMP: 1000
+                  Local DNS : 0
+                  Local Data: 0
+
+            Group FAILOVER_02
+                Balance Local  : true
+                Lock Local DNS : true
+                Conntrack Flush: true
+                Sticky Bits    : 0x000000ff
+
+              interface   : eth2
+              reachable   : true
+              status      : failover
+              gateway     : 
+              route table : 3
+              weight      : 0%
+              fo_priority : 60
+              flows
+                  WAN Out   : 2000
+                  WAN In    : 2100
+                  Local ICMP: 1000
+                  Local DNS : 0
+                  Local Data: 0
+
+              interface   : eth3
+              reachable   : true
+              status      : active
+              gateway     : 
+              route table : 4
+              weight      : 50%
+              fo_priority : 60
+              flows
+                  WAN Out   : 3000
+                  WAN In    : 3100
+                  Local ICMP: 1000
+                  Local DNS : 0
+                  Local Data: 0
+
+              interface   : eth4
+              reachable   : true
+              status      : active
+              gateway     : 
+              route table : 5
+              weight      : 50%
+              fo_priority : 60
+              flows
+                  WAN Out   : 4000
+                  WAN In    : 4100
+                  Local ICMP: 1000
+                  Local DNS : 0
+                  Local Data: 0
+
+        "};
+
+        let actual = parser.parse(input.to_string()).unwrap();
+        assert_eq!(actual, vec![
+            LoadBalanceStatus {
+                name: "FAILOVER_01".to_string(),
+                balance_local: false,
+                lock_local_dns: false,
+                conntrack_flush: false,
+                sticky_bits: 0,
+                interfaces: vec![
+                    LoadBalanceStatusInterface {
+                        interface: "eth0".to_string(),
+                        reachable: true,
+                        status: LoadBalanceStatusStatus::Active,
+                        gateway: None,
+                        route_table: 1,
+                        weight: 1.0,
+                        fo_priority: 60,
+                        flows: {
+                            let mut flows = BTreeMap::new();
+                            flows.insert("WAN Out".to_string(), NumberPrefix::Standalone(2000).into());
+                            flows.insert("WAN In".to_string(), NumberPrefix::Standalone(2100).into());
+                            flows.insert("Local ICMP".to_string(), NumberPrefix::Standalone(1000).into());
+                            flows.insert("Local DNS".to_string(), NumberPrefix::Standalone(0).into());
+                            flows.insert("Local Data".to_string(), NumberPrefix::Standalone(0).into());
+                            flows
+                        },
+                        watchdog: None,
+                    },
+                    LoadBalanceStatusInterface {
+                        interface: "eth1".to_string(),
+                        reachable: false,
+                        status: LoadBalanceStatusStatus::Inactive,
+                        gateway: None,
+                        route_table: 2,
+                        weight: 0.0,
+                        fo_priority: 60,
+                        flows: {
+                            let mut flows = BTreeMap::new();
+                            flows.insert("WAN Out".to_string(), NumberPrefix::Standalone(3000).into());
+                            flows.insert("WAN In".to_string(), NumberPrefix::Standalone(3100).into());
+                            flows.insert("Local ICMP".to_string(), NumberPrefix::Standalone(1000).into());
+                            flows.insert("Local DNS".to_string(), NumberPrefix::Standalone(0).into());
+                            flows.insert("Local Data".to_string(), NumberPrefix::Standalone(0).into());
+                            flows
+                        },
+                        watchdog: None,
+                    },
+                ],
+            },
+            LoadBalanceStatus {
+                name: "FAILOVER_02".to_string(),
+                balance_local: true,
+                lock_local_dns: true,
+                conntrack_flush: true,
+                sticky_bits: 0x000000ff,
+                interfaces: vec![
+                    LoadBalanceStatusInterface {
+                        interface: "eth2".to_string(),
+                        reachable: true,
+                        status: LoadBalanceStatusStatus::Failover,
+                        gateway: None,
+                        route_table: 3,
+                        weight: 0.0,
+                        fo_priority: 60,
+                        flows: {
+                            let mut flows = BTreeMap::new();
+                            flows.insert("WAN Out".to_string(), NumberPrefix::Standalone(2000).into());
+                            flows.insert("WAN In".to_string(), NumberPrefix::Standalone(2100).into());
+                            flows.insert("Local ICMP".to_string(), NumberPrefix::Standalone(1000).into());
+                            flows.insert("Local DNS".to_string(), NumberPrefix::Standalone(0).into());
+                            flows.insert("Local Data".to_string(), NumberPrefix::Standalone(0).into());
+                            flows
+                        },
+                        watchdog: None,
+                    },
+                    LoadBalanceStatusInterface {
+                        interface: "eth3".to_string(),
+                        reachable: true,
+                        status: LoadBalanceStatusStatus::Active,
+                        gateway: None,
+                        route_table: 4,
+                        weight: 0.5,
+                        fo_priority: 60,
+                        flows: {
+                            let mut flows = BTreeMap::new();
+                            flows.insert("WAN Out".to_string(), NumberPrefix::Standalone(3000).into());
+                            flows.insert("WAN In".to_string(), NumberPrefix::Standalone(3100).into());
+                            flows.insert("Local ICMP".to_string(), NumberPrefix::Standalone(1000).into());
+                            flows.insert("Local DNS".to_string(), NumberPrefix::Standalone(0).into());
+                            flows.insert("Local Data".to_string(), NumberPrefix::Standalone(0).into());
+                            flows
+                        },
+                        watchdog: None,
+                    },
+                    LoadBalanceStatusInterface {
+                        interface: "eth4".to_string(),
+                        reachable: true,
+                        status: LoadBalanceStatusStatus::Active,
+                        gateway: None,
+                        route_table: 5,
+                        weight: 0.5,
+                        fo_priority: 60,
+                        flows: {
+                            let mut flows = BTreeMap::new();
+                            flows.insert("WAN Out".to_string(), NumberPrefix::Standalone(4000).into());
+                            flows.insert("WAN In".to_string(), NumberPrefix::Standalone(4100).into());
+                            flows.insert("Local ICMP".to_string(), NumberPrefix::Standalone(1000).into());
+                            flows.insert("Local DNS".to_string(), NumberPrefix::Standalone(0).into());
+                            flows.insert("Local Data".to_string(), NumberPrefix::Standalone(0).into());
+                            flows
+                        },
+                        watchdog: None,
+                    },
+                ],
+            },
+        ]);
+
+        let parser = LoadBalanceWatchdogParser;
         let input = indoc! {"
             Group FAILOVER_01
               eth0
@@ -333,12 +849,12 @@ mod tests {
 
         let actual = parser.parse(input.to_string()).unwrap();
         assert_eq!(actual, vec![
-            LoadBalanceGroup {
+            LoadBalanceWatchdog {
                 name: "FAILOVER_01".to_string(),
                 interfaces: vec![
-                    LoadBalanceInterface {
+                    LoadBalanceWatchdogInterface {
                         interface: "eth0".to_string(),
-                        status: LoadBalanceStatus::Ok,
+                        status: LoadBalanceWatchdogStatus::Ok,
                         failover_only_mode: true,
                         pings: 1000,
                         fails: 1,
@@ -348,9 +864,9 @@ mod tests {
                         last_route_drop: None,
                         last_route_recover: None,
                     },
-                    LoadBalanceInterface {
+                    LoadBalanceWatchdogInterface {
                         interface: "eth1".to_string(),
-                        status: LoadBalanceStatus::WaitOnRecovery(0, 3),
+                        status: LoadBalanceWatchdogStatus::WaitOnRecovery(0, 3),
                         failover_only_mode: false,
                         pings: 1000,
                         fails: 10,
@@ -362,12 +878,12 @@ mod tests {
                     },
                 ],
             },
-            LoadBalanceGroup {
+            LoadBalanceWatchdog {
                 name: "FAILOVER_02".to_string(),
                 interfaces: vec![
-                    LoadBalanceInterface {
+                    LoadBalanceWatchdogInterface {
                         interface: "eth2".to_string(),
-                        status: LoadBalanceStatus::Ok,
+                        status: LoadBalanceWatchdogStatus::Ok,
                         failover_only_mode: false,
                         pings: 1000,
                         fails: 0,
@@ -377,9 +893,9 @@ mod tests {
                         last_route_drop: None,
                         last_route_recover: None,
                     },
-                    LoadBalanceInterface {
+                    LoadBalanceWatchdogInterface {
                         interface: "eth3".to_string(),
-                        status: LoadBalanceStatus::Ok,
+                        status: LoadBalanceWatchdogStatus::Ok,
                         failover_only_mode: false,
                         pings: 1000,
                         fails: 0,

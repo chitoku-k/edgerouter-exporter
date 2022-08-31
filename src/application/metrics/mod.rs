@@ -12,7 +12,7 @@ use crate::{
         bgp::BGPStatusResult,
         ddns::DdnsStatusResult,
         ipsec::IPsecResult,
-        load_balance::LoadBalanceGroupResult,
+        load_balance::LoadBalanceStatusResult,
         pppoe::PPPoEClientSessionResult,
         version::VersionResult,
         Runner,
@@ -27,7 +27,7 @@ mod load_balance;
 mod pppoe;
 mod version;
 
-pub type Gauge = gauge::Gauge<u64, atomic::AtomicU64>;
+pub type Gauge<T = u64, U = atomic::AtomicU64> = gauge::Gauge<T, U>;
 
 pub trait Collector {
     fn collect(self, registry: &mut Registry);
@@ -50,7 +50,7 @@ where
     BGPRunner: Runner<Item = (BGPStatusResult, BGPStatusResult)> + Send + Sync + Clone + 'static,
     DdnsRunner: Runner<Item = DdnsStatusResult> + Send + Sync + Clone + 'static,
     IPsecRunner: Runner<Item = IPsecResult> + Send + Sync + Clone + 'static,
-    LoadBalanceRunner: Runner<Item = LoadBalanceGroupResult> + Send + Sync + Clone + 'static,
+    LoadBalanceRunner: Runner<Item = LoadBalanceStatusResult> + Send + Sync + Clone + 'static,
     PPPoERunner: Runner<Item = PPPoEClientSessionResult> + Send + Sync + Clone + 'static,
     VersionRunner: Runner<Item = VersionResult> + Send + Sync + Clone + 'static,
 {

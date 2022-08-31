@@ -7,11 +7,11 @@ use prometheus_client::{
 use crate::{
     application::metrics::{Collector, Gauge},
     domain::load_balance::{
-        LoadBalanceInterface,
         LoadBalancePing,
-        LoadBalanceStatus,
+        LoadBalanceStatusStatus,
+        LoadBalanceWatchdogStatus,
     },
-    service::load_balance::LoadBalanceGroupResult,
+    service::load_balance::LoadBalanceStatusResult,
 };
 
 pub struct LoadBalanceHealthLabelBuilder {
@@ -25,24 +25,27 @@ pub struct LoadBalanceHealthLabel {
 }
 
 #[derive(Clone, Encode, Eq, Hash, PartialEq)]
+pub struct LoadBalanceFlowLabel {
+    group_name: String,
+    interface_name: String,
+    flow: String,
+}
+
+#[derive(Clone, Encode, Eq, Hash, PartialEq)]
 pub struct LoadBalancePingLabel {
     group_name: String,
     interface_name: String,
     gateway: String,
 }
 
-impl From<LoadBalanceInterface> for LoadBalanceHealthLabelBuilder {
-    fn from(i: LoadBalanceInterface) -> Self {
-        let interface_name = i.interface;
+impl LoadBalanceHealthLabelBuilder {
+    pub fn new(interface_name: String) -> Self {
         Self {
             interface_name,
         }
     }
-}
 
-impl LoadBalanceHealthLabelBuilder {
-    pub fn with(self, group_name: &str) -> LoadBalanceHealthLabel {
-        let group_name = group_name.to_string();
+    pub fn group(self, group_name: String) -> LoadBalanceHealthLabel {
         let interface_name = self.interface_name;
         LoadBalanceHealthLabel {
             group_name,
@@ -52,10 +55,19 @@ impl LoadBalanceHealthLabelBuilder {
 }
 
 impl LoadBalanceHealthLabel {
-    pub fn with(self, gateway: &str) -> LoadBalancePingLabel {
+    pub fn flow(self, flow: String) -> LoadBalanceFlowLabel {
         let group_name = self.group_name;
         let interface_name = self.interface_name;
-        let gateway = gateway.to_string();
+        LoadBalanceFlowLabel {
+            group_name,
+            interface_name,
+            flow,
+        }
+    }
+
+    pub fn ping(self, gateway: String) -> LoadBalancePingLabel {
+        let group_name = self.group_name;
+        let interface_name = self.interface_name;
         LoadBalancePingLabel {
             group_name,
             interface_name,
@@ -64,8 +76,29 @@ impl LoadBalanceHealthLabel {
     }
 }
 
-impl Collector for LoadBalanceGroupResult {
+impl Collector for LoadBalanceStatusResult {
     fn collect(self, registry: &mut Registry) {
+        let load_balancer_status = Family::<LoadBalanceHealthLabel, Gauge>::default();
+        registry.register(
+            "edgerouter_load_balancer_status",
+            "Status (0: inactive, 1: active, 2: failover)",
+            Box::new(load_balancer_status.clone()),
+        );
+
+        let load_balancer_weight_ratio = Family::<LoadBalanceHealthLabel, Gauge<f64>>::default();
+        registry.register(
+            "edgerouter_load_balancer_weight_ratio",
+            "Weight ratio",
+            Box::new(load_balancer_weight_ratio.clone()),
+        );
+
+        let load_balancer_flows_total = Family::<LoadBalanceFlowLabel, Gauge>::default();
+        registry.register(
+            "edgerouter_load_balancer_flows_total",
+            "Total number of flows",
+            Box::new(load_balancer_flows_total.clone()),
+        );
+
         let load_balancer_health = Family::<LoadBalanceHealthLabel, Gauge>::default();
         registry.register(
             "edgerouter_load_balancer_health",
@@ -110,68 +143,92 @@ impl Collector for LoadBalanceGroupResult {
 
         for load_balance in self {
             for interface in load_balance.interfaces {
-                let (
-                    health,
-                    (run_fails, _),
-                    route_drops,
-                ) = match interface.status {
-                    LoadBalanceStatus::Ok | LoadBalanceStatus::Running => (
-                        1,
-                        interface.run_fails,
-                        interface.route_drops,
-                    ),
-                    _ => (
-                        0,
-                        interface.run_fails,
-                        interface.route_drops,
-                    ),
+                let status = match interface.status {
+                    LoadBalanceStatusStatus::Inactive | LoadBalanceStatusStatus::Unknown(_) => 0,
+                    LoadBalanceStatusStatus::Active => 1,
+                    LoadBalanceStatusStatus::Failover => 2,
                 };
 
-                let (
-                    ping_health,
-                    ping_total,
-                    ping_fail_total,
-                    ping_gateway,
-                ) = match &interface.ping {
-                    LoadBalancePing::Reachable(gateway) => (
-                        1,
-                        interface.pings,
-                        interface.fails,
-                        gateway.clone(),
-                    ),
-                    LoadBalancePing::Down(gateway) | LoadBalancePing::Unknown(_, gateway) => (
-                        0,
-                        interface.pings,
-                        interface.fails,
-                        gateway.clone(),
-                    ),
-                };
-
-                let labels = LoadBalanceHealthLabelBuilder::from(interface).with(&load_balance.name);
-                load_balancer_health
+                let labels = LoadBalanceHealthLabelBuilder::new(interface.interface).group(load_balance.name.clone());
+                load_balancer_status
                     .get_or_create(&labels)
-                    .set(health);
+                    .set(status);
 
-                load_balancer_run_fail_total
+                load_balancer_weight_ratio
                     .get_or_create(&labels)
-                    .set(run_fails);
+                    .set(interface.weight);
 
-                load_balancer_route_drop_total
-                    .get_or_create(&labels)
-                    .set(route_drops);
+                for (flow, value) in interface.flows {
+                    let labels = labels.clone().flow(flow);
+                    load_balancer_flows_total
+                        .get_or_create(&labels)
+                        .set(value.into());
+                }
 
-                let labels = labels.with(&ping_gateway);
-                load_balancer_ping_health
-                    .get_or_create(&labels)
-                    .set(ping_health);
+                if let Some(watchdog) = interface.watchdog {
+                    let (
+                        health,
+                        (run_fails, _),
+                        route_drops,
+                    ) = match watchdog.status {
+                        LoadBalanceWatchdogStatus::Ok | LoadBalanceWatchdogStatus::Running => (
+                            1,
+                            watchdog.run_fails,
+                            watchdog.route_drops,
+                        ),
+                        _ => (
+                            0,
+                            watchdog.run_fails,
+                            watchdog.route_drops,
+                        ),
+                    };
 
-                load_balancer_ping_total
-                    .get_or_create(&labels)
-                    .set(ping_total);
+                    let (
+                        ping_health,
+                        ping_total,
+                        ping_fail_total,
+                        ping_gateway,
+                    ) = match &watchdog.ping {
+                        LoadBalancePing::Reachable(gateway) => (
+                            1,
+                            watchdog.pings,
+                            watchdog.fails,
+                            gateway.clone(),
+                        ),
+                        LoadBalancePing::Down(gateway) | LoadBalancePing::Unknown(_, gateway) => (
+                            0,
+                            watchdog.pings,
+                            watchdog.fails,
+                            gateway.clone(),
+                        ),
+                    };
 
-                load_balancer_ping_fail_total
-                    .get_or_create(&labels)
-                    .set(ping_fail_total);
+                    let labels = LoadBalanceHealthLabelBuilder::new(watchdog.interface).group(load_balance.name.clone());
+                    load_balancer_health
+                        .get_or_create(&labels)
+                        .set(health);
+
+                    load_balancer_run_fail_total
+                        .get_or_create(&labels)
+                        .set(run_fails);
+
+                    load_balancer_route_drop_total
+                        .get_or_create(&labels)
+                        .set(route_drops);
+
+                    let labels = labels.ping(ping_gateway);
+                    load_balancer_ping_health
+                        .get_or_create(&labels)
+                        .set(ping_health);
+
+                    load_balancer_ping_total
+                        .get_or_create(&labels)
+                        .set(ping_total);
+
+                    load_balancer_ping_fail_total
+                        .get_or_create(&labels)
+                        .set(ping_fail_total);
+                }
             }
         }
     }
