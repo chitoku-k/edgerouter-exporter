@@ -204,6 +204,26 @@ ipsec_out_packets{tunnel="peer-2.example.com-tunnel-1"} 8000
 ### Load Balancers
 
 ```
+# HELP edgerouter_load_balancer_status Status (0: inactive, 1: active, 2: failover)
+# TYPE edgerouter_load_balancer_status gauge
+edgerouter_load_balancer_status{group_name="WAN_FAILOVER",interface_name="eth0"} 1
+edgerouter_load_balancer_status{group_name="WAN_FAILOVER",interface_name="eth1"} 0
+# HELP edgerouter_load_balancer_weight_ratio Weight ratio
+# TYPE edgerouter_load_balancer_weight_ratio gauge
+edgerouter_load_balancer_weight_ratio{group_name="WAN_FAILOVER",interface_name="eth0"} 1.0
+edgerouter_load_balancer_weight_ratio{group_name="WAN_FAILOVER",interface_name="eth1"} 0.0
+# HELP edgerouter_load_balancer_flows_total Total number of flows
+# TYPE edgerouter_load_balancer_flows_total gauge
+edgerouter_load_balancer_flows_total{group_name="WAN_FAILOVER",interface_name="eth0",flow="WAN Out"} 3000
+edgerouter_load_balancer_flows_total{group_name="WAN_FAILOVER",interface_name="eth0",flow="WAN In"} 3100
+edgerouter_load_balancer_flows_total{group_name="WAN_FAILOVER",interface_name="eth0",flow="Local ICMP"} 1000
+edgerouter_load_balancer_flows_total{group_name="WAN_FAILOVER",interface_name="eth0",flow="Local DNS"} 0
+edgerouter_load_balancer_flows_total{group_name="WAN_FAILOVER",interface_name="eth0",flow="Local Data"} 0
+edgerouter_load_balancer_flows_total{group_name="WAN_FAILOVER",interface_name="eth1",flow="WAN Out"} 2000
+edgerouter_load_balancer_flows_total{group_name="WAN_FAILOVER",interface_name="eth1",flow="WAN In"} 2100
+edgerouter_load_balancer_flows_total{group_name="WAN_FAILOVER",interface_name="eth1",flow="Local ICMP"} 500
+edgerouter_load_balancer_flows_total{group_name="WAN_FAILOVER",interface_name="eth1",flow="Local DNS"} 0
+edgerouter_load_balancer_flows_total{group_name="WAN_FAILOVER",interface_name="eth1",flow="Local Data"} 0
 # HELP edgerouter_load_balancer_health Result of watchdog
 # TYPE edgerouter_load_balancer_health gauge
 edgerouter_load_balancer_health{group_name="WAN_FAILOVER",interface_name="eth0"} 1
