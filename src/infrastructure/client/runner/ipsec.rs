@@ -26,10 +26,10 @@ impl IPsecRunner {
     }
 
     async fn sas(&self) -> anyhow::Result<IPsecResult> {
-        let mut client = match rsvici::unix::connect(self.path.as_str()).await {
+        let mut client = match rsvici::unix::connect(&self.path).await {
             Ok(client) => client,
             Err(e) if e.kind() == ErrorKind::NotFound => {
-                log::debug!("failed to connect to strongSwan at {}: {e}", self.path.as_str());
+                log::debug!("failed to connect to strongSwan at {:?}: {e}", &self.path);
                 return Ok(IndexMap::new());
             },
             Err(e) => {
