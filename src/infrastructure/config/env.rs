@@ -1,9 +1,10 @@
 use anyhow::{anyhow, Context};
-use derive_more::{Deref, From};
+use derive_more::{AsRef, Deref, From};
 use envy::Error;
 use serde::Deserialize;
 
-#[derive(Clone, Debug, Deref, Deserialize, Eq, From, PartialEq)]
+#[derive(AsRef, Clone, Debug, Deref, Deserialize, Eq, From, PartialEq)]
+#[as_ref(forward)]
 pub struct ViciPath(String);
 
 #[derive(Clone, Debug, Deref, Deserialize, Eq, From, PartialEq)]
