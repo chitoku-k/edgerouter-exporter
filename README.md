@@ -11,6 +11,7 @@ For development, the following dependencies are required:
 
 - [rustup](https://rustup.rs/)
 - [cross](https://github.com/cross-rs/cross)
+- openssl (e.g. libssl-dev, openssl, or openssl-devel)
 
 In order to build the artifact, use `cross build`. To find on which architecture
 your model is running, refer to [EdgeRouter - Hardware Offloading].
