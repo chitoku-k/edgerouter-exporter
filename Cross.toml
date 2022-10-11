@@ -1,2 +1,26 @@
-[build.env]
-passthrough = ["RUSTFLAGS"]
+[build]
+pre-build = [
+    "export DEBIAN_FRONTEND=noninteractive",
+    "dpkg --add-architecture $CROSS_DEB_ARCH > /etc/dpkg/dpkg.cfg.d/multiarch",
+    "echo 'deb http://http.debian.net/debian/ stretch main' >> /etc/apt/sources.list",
+    "echo 'deb http://security.debian.org/ stretch/updates main' >> /etc/apt/sources.list",
+    "apt-get update",
+    "apt-get install --assume-yes --no-install-recommends dpkg-cross",
+    "apt-get download --assume-yes libssl1.1:$CROSS_DEB_ARCH libssl-dev:$CROSS_DEB_ARCH",
+    "dpkg-cross --install --exclude debconf --arch $CROSS_DEB_ARCH --convert-multiarch *.deb",
+    "rm -f *.deb",
+]
+
+[target.mipsel-unknown-linux-gnu]
+image = "ghcr.io/cross-rs/mipsel-unknown-linux-gnu:0.2.4"
+env.passthrough = [
+    "RUSTFLAGS=-C strip=symbols",
+    "OPENSSL_DIR=/usr/mipsel-linux-gnu",
+]
+
+[target.mips-unknown-linux-gnu]
+image = "ghcr.io/cross-rs/mips-unknown-linux-gnu:0.2.4"
+env.passthrough = [
+    "RUSTFLAGS=-C strip=symbols",
+    "OPENSSL_DIR=/usr/mips-linux-gnu",
+]

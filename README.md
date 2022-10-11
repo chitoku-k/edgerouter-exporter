@@ -11,6 +11,7 @@ For development, the following dependencies are required:
 
 - [rustup](https://rustup.rs/)
 - [cross](https://github.com/cross-rs/cross)
+- openssl (e.g. libssl-dev, openssl, or openssl-devel)
 
 In order to build the artifact, use `cross build`. To find on which architecture
 your model is running, refer to [EdgeRouter - Hardware Offloading].
@@ -18,17 +19,13 @@ your model is running, refer to [EdgeRouter - Hardware Offloading].
 ### MediaTek-based devices
 
 ```sh
-$ export RUSTFLAGS='-C strip=symbols'
 $ cross build --release --target=mipsel-unknown-linux-gnu
 ```
 
 ### Cavium-based devices
 
-:warning: Due to lack of MIPS support by [ring], TLS is not supported.
-
 ```sh
-$ export RUSTFLAGS='-C strip=symbols'
-$ cross build --release --target=mips-unknown-linux-gnu --no-default-features
+$ cross build --release --target=mips-unknown-linux-gnu
 ```
 
 ## Installation
@@ -48,8 +45,6 @@ $ mv edgerouter-exporter /config/scripts
 ```
 
 ### Cavium-based devices
-
-:warning: Due to lack of MIPS support by [ring], TLS is not supported.
 
 ```console
 $ curl -fL -o edgerouter-exporter https://github.com/chitoku-k/edgerouter-exporter/releases/latest/download/edgerouter-exporter-mips
@@ -281,4 +276,3 @@ edgerouter_pppoe_client_session_transmit_packets_total{interface_name="pppoe0",i
 [workflow-badge]:                   https://img.shields.io/github/workflow/status/chitoku-k/edgerouter-exporter/CI%20Workflow/master.svg?style=flat-square
 [IPsec Exporter]:                   https://github.com/dennisstritzke/ipsec_exporter
 [EdgeRouter - Hardware Offloading]: https://help.ui.com/hc/en-us/articles/115006567467-EdgeRouter-Hardware-Offloading
-[ring]:                             https://github.com/briansmith/ring

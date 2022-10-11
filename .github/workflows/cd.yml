@@ -16,7 +16,7 @@ jobs:
             args: []
           - id: mips
             name: mips-unknown-linux-gnu
-            args: [--no-default-features]
+            args: []
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -26,8 +26,6 @@ jobs:
           toolchain: stable
       - name: Build
         uses: actions-rs/cargo@v1
-        env:
-          RUSTFLAGS: -C strip=symbols
         with:
           command: build
           args: --release --target=${{ matrix.target.name }} ${{ join(matrix.target.args, ' ') }}
