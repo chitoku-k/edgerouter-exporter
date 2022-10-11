@@ -29,14 +29,16 @@ default-features = false
 [dependencies.chrono]
 version = "0.4.22"
 
+[dependencies.clap]
+version = "4.0.12"
+features = ["cargo", "derive", "env", "help", "std", "string", "suggestions", "usage"]
+default-features = false
+
 [dependencies.derive_more]
 version = "0.99.0"
 
 [dependencies.env_logger]
 version = "0.9.1"
-
-[dependencies.envy]
-version = "0.4.2"
 
 [dependencies.futures]
 version = "0.3.24"

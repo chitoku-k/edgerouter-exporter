@@ -38,7 +38,7 @@ impl Application {
             .parse_env("LOG_LEVEL")
             .init();
 
-        let config = env::get()?;
+        let config = env::get();
         let engine = Engine::new(
             config.port,
             config.tls_cert,
