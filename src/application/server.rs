@@ -12,7 +12,7 @@ use hyper::server::{conn::AddrIncoming, Server};
 use {
     hyper::server::conn::Http,
     notify::Watcher,
-    openssl::ssl::{SslContext, SslFiletype, SslMethod},
+    openssl::ssl::{self, AlpnError, SslContext, SslFiletype, SslMethod},
     tls_listener::TlsListener,
     tokio::{
         sync::mpsc::unbounded_channel,
@@ -94,6 +94,10 @@ fn acceptor(tls_cert: &str, tls_key: &str) -> anyhow::Result<SslContext> {
     builder
         .set_private_key_file(tls_key, SslFiletype::PEM)
         .context("error loading TLS private key")?;
+    builder
+        .set_alpn_select_callback(|_, client| {
+            ssl::select_next_proto(b"\x02h2\x08http/1.1", client).ok_or(AlpnError::NOACK)
+        });
 
     Ok(builder.build())
 }
