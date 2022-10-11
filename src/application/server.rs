@@ -1,6 +1,4 @@
 use std::{net::Ipv6Addr, sync::Arc};
-#[cfg(feature = "tls")]
-use std::sync::mpsc::channel;
 
 use anyhow::Context;
 use async_trait::async_trait;
@@ -9,11 +7,18 @@ use axum::{
     routing::get,
     Router,
 };
+use hyper::server::{conn::AddrIncoming, Server};
 #[cfg(feature = "tls")]
 use {
-    axum_server::tls_rustls::RustlsConfig,
+    hyper::server::conn::Http,
     notify::Watcher,
-    tokio::task::JoinHandle,
+    openssl::ssl::{SslContext, SslFiletype, SslMethod},
+    tls_listener::TlsListener,
+    tokio::{
+        sync::mpsc::unbounded_channel,
+        time::{sleep, Duration},
+        select,
+    },
 };
 
 use crate::application::metrics;
@@ -61,6 +66,7 @@ where
             .nest("/healthz", health)
             .nest("/metrics", metrics);
 
+        let incoming = AddrIncoming::bind(&addr)?;
         match self.tls {
             #[cfg(not(feature = "tls"))]
             Some(_) => {
@@ -68,20 +74,11 @@ where
             },
             #[cfg(feature = "tls")]
             Some((tls_cert, tls_key)) => {
-                let config = RustlsConfig::from_pem_file(&tls_cert, &tls_key).await.context("error loading TLS certificates")?;
-                enable_auto_reload(config.clone(), tls_cert, tls_key);
-
-                axum_server::bind_rustls(addr, config)
-                    .serve(app.into_make_service())
-                    .await
-                    .context("error starting server")?;
+                bind_tls(app, incoming, tls_cert, tls_key).await?;
             },
             None => {
-                axum_server::bind(addr)
-                    .serve(app.into_make_service())
-                    .await
-                    .context("error starting server")?;
-            },
+                bind(app, incoming).await?;
+            }
         }
 
         Ok(())
@@ -89,18 +86,68 @@ where
 }
 
 #[cfg(feature = "tls")]
-fn enable_auto_reload(config: RustlsConfig, tls_cert: String, tls_key: String) -> JoinHandle<anyhow::Result<()>> {
-    let (tx, rx) = channel();
+fn acceptor(tls_cert: &str, tls_key: &str) -> anyhow::Result<SslContext> {
+    let mut builder = SslContext::builder(SslMethod::tls_server())?;
+    builder
+        .set_certificate_chain_file(tls_cert)
+        .context("error loading TLS certificate")?;
+    builder
+        .set_private_key_file(tls_key, SslFiletype::PEM)
+        .context("error loading TLS private key")?;
 
-    tokio::spawn(async move {
-        let mut watcher = notify::recommended_watcher(tx)?;
-        watcher.watch(tls_cert.as_ref(), notify::RecursiveMode::NonRecursive)?;
+    Ok(builder.build())
+}
 
-        loop {
-            let event = rx.recv()?.context("error watching updates on TLS certificates")?;
-            if event.kind.is_modify() {
-                config.reload_from_pem_file(&tls_cert, &tls_key).await?;
-            }
+#[cfg(feature = "tls")]
+async fn bind_tls(app: Router, incoming: AddrIncoming, tls_cert: String, tls_key: String) -> anyhow::Result<()> {
+    let (tx, mut rx) = unbounded_channel();
+
+    let mut watcher = notify::recommended_watcher(move |event| {
+        if let Ok(event) = event {
+            tx.send(event).expect("error reloading TLS certificate");
         }
-    })
+    })?;
+    watcher.watch(tls_cert.as_ref(), notify::RecursiveMode::NonRecursive)?;
+
+    let mut listener = TlsListener::new(acceptor(&tls_cert, &tls_key)?, incoming);
+    let http = Http::new();
+
+    loop {
+        select! {
+            stream = listener.accept() => {
+                match stream.context("error accepting TLS listener")? {
+                    Ok(stream) => {
+                        tokio::spawn(http.serve_connection(stream, app.clone()));
+                    },
+                    Err(e) => {
+                        log::debug!("{}", e)
+                    },
+                }
+            },
+            event = rx.recv() => {
+                match event {
+                    Some(event) if event.kind.is_modify() => {
+                        sleep(Duration::from_millis(200)).await;
+
+                        match acceptor(&tls_cert, &tls_key) {
+                            Ok(acceptor) => {
+                                listener.replace_acceptor(acceptor);
+                            },
+                            Err(e) => {
+                                log::warn!("{:?}", e);
+                            },
+                        }
+                    },
+                    _ => {},
+                }
+            },
+        }
+    }
+}
+
+async fn bind(app: Router, incoming: AddrIncoming) -> anyhow::Result<()> {
+    Server::builder(incoming)
+        .serve(app.into_make_service())
+        .await
+        .context("error starting server")
 }
