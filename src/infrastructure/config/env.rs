@@ -1,53 +1,70 @@
-use anyhow::{anyhow, Context};
-use derive_more::{AsRef, Deref, From};
-use envy::Error;
-use serde::Deserialize;
+use clap::{crate_version, Parser};
+use derive_more::{AsRef, Deref, Display, From};
 
-#[derive(AsRef, Clone, Debug, Deref, Deserialize, Eq, From, PartialEq)]
+#[derive(AsRef, Clone, Debug, Deref, Display, Eq, From, PartialEq)]
 #[as_ref(forward)]
 pub struct ViciPath(String);
 
-#[derive(Clone, Debug, Deref, Deserialize, Eq, From, PartialEq)]
+#[derive(Clone, Debug, Deref, Display, Eq, From, PartialEq)]
 pub struct IpCommand(String);
 
-#[derive(Clone, Debug, Deref, Deserialize, Eq, From, PartialEq)]
+#[derive(Clone, Debug, Deref, Display, Eq, From, PartialEq)]
 pub struct OpCommand(String);
 
-#[derive(Clone, Debug, Deref, Deserialize, Eq, From, PartialEq)]
+#[derive(Clone, Debug, Deref, Display, Eq, From, PartialEq)]
 pub struct OpDdnsCommand(String);
 
-#[derive(Clone, Debug, Deref, Deserialize, Eq, From, PartialEq)]
+#[derive(Clone, Debug, Deref, Display, Eq, From, PartialEq)]
 pub struct VtyshCommand(String);
 
-#[derive(Debug, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Eq, Parser, PartialEq)]
+#[command(version = version())]
 pub struct Config {
+    /// Port number
+    #[arg(long, env)]
     pub port: u16,
+
+    /// Path to TLS certificate (if not specified, exporter is served over HTTP)
+    #[arg(long, env)]
     pub tls_cert: Option<String>,
+
+    /// Path to TLS private key (if not specified, exporter is served over HTTP)
+    #[arg(long, env)]
     pub tls_key: Option<String>,
 
-    #[serde(default = "default_vici_path")]
+    /// Path to Unix socket for VICI
+    #[arg(long, env, default_value_t = default_vici_path())]
     pub vici_path: ViciPath,
 
-    #[serde(default = "default_ip_command")]
+    /// Path to ip command
+    #[arg(long, env, default_value_t = default_ip_command())]
     pub ip_command: IpCommand,
 
-    #[serde(default = "default_op_command")]
+    /// Path to op command
+    #[arg(long, env, default_value_t = default_op_command())]
     pub op_command: OpCommand,
 
-    #[serde(default = "default_op_ddns_command")]
+    /// Path to op ddns command
+    #[arg(long, env, default_value_t = default_op_ddns_command())]
     pub op_ddns_command: OpDdnsCommand,
 
-    #[serde(default = "default_vtysh_command")]
+    /// Path to vtysh command
+    #[arg(long, env, default_value_t = default_vtysh_command())]
     pub vtysh_command: VtyshCommand,
 }
 
-pub fn get() -> anyhow::Result<Config> {
-    envy::from_env()
-        .map_err(|e| match e {
-            Error::MissingValue(field) => anyhow!("missing value for {}", field.to_ascii_uppercase()),
-            Error::Custom(e) => anyhow!(e),
-        })
-        .context("error reading environment variables")
+pub fn get() -> Config {
+    Config::parse()
+}
+
+#[cfg(not(feature = "tls"))]
+fn version() -> &'static str {
+    crate_version!()
+}
+
+#[cfg(feature = "tls")]
+fn version() -> String {
+    format!("{} ({})", crate_version!(), openssl::version::version())
 }
 
 fn default_vici_path() -> ViciPath {

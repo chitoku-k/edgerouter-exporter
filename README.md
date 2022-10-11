@@ -54,6 +54,14 @@ $ mv edgerouter-exporter /config/scripts
 
 ### Configuration
 
+Configure by either of the following options.
+
+#### Command-line options
+
+See `edgerouter-exporter --help`.
+
+#### Environment variables
+
 ```sh
 # Port number (required)
 export PORT=8080
