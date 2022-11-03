@@ -44,7 +44,7 @@ version = "0.9.1"
 version = "0.3.25"
 
 [dependencies.hyper]
-version = "0.14.20"
+version = "0.14.22"
 features = ["runtime"]
 
 [dependencies.indenter]
