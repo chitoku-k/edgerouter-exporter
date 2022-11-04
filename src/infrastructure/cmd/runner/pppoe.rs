@@ -25,8 +25,8 @@ pub struct PPPoERunner<E, PPPoEParser, InterfaceParser> {
 impl<E, PPPoEParser, InterfaceParser> PPPoERunner<E, PPPoEParser, InterfaceParser>
 where
     E: Executor + Send + Sync,
-    PPPoEParser: Parser<Input = (String, Vec<Interface>), Item = PPPoEClientSessionResult> + Send + Sync,
-    InterfaceParser: Parser<Input = String, Item = InterfaceResult> + Send + Sync,
+    for<'a> PPPoEParser: Parser<Input<'a> = (&'a str, &'a [Interface]), Item = PPPoEClientSessionResult> + Send + Sync,
+    for<'a> InterfaceParser: Parser<Input<'a> = &'a str, Item = InterfaceResult> + Send + Sync,
 {
     pub fn new(
         op_command: OpCommand,
@@ -44,15 +44,15 @@ where
         }
     }
 
-    async fn sessions(&self, interfaces: Vec<Interface>) -> anyhow::Result<PPPoEClientSessionResult> {
+    async fn sessions(&self, interfaces: &[Interface]) -> anyhow::Result<PPPoEClientSessionResult> {
         let output = self.executor.output(&self.op_command, &["show", "pppoe-client"]).await?;
-        let result = self.pppoe_parser.parse((output, interfaces))?;
+        let result = self.pppoe_parser.parse((&output, interfaces))?;
         Ok(result)
     }
 
     async fn interfaces(&self) -> anyhow::Result<InterfaceResult> {
         let output = self.executor.output(&self.ip_command, &["--brief", "addr", "show"]).await?;
-        let result = self.interface_parser.parse(output)?;
+        let result = self.interface_parser.parse(&output)?;
         Ok(result)
     }
 }
@@ -61,14 +61,14 @@ where
 impl<E, PPPoEParser, InterfaceParser> Runner for PPPoERunner<E, PPPoEParser, InterfaceParser>
 where
     E: Executor + Send + Sync,
-    PPPoEParser: Parser<Input = (String, Vec<Interface>), Item = PPPoEClientSessionResult> + Send + Sync,
-    InterfaceParser: Parser<Input = String, Item = InterfaceResult> + Send + Sync,
+    for<'a> PPPoEParser: Parser<Input<'a> = (&'a str, &'a [Interface]), Item = PPPoEClientSessionResult> + Send + Sync,
+    for<'a> InterfaceParser: Parser<Input<'a> = &'a str, Item = InterfaceResult> + Send + Sync,
 {
     type Item = PPPoEClientSessionResult;
 
     async fn run(&self) -> anyhow::Result<Self::Item> {
         let interfaces = self.interfaces().await?;
-        self.sessions(interfaces).await
+        self.sessions(&interfaces).await
     }
 }
 
@@ -98,10 +98,10 @@ mod tests {
         PPPoEParser {}
 
         impl Parser for PPPoEParser {
-            type Input = (String, Vec<Interface>);
+            type Input<'a> = (&'a str, &'a [Interface]);
             type Item = PPPoEClientSessionResult;
 
-            fn parse(&self, input: (String, Vec<Interface>)) -> anyhow::Result<<Self as Parser>::Item>;
+            fn parse<'a>(&self, input: (&'a str, &'a [Interface])) -> anyhow::Result<<Self as Parser>::Item>;
         }
     }
 
@@ -109,10 +109,10 @@ mod tests {
         InterfaceParser {}
 
         impl Parser for InterfaceParser {
-            type Input = String;
+            type Input<'a> = &'a str;
             type Item = InterfaceResult;
 
-            fn parse(&self, input: String) -> anyhow::Result<<Self as Parser>::Item>;
+            fn parse(&self, input: &str) -> anyhow::Result<<Self as Parser>::Item>;
         }
     }
 
@@ -136,7 +136,7 @@ mod tests {
             pppoe0           UP             203.0.113.1 peer 192.0.2.255/32 
         "#};
 
-        let interfaces = vec![
+        let interfaces = [
             Interface {
                 ifname: "lo".to_string(),
                 operstate: "UNKNOWN".to_string(),
@@ -187,7 +187,7 @@ mod tests {
         mock_pppoe_parser
             .expect_parse()
             .times(1)
-            .with(eq((pppoe_output.to_string(), interfaces)))
+            .withf(move |output| output == &(pppoe_output, &interfaces[..]))
             .returning(|_| Ok(vec![
                 PPPoEClientSession {
                     user: "user01".to_string(),
@@ -219,7 +219,7 @@ mod tests {
         mock_interface_parser
             .expect_parse()
             .times(1)
-            .with(eq(interface_output.to_string()))
+            .with(eq(interface_output))
             .returning(|_| Ok(vec![
                 Interface {
                     ifname: "lo".to_string(),

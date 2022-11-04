@@ -22,8 +22,8 @@ pub struct LoadBalanceRunner<E, StatusParser, WatchdogParser> {
 impl<E, StatusParser, WatchdogParser> LoadBalanceRunner<E, StatusParser, WatchdogParser>
 where
     E: Executor + Send + Sync,
-    StatusParser: Parser<Input = String, Item = LoadBalanceStatusResult> + Send + Sync,
-    WatchdogParser: Parser<Input = String, Item = LoadBalanceWatchdogResult> + Send + Sync,
+    for<'a> StatusParser: Parser<Input<'a> = &'a str, Item = LoadBalanceStatusResult> + Send + Sync,
+    for<'a> WatchdogParser: Parser<Input<'a> = &'a str, Item = LoadBalanceWatchdogResult> + Send + Sync,
 {
     pub fn new(command: OpCommand, executor: E, status_parser: StatusParser, watchdog_parser: WatchdogParser) -> Self {
         Self {
@@ -36,13 +36,13 @@ where
 
     async fn status(&self) -> anyhow::Result<LoadBalanceStatusResult> {
         let output = self.executor.output(&self.command, &["show", "load-balance", "status"]).await?;
-        let result = self.status_parser.parse(output)?;
+        let result = self.status_parser.parse(&output)?;
         Ok(result)
     }
 
     async fn watchdog(&self) -> anyhow::Result<LoadBalanceWatchdogResult> {
         let output = self.executor.output(&self.command, &["show", "load-balance", "watchdog"]).await?;
-        let result = self.watchdog_parser.parse(output)?;
+        let result = self.watchdog_parser.parse(&output)?;
         Ok(result)
     }
 }
@@ -51,8 +51,8 @@ where
 impl<E, StatusParser, WatchdogParser> Runner for LoadBalanceRunner<E, StatusParser, WatchdogParser>
 where
     E: Executor + Send + Sync,
-    StatusParser: Parser<Input = String, Item = LoadBalanceStatusResult> + Send + Sync,
-    WatchdogParser: Parser<Input = String, Item = LoadBalanceWatchdogResult> + Send + Sync,
+    for<'a> StatusParser: Parser<Input<'a> = &'a str, Item = LoadBalanceStatusResult> + Send + Sync,
+    for<'a> WatchdogParser: Parser<Input<'a> = &'a str, Item = LoadBalanceWatchdogResult> + Send + Sync,
 {
     type Item = LoadBalanceStatusResult;
 
@@ -106,10 +106,10 @@ mod tests {
         LoadBalanceStatusParser {}
 
         impl Parser for LoadBalanceStatusParser {
-            type Input = String;
+            type Input<'a> = &'a str;
             type Item = LoadBalanceStatusResult;
 
-            fn parse(&self, input: String) -> anyhow::Result<<Self as Parser>::Item>;
+            fn parse(&self, input: &str) -> anyhow::Result<<Self as Parser>::Item>;
         }
     }
 
@@ -117,10 +117,10 @@ mod tests {
         LoadBalanceWatchdogParser {}
 
         impl Parser for LoadBalanceWatchdogParser {
-            type Input = String;
+            type Input<'a> = &'a str;
             type Item = LoadBalanceWatchdogResult;
 
-            fn parse(&self, input: String) -> anyhow::Result<<Self as Parser>::Item>;
+            fn parse(&self, input: &str) -> anyhow::Result<<Self as Parser>::Item>;
         }
     }
 
@@ -204,7 +204,7 @@ mod tests {
         mock_status_parser
             .expect_parse()
             .times(1)
-            .with(eq(status_output.to_string()))
+            .with(eq(status_output))
             .returning(|_| Ok(vec![
                 LoadBalanceStatus {
                     name: "FAILOVER_01".to_string(),
@@ -259,7 +259,7 @@ mod tests {
         mock_watchdog_parser
             .expect_parse()
             .times(1)
-            .with(eq(watchdog_output.to_string()))
+            .with(eq(watchdog_output))
             .returning(|_| Ok(vec![
                 LoadBalanceWatchdog {
                     name: "FAILOVER_01".to_string(),
