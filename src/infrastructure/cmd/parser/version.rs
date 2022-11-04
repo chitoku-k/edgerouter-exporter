@@ -20,11 +20,11 @@ use crate::{
 pub struct VersionParser;
 
 impl Parser for VersionParser {
-    type Input = String;
+    type Input<'a> = &'a str;
     type Item = VersionResult;
 
-    fn parse(&self, input: Self::Input) -> anyhow::Result<Self::Item> {
-        parse_version(&input)
+    fn parse(&self, input: Self::Input<'_>) -> anyhow::Result<Self::Item> {
+        parse_version(input)
             .finish()
             .map(|(_, version)| version)
             .map_err(|e| Error::new(e.input.to_string(), e.code))
@@ -107,7 +107,7 @@ mod tests {
         let parser = VersionParser;
         let input = "";
 
-        assert!(parser.parse(input.to_string()).is_err());
+        assert!(parser.parse(input).is_err());
     }
 
     #[test]
@@ -123,7 +123,7 @@ mod tests {
             Uptime:       01:00:00 up  1:00,  1 user,  load average: 1.00, 1.00, 1.00
         "};
 
-        let actual = parser.parse(input.to_string()).unwrap();
+        let actual = parser.parse(input).unwrap();
         assert_eq!(actual, Version {
             version: "v2.0.6".to_string(),
             build_id: "5208541".to_string(),

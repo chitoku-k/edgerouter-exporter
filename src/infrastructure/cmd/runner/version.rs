@@ -18,7 +18,7 @@ pub struct VersionRunner<E, P> {
 impl<E, P> VersionRunner<E, P>
 where
     E: Executor + Send + Sync,
-    P: Parser<Input = String, Item = VersionResult> + Send + Sync,
+    for<'a> P: Parser<Input<'a> = &'a str, Item = VersionResult> + Send + Sync,
 {
     pub fn new(command: OpCommand, executor: E, parser: P) -> Self {
         Self {
@@ -30,7 +30,7 @@ where
 
     async fn version(&self) -> anyhow::Result<VersionResult> {
         let output = self.executor.output(&self.command, &["show", "version"]).await?;
-        let result = self.parser.parse(output)?;
+        let result = self.parser.parse(&output)?;
         Ok(result)
     }
 }
@@ -39,7 +39,7 @@ where
 impl<E, P> Runner for VersionRunner<E, P>
 where
     E: Executor + Send + Sync,
-    P: Parser<Input = String, Item = VersionResult> + Send + Sync,
+    for<'a> P: Parser<Input<'a> = &'a str, Item = VersionResult> + Send + Sync,
 {
     type Item = VersionResult;
 
@@ -63,10 +63,10 @@ mod tests {
         VersionParser {}
 
         impl Parser for VersionParser {
-            type Input = String;
+            type Input<'a> = &'a str;
             type Item = VersionResult;
 
-            fn parse(&self, input: String) -> anyhow::Result<<Self as Parser>::Item>;
+            fn parse(&self, input: &str) -> anyhow::Result<<Self as Parser>::Item>;
         }
     }
 
@@ -94,7 +94,7 @@ mod tests {
         mock_parser
             .expect_parse()
             .times(1)
-            .with(eq(output.to_string()))
+            .with(eq(output))
             .returning(|_| Ok(Version {
                 version: "v2.0.6".to_string(),
                 build_id: "5208541".to_string(),

@@ -21,11 +21,11 @@ use crate::{
 pub struct DdnsParser;
 
 impl Parser for DdnsParser {
-    type Input = String;
+    type Input<'a> = &'a str;
     type Item = DdnsStatusResult;
 
-    fn parse(&self, input: Self::Input) -> anyhow::Result<Self::Item> {
-        parse_ddns_status(&input)
+    fn parse(&self, input: Self::Input<'_>) -> anyhow::Result<Self::Item> {
+        parse_ddns_status(input)
             .finish()
             .map(|(_, status)| status)
             .map_err(|e| Error::new(e.input.to_string(), e.code))
@@ -147,7 +147,7 @@ mod tests {
         let parser = DdnsParser;
         let input = "";
 
-        assert!(parser.parse(input.to_string()).is_err());
+        assert!(parser.parse(input).is_err());
     }
 
     #[test]
@@ -158,7 +158,7 @@ mod tests {
 
         "};
 
-        let actual = parser.parse(input.to_string()).unwrap();
+        let actual = parser.parse(input).unwrap();
         assert_eq!(actual, vec![]);
     }
 
@@ -174,7 +174,7 @@ mod tests {
 
         "};
 
-        let actual = parser.parse(input.to_string()).unwrap();
+        let actual = parser.parse(input).unwrap();
         assert_eq!(actual, vec![
             DdnsStatus {
                 interface: "eth0".to_string(),
@@ -210,7 +210,7 @@ mod tests {
 
         "};
 
-        let actual = parser.parse(input.to_string()).unwrap();
+        let actual = parser.parse(input).unwrap();
         assert_eq!(actual, vec![
             DdnsStatus {
                 interface: "eth0".to_string(),
