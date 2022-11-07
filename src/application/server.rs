@@ -78,7 +78,7 @@ where
             },
             None => {
                 bind(app, incoming).await?;
-            }
+            },
         }
 
         Ok(())
@@ -129,20 +129,18 @@ async fn bind_tls(app: Router, incoming: AddrIncoming, tls_cert: String, tls_key
                 }
             },
             event = rx.recv() => {
-                match event {
-                    Some(event) if event.kind.is_modify() => {
-                        sleep(Duration::from_millis(200)).await;
+                if event.filter(|e| e.kind.is_modify()).is_none() {
+                    continue;
+                }
+                sleep(Duration::from_millis(200)).await;
 
-                        match acceptor(&tls_cert, &tls_key) {
-                            Ok(acceptor) => {
-                                listener.replace_acceptor(acceptor);
-                            },
-                            Err(e) => {
-                                log::warn!("{:?}", e);
-                            },
-                        }
+                match acceptor(&tls_cert, &tls_key) {
+                    Ok(acceptor) => {
+                        listener.replace_acceptor(acceptor);
                     },
-                    _ => {},
+                    Err(e) => {
+                        log::warn!("{:?}", e);
+                    },
                 }
             },
         }
