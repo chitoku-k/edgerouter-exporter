@@ -27,7 +27,7 @@ features = ["http1", "http2"]
 default-features = false
 
 [dependencies.chrono]
-version = "0.4.22"
+version = "0.4.23"
 
 [dependencies.clap]
 version = "4.0.26"
