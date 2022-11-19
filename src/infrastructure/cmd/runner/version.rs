@@ -98,7 +98,7 @@ mod tests {
             .returning(|_| Ok(Version {
                 version: "v2.0.6".to_string(),
                 build_id: "5208541".to_string(),
-                build_on: NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 0),
+                build_on: NaiveDate::from_ymd_opt(2006, 1, 2).and_then(|d| d.and_hms_opt(15, 4, 0)).unwrap(),
                 copyright: "2012-2018 Ubiquiti Networks, Inc.".to_string(),
                 hw_model: "EdgeRouter X 5-Port".to_string(),
                 hw_serial_number: "000000000000".to_string(),
@@ -110,7 +110,7 @@ mod tests {
         assert_eq!(actual, Version {
             version: "v2.0.6".to_string(),
             build_id: "5208541".to_string(),
-            build_on: NaiveDate::from_ymd(2006, 1, 2).and_hms(15, 4, 0),
+            build_on: NaiveDate::from_ymd_opt(2006, 1, 2).and_then(|d| d.and_hms_opt(15, 4, 0)).unwrap(),
             copyright: "2012-2018 Ubiquiti Networks, Inc.".to_string(),
             hw_model: "EdgeRouter X 5-Port".to_string(),
             hw_serial_number: "000000000000".to_string(),
