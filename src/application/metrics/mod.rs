@@ -1,7 +1,5 @@
-use std::sync::Arc;
-
 use async_trait::async_trait;
-use axum::{extract::Extension, http::StatusCode, response::IntoResponse};
+use axum::{extract::State, http::StatusCode, response::IntoResponse};
 use derive_more::Constructor;
 use prometheus_client::{encoding::text::encode, metrics::gauge, registry::Registry};
 use tokio::try_join;
@@ -86,7 +84,7 @@ where
     }
 }
 
-pub async fn handle<T>(Extension(controller): Extension<Arc<T>>) -> impl IntoResponse
+pub async fn handle<T>(State(controller): State<T>) -> impl IntoResponse
 where
     T: Controller<String>,
 {

@@ -1,12 +1,8 @@
-use std::{net::Ipv6Addr, sync::Arc};
+use std::net::Ipv6Addr;
 
 use anyhow::Context;
 use async_trait::async_trait;
-use axum::{
-    extract::Extension,
-    routing::get,
-    Router,
-};
+use axum::{routing::get, Router};
 use hyper::server::{conn::AddrIncoming, Server};
 #[cfg(feature = "tls")]
 use {
@@ -59,7 +55,7 @@ where
 
         let metrics = Router::new()
             .route("/", get(metrics::handle::<MetricsController>))
-            .layer(Extension(Arc::new(self.metrics_controller)));
+            .with_state(self.metrics_controller);
 
         let addr = (Ipv6Addr::UNSPECIFIED, self.port).into();
         let app = Router::new()

@@ -22,7 +22,7 @@ version = "0.1.58"
 version = "0.2.0"
 
 [dependencies.axum]
-version = "0.5.17"
+version = "0.6.0"
 features = ["http1", "http2"]
 default-features = false
 
@@ -45,7 +45,7 @@ version = "0.3.25"
 
 [dependencies.hyper]
 version = "0.14.23"
-features = ["runtime"]
+features = ["runtime", "server"]
 
 [dependencies.indenter]
 version = "0.3.3"
