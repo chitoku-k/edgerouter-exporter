@@ -11,7 +11,6 @@ use crate::{
     },
 };
 
-#[derive(Clone)]
 pub struct LoadBalanceRunner<E, StatusParser, WatchdogParser> {
     command: OpCommand,
     executor: E,

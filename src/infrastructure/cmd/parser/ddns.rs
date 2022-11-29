@@ -17,7 +17,6 @@ use crate::{
     service::ddns::DdnsStatusResult,
 };
 
-#[derive(Clone)]
 pub struct DdnsParser;
 
 impl Parser for DdnsParser {

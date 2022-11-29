@@ -9,7 +9,6 @@ use crate::{
     service::{bgp::BGPStatusResult, Runner},
 };
 
-#[derive(Clone)]
 pub struct BGPRunner<E, P> {
     command: VtyshCommand,
     executor: E,

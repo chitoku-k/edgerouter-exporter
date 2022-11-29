@@ -16,7 +16,6 @@ use crate::{
     service::version::VersionResult,
 };
 
-#[derive(Clone)]
 pub struct VersionParser;
 
 impl Parser for VersionParser {

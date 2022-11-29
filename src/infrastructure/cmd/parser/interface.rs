@@ -18,7 +18,6 @@ use crate::{
     service::interface::InterfaceResult,
 };
 
-#[derive(Clone)]
 pub struct InterfaceParser;
 
 impl Parser for InterfaceParser {

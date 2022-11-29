@@ -48,7 +48,6 @@ impl fmt::Debug for Output<'_> {
     }
 }
 
-#[derive(Clone)]
 pub struct CommandExecutor;
 
 impl Executor for CommandExecutor {}

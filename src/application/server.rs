@@ -1,4 +1,4 @@
-use std::net::Ipv6Addr;
+use std::{net::Ipv6Addr, sync::Arc};
 
 use anyhow::Context;
 use async_trait::async_trait;
@@ -24,7 +24,6 @@ pub trait Controller<T> {
     async fn handle(&self) -> anyhow::Result<T>;
 }
 
-#[derive(Clone)]
 pub struct Engine<MetricsController> {
     port: u16,
     tls: Option<(String, String)>,
@@ -33,7 +32,7 @@ pub struct Engine<MetricsController> {
 
 impl<MetricsController> Engine<MetricsController>
 where
-    MetricsController: Controller<String> + Send + Sync + Clone + 'static,
+    MetricsController: Controller<String> + Send + Sync + 'static,
 {
     pub fn new(
         port: u16,
@@ -55,7 +54,7 @@ where
 
         let metrics = Router::new()
             .route("/", get(metrics::handle::<MetricsController>))
-            .with_state(self.metrics_controller);
+            .with_state(Arc::new(self.metrics_controller));
 
         let addr = (Ipv6Addr::UNSPECIFIED, self.port).into();
         let app = Router::new()

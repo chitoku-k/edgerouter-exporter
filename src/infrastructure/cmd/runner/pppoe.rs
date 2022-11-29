@@ -13,7 +13,6 @@ use crate::{
     },
 };
 
-#[derive(Clone)]
 pub struct PPPoERunner<E, PPPoEParser, InterfaceParser> {
     op_command: OpCommand,
     ip_command: IpCommand,

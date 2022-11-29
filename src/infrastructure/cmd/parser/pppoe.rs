@@ -21,7 +21,6 @@ use crate::{
     service::pppoe::PPPoEClientSessionResult,
 };
 
-#[derive(Clone)]
 pub struct PPPoEParser;
 
 impl Parser for PPPoEParser {

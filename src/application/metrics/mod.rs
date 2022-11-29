@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use axum::{extract::State, http::StatusCode, response::IntoResponse};
 use derive_more::Constructor;
@@ -31,7 +33,7 @@ pub trait Collector {
     fn collect(self, registry: &mut Registry);
 }
 
-#[derive(Clone, Constructor)]
+#[derive(Constructor)]
 pub struct MetricsHandler<BGPRunner, DdnsRunner, IPsecRunner, LoadBalanceRunner, PPPoERunner, VersionRunner> {
     bgp_runner: BGPRunner,
     ddns_runner: DdnsRunner,
@@ -45,12 +47,12 @@ pub struct MetricsHandler<BGPRunner, DdnsRunner, IPsecRunner, LoadBalanceRunner,
 impl<BGPRunner, DdnsRunner, IPsecRunner, LoadBalanceRunner, PPPoERunner, VersionRunner> Controller<String>
     for MetricsHandler<BGPRunner, DdnsRunner, IPsecRunner, LoadBalanceRunner, PPPoERunner, VersionRunner>
 where
-    BGPRunner: Runner<Item = (BGPStatusResult, BGPStatusResult)> + Send + Sync + Clone + 'static,
-    DdnsRunner: Runner<Item = DdnsStatusResult> + Send + Sync + Clone + 'static,
-    IPsecRunner: Runner<Item = IPsecResult> + Send + Sync + Clone + 'static,
-    LoadBalanceRunner: Runner<Item = LoadBalanceStatusResult> + Send + Sync + Clone + 'static,
-    PPPoERunner: Runner<Item = PPPoEClientSessionResult> + Send + Sync + Clone + 'static,
-    VersionRunner: Runner<Item = VersionResult> + Send + Sync + Clone + 'static,
+    BGPRunner: Runner<Item = (BGPStatusResult, BGPStatusResult)> + Send + Sync + 'static,
+    DdnsRunner: Runner<Item = DdnsStatusResult> + Send + Sync + 'static,
+    IPsecRunner: Runner<Item = IPsecResult> + Send + Sync + 'static,
+    LoadBalanceRunner: Runner<Item = LoadBalanceStatusResult> + Send + Sync + 'static,
+    PPPoERunner: Runner<Item = PPPoEClientSessionResult> + Send + Sync + 'static,
+    VersionRunner: Runner<Item = VersionResult> + Send + Sync + 'static,
 {
     async fn handle(&self) -> anyhow::Result<String> {
         let mut registry = Registry::default();
@@ -84,7 +86,7 @@ where
     }
 }
 
-pub async fn handle<T>(State(controller): State<T>) -> impl IntoResponse
+pub async fn handle<T>(State(controller): State<Arc<T>>) -> impl IntoResponse
 where
     T: Controller<String>,
 {

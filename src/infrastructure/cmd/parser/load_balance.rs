@@ -28,10 +28,8 @@ use crate::{
     service::load_balance::{LoadBalanceStatusResult, LoadBalanceWatchdogResult},
 };
 
-#[derive(Clone)]
 pub struct LoadBalanceStatusParser;
 
-#[derive(Clone)]
 pub struct LoadBalanceWatchdogParser;
 
 impl Parser for LoadBalanceStatusParser {

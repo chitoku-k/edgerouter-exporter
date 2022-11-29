@@ -18,7 +18,6 @@ use crate::{
     service::bgp::BGPStatusResult,
 };
 
-#[derive(Clone)]
 pub struct BGPParser;
 
 impl Parser for BGPParser {
