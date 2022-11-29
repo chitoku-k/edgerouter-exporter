@@ -33,7 +33,7 @@ pub trait Collector {
     fn collect(self, registry: &mut Registry);
 }
 
-#[derive(Clone, Constructor)]
+#[derive(Constructor)]
 pub struct MetricsHandler<BGPRunner, DdnsRunner, IPsecRunner, LoadBalanceRunner, PPPoERunner, VersionRunner> {
     bgp_runner: BGPRunner,
     ddns_runner: DdnsRunner,

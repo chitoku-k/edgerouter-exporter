@@ -24,7 +24,6 @@ pub trait Controller<T> {
     async fn handle(&self) -> anyhow::Result<T>;
 }
 
-#[derive(Clone)]
 pub struct Engine<MetricsController> {
     port: u16,
     tls: Option<(String, String)>,
@@ -33,7 +32,7 @@ pub struct Engine<MetricsController> {
 
 impl<MetricsController> Engine<MetricsController>
 where
-    MetricsController: Controller<String> + Send + Sync + Clone + 'static,
+    MetricsController: Controller<String> + Send + Sync + 'static,
 {
     pub fn new(
         port: u16,
