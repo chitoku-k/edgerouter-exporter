@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use async_trait::async_trait;
 use axum::{extract::State, http::StatusCode, response::IntoResponse};
 use derive_more::Constructor;
@@ -84,7 +86,7 @@ where
     }
 }
 
-pub async fn handle<T>(State(controller): State<T>) -> impl IntoResponse
+pub async fn handle<T>(State(controller): State<Arc<T>>) -> impl IntoResponse
 where
     T: Controller<String>,
 {

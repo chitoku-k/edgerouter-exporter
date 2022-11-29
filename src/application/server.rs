@@ -1,4 +1,4 @@
-use std::net::Ipv6Addr;
+use std::{net::Ipv6Addr, sync::Arc};
 
 use anyhow::Context;
 use async_trait::async_trait;
@@ -55,7 +55,7 @@ where
 
         let metrics = Router::new()
             .route("/", get(metrics::handle::<MetricsController>))
-            .with_state(self.metrics_controller);
+            .with_state(Arc::new(self.metrics_controller));
 
         let addr = (Ipv6Addr::UNSPECIFIED, self.port).into();
         let app = Router::new()
