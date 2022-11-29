@@ -8,7 +8,6 @@ use crate::{
     service::{version::VersionResult, Runner},
 };
 
-#[derive(Clone)]
 pub struct VersionRunner<E, P> {
     command: OpCommand,
     executor: E,

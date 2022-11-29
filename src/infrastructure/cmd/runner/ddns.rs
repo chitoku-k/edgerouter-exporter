@@ -8,7 +8,6 @@ use crate::{
     service::{ddns::DdnsStatusResult, Runner},
 };
 
-#[derive(Clone)]
 pub struct DdnsRunner<E, P> {
     command: OpDdnsCommand,
     executor: E,

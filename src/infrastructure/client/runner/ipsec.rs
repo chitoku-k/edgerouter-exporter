@@ -13,7 +13,6 @@ use crate::{
 
 type SAs = IndexMap<String, SA>;
 
-#[derive(Clone)]
 pub struct IPsecRunner {
     path: ViciPath,
 }
