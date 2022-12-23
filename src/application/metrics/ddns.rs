@@ -1,5 +1,5 @@
 use prometheus_client::{
-    encoding::text::Encode,
+    encoding::EncodeLabelSet,
     metrics::family::Family,
     registry::Registry,
 };
@@ -10,7 +10,7 @@ use crate::{
     service::ddns::DdnsStatusResult,
 };
 
-#[derive(Clone, Encode, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, EncodeLabelSet, Eq, Hash, PartialEq)]
 pub struct DdnsStatusLabel {
     interface_name: String,
     ip_address: String,
@@ -36,7 +36,7 @@ impl Collector for DdnsStatusResult {
         registry.register(
             "edgerouter_dynamic_dns_status",
             "Result of DDNS update",
-            Box::new(ddns_status.clone()),
+            ddns_status.clone(),
         );
 
         for status in self {

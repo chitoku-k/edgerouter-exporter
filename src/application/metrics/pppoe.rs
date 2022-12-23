@@ -1,5 +1,5 @@
 use prometheus_client::{
-    encoding::text::Encode,
+    encoding::EncodeLabelSet,
     metrics::family::Family,
     registry::Registry,
 };
@@ -10,7 +10,7 @@ use crate::{
     service::pppoe::PPPoEClientSessionResult,
 };
 
-#[derive(Clone, Encode, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, EncodeLabelSet, Eq, Hash, PartialEq)]
 pub struct PPPoEClientSessionLabel {
     user: String,
     protocol: String,
@@ -42,35 +42,35 @@ impl Collector for PPPoEClientSessionResult {
         registry.register(
             "edgerouter_pppoe_client_session_seconds_total",
             "Total seconds for PPPoE client session",
-            Box::new(pppoe_client_session_seconds_total.clone()),
+            pppoe_client_session_seconds_total.clone(),
         );
 
         let pppoe_client_session_transmit_packets_total = Family::<PPPoEClientSessionLabel, Gauge>::default();
         registry.register(
             "edgerouter_pppoe_client_session_transmit_packets_total",
             "Total transmit packets for PPPoE client session",
-            Box::new(pppoe_client_session_transmit_packets_total.clone()),
+            pppoe_client_session_transmit_packets_total.clone(),
         );
 
         let pppoe_client_session_receive_packets_total = Family::<PPPoEClientSessionLabel, Gauge>::default();
         registry.register(
             "edgerouter_pppoe_client_session_receive_packets_total",
             "Total receive packets for PPPoE client session",
-            Box::new(pppoe_client_session_receive_packets_total.clone()),
+            pppoe_client_session_receive_packets_total.clone(),
         );
 
         let pppoe_client_session_transmit_bytes_total = Family::<PPPoEClientSessionLabel, Gauge>::default();
         registry.register(
             "edgerouter_pppoe_client_session_transmit_bytes_total",
             "Total transmit bytes for PPPoE client session",
-            Box::new(pppoe_client_session_transmit_bytes_total.clone()),
+            pppoe_client_session_transmit_bytes_total.clone(),
         );
 
         let pppoe_client_session_receive_bytes_total = Family::<PPPoEClientSessionLabel, Gauge>::default();
         registry.register(
             "edgerouter_pppoe_client_session_receive_bytes_total",
             "Total receive bytes for PPPoE client session",
-            Box::new(pppoe_client_session_receive_bytes_total.clone()),
+            pppoe_client_session_receive_bytes_total.clone(),
         );
 
         for session in self {
@@ -80,7 +80,7 @@ impl Collector for PPPoEClientSessionResult {
                 receive_packets,
                 transmit_bytes,
                 receive_bytes,
-            ) = (
+            ): (_, u64, u64, u64, u64) = (
                 session.time.as_secs(),
                 session.transmit_packets.clone().into(),
                 session.receive_packets.clone().into(),
@@ -91,23 +91,23 @@ impl Collector for PPPoEClientSessionResult {
 
             pppoe_client_session_seconds_total
                 .get_or_create(&labels)
-                .set(seconds);
+                .set(seconds as i64);
 
             pppoe_client_session_transmit_packets_total
                 .get_or_create(&labels)
-                .set(transmit_packets);
+                .set(transmit_packets as i64);
 
             pppoe_client_session_receive_packets_total
                 .get_or_create(&labels)
-                .set(receive_packets);
+                .set(receive_packets as i64);
 
             pppoe_client_session_transmit_bytes_total
                 .get_or_create(&labels)
-                .set(transmit_bytes);
+                .set(transmit_bytes as i64);
 
             pppoe_client_session_receive_bytes_total
                 .get_or_create(&labels)
-                .set(receive_bytes);
+                .set(receive_bytes as i64);
         }
     }
 }

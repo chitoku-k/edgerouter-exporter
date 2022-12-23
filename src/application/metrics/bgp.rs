@@ -1,5 +1,5 @@
 use prometheus_client::{
-    encoding::text::Encode,
+    encoding::EncodeLabelSet,
     metrics::family::Family,
     registry::Registry,
 };
@@ -10,7 +10,7 @@ use crate::{
     service::bgp::BGPStatusResult,
 };
 
-#[derive(Clone, Encode, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, EncodeLabelSet, Eq, Hash, PartialEq)]
 pub struct BGPNeighborLabel {
     neighbor: String,
     r#as: String,
@@ -36,42 +36,42 @@ impl Collector for (BGPStatusResult, BGPStatusResult) {
         registry.register(
             "edgerouter_bgp_message_received_total",
             "Total number of BGP messages received",
-            Box::new(bgp_msg_rcv.clone()),
+            bgp_msg_rcv.clone(),
         );
 
         let bgp_msg_sen = Family::<BGPNeighborLabel, Gauge>::default();
         registry.register(
             "edgerouter_bgp_message_sent_total",
             "Total number of BGP messages sent",
-            Box::new(bgp_msg_sen.clone()),
+            bgp_msg_sen.clone(),
         );
 
         let bgp_in_q = Family::<BGPNeighborLabel, Gauge>::default();
         registry.register(
             "edgerouter_bgp_message_in_queue",
             "Number of BGP messages in incoming queue",
-            Box::new(bgp_in_q.clone()),
+            bgp_in_q.clone(),
         );
 
         let bgp_out_q = Family::<BGPNeighborLabel, Gauge>::default();
         registry.register(
             "edgerouter_bgp_message_out_queue",
             "Number of BGP messages in outgoing queue",
-            Box::new(bgp_out_q.clone()),
+            bgp_out_q.clone(),
         );
 
         let bgp_session_seconds_total = Family::<BGPNeighborLabel, Gauge>::default();
         registry.register(
             "edgerouter_bgp_session_seconds_total",
             "Total seconds for established BGP session",
-            Box::new(bgp_session_seconds_total.clone()),
+            bgp_session_seconds_total.clone(),
         );
 
         let bgp_pfx_rcd = Family::<BGPNeighborLabel, Gauge>::default();
         registry.register(
             "edgerouter_bgp_prefix_received_total",
             "Total number of BGP prefixes received",
-            Box::new(bgp_pfx_rcd.clone()),
+            bgp_pfx_rcd.clone(),
         );
 
         for neighbor in BGPIterator::from(self) {
@@ -94,27 +94,27 @@ impl Collector for (BGPStatusResult, BGPStatusResult) {
 
             bgp_msg_rcv
                 .get_or_create(&labels)
-                .set(messages_received);
+                .set(messages_received as i64);
 
             bgp_msg_sen
                 .get_or_create(&labels)
-                .set(messages_sent);
+                .set(messages_sent as i64);
 
             bgp_in_q
                 .get_or_create(&labels)
-                .set(in_queue);
+                .set(in_queue as i64);
 
             bgp_out_q
                 .get_or_create(&labels)
-                .set(out_queue);
+                .set(out_queue as i64);
 
             bgp_session_seconds_total
                 .get_or_create(&labels)
-                .set(uptime);
+                .set(uptime as i64);
 
             bgp_pfx_rcd
                 .get_or_create(&labels)
-                .set(prefixes_received);
+                .set(prefixes_received as i64);
         }
     }
 }
