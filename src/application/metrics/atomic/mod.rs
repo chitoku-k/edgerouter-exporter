@@ -2,8 +2,11 @@ use std::sync::atomic::Ordering;
 
 use prometheus_client::metrics::gauge;
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct AtomicU64(atomic_shim::AtomicU64);
+
+#[derive(Debug, Default)]
+pub struct AtomicI64(atomic_shim::AtomicI64);
 
 impl gauge::Atomic<f64> for AtomicU64 {
     fn inc(&self) -> f64 {
@@ -53,28 +56,28 @@ impl gauge::Atomic<f64> for AtomicU64 {
     }
 }
 
-impl gauge::Atomic<u64> for AtomicU64 {
-    fn inc(&self) -> u64 {
+impl gauge::Atomic<i64> for AtomicI64 {
+    fn inc(&self) -> i64 {
         self.inc_by(1)
     }
 
-    fn inc_by(&self, v: u64) -> u64 {
+    fn inc_by(&self, v: i64) -> i64 {
         self.0.fetch_add(v, Ordering::Relaxed)
     }
 
-    fn dec(&self) -> u64 {
+    fn dec(&self) -> i64 {
         self.dec_by(1)
     }
 
-    fn dec_by(&self, v: u64) -> u64 {
+    fn dec_by(&self, v: i64) -> i64 {
         self.0.fetch_sub(v, Ordering::Relaxed)
     }
 
-    fn set(&self, v: u64) -> u64 {
+    fn set(&self, v: i64) -> i64 {
         self.0.swap(v, Ordering::Relaxed)
     }
 
-    fn get(&self) -> u64 {
+    fn get(&self) -> i64 {
         self.0.load(Ordering::Relaxed)
     }
 }

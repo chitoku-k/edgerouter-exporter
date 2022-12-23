@@ -1,5 +1,5 @@
 use prometheus_client::{
-    encoding::text::Encode,
+    encoding::EncodeLabelSet,
     metrics::family::Family,
     registry::Registry,
 };
@@ -10,7 +10,7 @@ use crate::{
     service::ipsec::IPsecResult,
 };
 
-#[derive(Clone, Encode, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, EncodeLabelSet, Eq, Hash, PartialEq)]
 pub struct IPsecTunnelLabel {
     tunnel: String,
 }
@@ -34,42 +34,42 @@ impl Collector for IPsecResult {
         registry.register(
             "ipsec_up",
             "Result of IPsec metrics scrape",
-            Box::new(ipsec_up.clone()),
+            ipsec_up.clone(),
         );
 
         let ipsec_status = Family::<IPsecTunnelLabel, Gauge>::default();
         registry.register(
             "ipsec_status",
             "Status of IPsec tunnel",
-            Box::new(ipsec_status.clone()),
+            ipsec_status.clone(),
         );
 
         let ipsec_in_bytes = Family::<IPsecTunnelLabel, Gauge>::default();
         registry.register(
             "ipsec_in_bytes",
             "Total receive bytes for IPsec tunnel",
-            Box::new(ipsec_in_bytes.clone()),
+            ipsec_in_bytes.clone(),
         );
 
         let ipsec_out_bytes = Family::<IPsecTunnelLabel, Gauge>::default();
         registry.register(
             "ipsec_out_bytes",
             "Total transmit bytes for IPsec tunnel",
-            Box::new(ipsec_out_bytes.clone()),
+            ipsec_out_bytes.clone(),
         );
 
         let ipsec_in_packets = Family::<IPsecTunnelLabel, Gauge>::default();
         registry.register(
             "ipsec_in_packets",
             "Total receive packets for IPsec tunnel",
-            Box::new(ipsec_in_packets.clone()),
+            ipsec_in_packets.clone(),
         );
 
         let ipsec_out_packets = Family::<IPsecTunnelLabel, Gauge>::default();
         registry.register(
             "ipsec_out_packets",
             "Total transmit packets for IPsec tunnel",
-            Box::new(ipsec_out_packets.clone()),
+            ipsec_out_packets.clone(),
         );
 
         for sa in self.into_values() {
@@ -103,19 +103,19 @@ impl Collector for IPsecResult {
 
             ipsec_in_bytes
                 .get_or_create(&labels)
-                .set(in_bytes);
+                .set(in_bytes as i64);
 
             ipsec_out_bytes
                 .get_or_create(&labels)
-                .set(out_bytes);
+                .set(out_bytes as i64);
 
             ipsec_in_packets
                 .get_or_create(&labels)
-                .set(in_packets);
+                .set(in_packets as i64);
 
             ipsec_out_packets
                 .get_or_create(&labels)
-                .set(out_packets);
+                .set(out_packets as i64);
         }
     }
 }

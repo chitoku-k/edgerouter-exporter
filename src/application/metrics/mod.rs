@@ -27,7 +27,7 @@ mod load_balance;
 mod pppoe;
 mod version;
 
-pub type Gauge<T = u64, U = atomic::AtomicU64> = gauge::Gauge<T, U>;
+pub type Gauge<T = i64, U = atomic::AtomicI64> = gauge::Gauge<T, U>;
 
 pub trait Collector {
     fn collect(self, registry: &mut Registry);
@@ -79,10 +79,10 @@ where
         pppoe_client_sessions.collect(&mut registry);
         version.collect(&mut registry);
 
-        let mut buf = vec![];
+        let mut buf = String::new();
         encode(&mut buf, &registry)?;
 
-        Ok(String::from_utf8(buf)?)
+        Ok(buf)
     }
 }
 

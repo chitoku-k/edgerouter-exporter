@@ -1,11 +1,11 @@
 use prometheus_client::{
-    encoding::text::Encode,
+    encoding::EncodeLabelSet,
     metrics::family::Family,
     registry::Registry,
 };
 
 use crate::{
-    application::metrics::{Collector, Gauge},
+    application::metrics::{atomic, Collector, Gauge},
     domain::load_balance::{
         LoadBalancePing,
         LoadBalanceStatusStatus,
@@ -18,20 +18,20 @@ pub struct LoadBalanceHealthLabelBuilder {
     interface_name: String,
 }
 
-#[derive(Clone, Encode, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, EncodeLabelSet, Eq, Hash, PartialEq)]
 pub struct LoadBalanceHealthLabel {
     group_name: String,
     interface_name: String,
 }
 
-#[derive(Clone, Encode, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, EncodeLabelSet, Eq, Hash, PartialEq)]
 pub struct LoadBalanceFlowLabel {
     group_name: String,
     interface_name: String,
     flow: String,
 }
 
-#[derive(Clone, Encode, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, EncodeLabelSet, Eq, Hash, PartialEq)]
 pub struct LoadBalancePingLabel {
     group_name: String,
     interface_name: String,
@@ -82,63 +82,63 @@ impl Collector for LoadBalanceStatusResult {
         registry.register(
             "edgerouter_load_balancer_status",
             "Status (0: inactive, 1: active, 2: failover)",
-            Box::new(load_balancer_status.clone()),
+            load_balancer_status.clone(),
         );
 
-        let load_balancer_weight_ratio = Family::<LoadBalanceHealthLabel, Gauge<f64>>::default();
+        let load_balancer_weight_ratio = Family::<LoadBalanceHealthLabel, Gauge<f64, atomic::AtomicU64>>::default();
         registry.register(
             "edgerouter_load_balancer_weight_ratio",
             "Weight ratio",
-            Box::new(load_balancer_weight_ratio.clone()),
+            load_balancer_weight_ratio.clone(),
         );
 
         let load_balancer_flows_total = Family::<LoadBalanceFlowLabel, Gauge>::default();
         registry.register(
             "edgerouter_load_balancer_flows_total",
             "Total number of flows",
-            Box::new(load_balancer_flows_total.clone()),
+            load_balancer_flows_total.clone(),
         );
 
         let load_balancer_health = Family::<LoadBalanceHealthLabel, Gauge>::default();
         registry.register(
             "edgerouter_load_balancer_health",
             "Result of watchdog",
-            Box::new(load_balancer_health.clone()),
+            load_balancer_health.clone(),
         );
 
         let load_balancer_run_fail_total = Family::<LoadBalanceHealthLabel, Gauge>::default();
         registry.register(
             "edgerouter_load_balancer_run_fail_total",
             "Total number of run failures",
-            Box::new(load_balancer_run_fail_total.clone()),
+            load_balancer_run_fail_total.clone(),
         );
 
         let load_balancer_route_drop_total = Family::<LoadBalanceHealthLabel, Gauge>::default();
         registry.register(
             "edgerouter_load_balancer_route_drop_total",
             "Total number of route drops",
-            Box::new(load_balancer_route_drop_total.clone()),
+            load_balancer_route_drop_total.clone(),
         );
 
         let load_balancer_ping_health = Family::<LoadBalancePingLabel, Gauge>::default();
         registry.register(
             "edgerouter_load_balancer_ping_health",
             "Result of ping",
-            Box::new(load_balancer_ping_health.clone()),
+            load_balancer_ping_health.clone(),
         );
 
         let load_balancer_ping_total = Family::<LoadBalancePingLabel, Gauge>::default();
         registry.register(
             "edgerouter_load_balancer_ping_total",
             "Total number of pings",
-            Box::new(load_balancer_ping_total.clone()),
+            load_balancer_ping_total.clone(),
         );
 
         let load_balancer_ping_fail_total = Family::<LoadBalancePingLabel, Gauge>::default();
         registry.register(
             "edgerouter_load_balancer_ping_fail_total",
             "Total number of ping failures",
-            Box::new(load_balancer_ping_fail_total.clone()),
+            load_balancer_ping_fail_total.clone(),
         );
 
         for load_balance in self {
@@ -159,10 +159,11 @@ impl Collector for LoadBalanceStatusResult {
                     .set(interface.weight);
 
                 for (flow, value) in interface.flows {
+                    let value: u64 = value.into();
                     let labels = labels.clone().flow(flow);
                     load_balancer_flows_total
                         .get_or_create(&labels)
-                        .set(value.into());
+                        .set(value as i64);
                 }
 
                 if let Some(watchdog) = interface.watchdog {
@@ -210,11 +211,11 @@ impl Collector for LoadBalanceStatusResult {
 
                     load_balancer_run_fail_total
                         .get_or_create(&labels)
-                        .set(run_fails);
+                        .set(run_fails as i64);
 
                     load_balancer_route_drop_total
                         .get_or_create(&labels)
-                        .set(route_drops);
+                        .set(route_drops as i64);
 
                     let labels = labels.ping(ping_gateway);
                     load_balancer_ping_health
@@ -223,11 +224,11 @@ impl Collector for LoadBalanceStatusResult {
 
                     load_balancer_ping_total
                         .get_or_create(&labels)
-                        .set(ping_total);
+                        .set(ping_total as i64);
 
                     load_balancer_ping_fail_total
                         .get_or_create(&labels)
-                        .set(ping_fail_total);
+                        .set(ping_fail_total as i64);
                 }
             }
         }

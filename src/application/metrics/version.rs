@@ -1,5 +1,5 @@
 use prometheus_client::{
-    encoding::text::Encode,
+    encoding::EncodeLabelSet,
     metrics::family::Family,
     registry::Registry,
 };
@@ -10,7 +10,7 @@ use crate::{
     service::version::VersionResult,
 };
 
-#[derive(Clone, Encode, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, EncodeLabelSet, Eq, Hash, PartialEq)]
 pub struct VersionLabel {
     version: String,
     build_id: String,
@@ -33,7 +33,7 @@ impl Collector for VersionResult {
         registry.register(
             "edgerouter_info",
             "Version info",
-            Box::new(info.clone()),
+            info.clone(),
         );
 
         info.get_or_create(&self.into()).set(1);
