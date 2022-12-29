@@ -19,7 +19,7 @@ jobs:
             args: []
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Set up rust
         uses: actions-rs/toolchain@v1
         with:
