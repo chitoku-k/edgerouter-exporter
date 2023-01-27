@@ -22,7 +22,7 @@ version = "0.1.62"
 version = "0.2.0"
 
 [dependencies.axum]
-version = "0.6.2"
+version = "0.6.4"
 features = ["http1", "http2"]
 default-features = false
 
