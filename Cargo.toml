@@ -88,7 +88,7 @@ version = "1.24.2"
 features = ["macros", "net", "process", "rt-multi-thread"]
 
 [dev-dependencies.indoc]
-version = "1.0.8"
+version = "2.0.0"
 
 [dev-dependencies.mockall]
 version = "0.11.3"
