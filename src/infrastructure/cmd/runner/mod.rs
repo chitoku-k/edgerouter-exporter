@@ -41,7 +41,7 @@ impl fmt::Debug for Output<'_> {
         let output = output.trim_end();
         if !output.is_empty() {
             writeln!(f)?;
-            write!(indented(f), "{}", output)?;
+            write!(indented(f), "{output}")?;
         }
 
         Ok(())
