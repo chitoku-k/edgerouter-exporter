@@ -12,14 +12,14 @@ pre-build = [
 ]
 
 [target.mipsel-unknown-linux-gnu]
-image = "ghcr.io/cross-rs/mipsel-unknown-linux-gnu:0.2.4"
+image = "ghcr.io/cross-rs/mipsel-unknown-linux-gnu:0.2.5"
 env.passthrough = [
     "RUSTFLAGS=-C strip=symbols",
     "OPENSSL_DIR=/usr/mipsel-linux-gnu",
 ]
 
 [target.mips-unknown-linux-gnu]
-image = "ghcr.io/cross-rs/mips-unknown-linux-gnu:0.2.4"
+image = "ghcr.io/cross-rs/mips-unknown-linux-gnu:0.2.5"
 env.passthrough = [
     "RUSTFLAGS=-C strip=symbols",
     "OPENSSL_DIR=/usr/mips-linux-gnu",
