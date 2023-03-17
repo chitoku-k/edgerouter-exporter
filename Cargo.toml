@@ -41,7 +41,7 @@ version = "0.99.0"
 version = "0.10.0"
 
 [dependencies.futures]
-version = "0.3.26"
+version = "0.3.27"
 
 [dependencies.hyper]
 version = "0.14.24"
