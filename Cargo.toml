@@ -51,7 +51,7 @@ features = ["runtime", "server"]
 version = "0.3.3"
 
 [dependencies.indexmap]
-version = "1.9.2"
+version = "1.9.3"
 features = ["serde"]
 
 [dependencies.log]
