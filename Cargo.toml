@@ -81,7 +81,7 @@ version = "1.0.159"
 features = ["derive"]
 
 [dependencies.tls-listener]
-version = "0.6.0"
+version = "0.7.0"
 
 [dependencies.tokio]
 version = "1.27.0"
