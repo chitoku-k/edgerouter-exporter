@@ -518,7 +518,7 @@ checksum = "89ca545a94061b6365f2c7355b4b32bd20df3ff95f02da9329b34ccc3bd6ee72"
 dependencies = [
  "proc-macro2",
  "quote 1.0.26",
- "syn 2.0.8",
+ "syn 2.0.12",
 ]
 
 [[package]]
@@ -1485,9 +1485,9 @@ dependencies = [
 
 [[package]]
 name = "tls-listener"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "97abcaa5d5850d3b469898d1e0939b57c3afb4475122e792cdd1c82b07f5de06"
+checksum = "81294c017957a1a69794f506723519255879e15a870507faf45dfed288b763dd"
 dependencies = [
  "futures-util",
  "hyper",
@@ -1524,7 +1524,7 @@ checksum = "61a573bdc87985e9d6ddeed1b3d864e8a302c847e40d647746df2f1de209d1ce"
 dependencies = [
  "proc-macro2",
  "quote 1.0.26",
- "syn 2.0.8",
+ "syn 2.0.12",
 ]
 
 [[package]]
