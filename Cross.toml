@@ -1,5 +1,6 @@
 [build]
 pre-build = [
+    "set -eu",
     "export DEBIAN_FRONTEND=noninteractive",
     "dpkg --add-architecture $CROSS_DEB_ARCH > /etc/dpkg/dpkg.cfg.d/multiarch",
     "echo 'deb http://http.debian.net/debian/ stretch main' >> /etc/apt/sources.list",
