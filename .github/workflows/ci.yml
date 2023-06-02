@@ -10,14 +10,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Set up rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
+        uses: dtolnay/rust-toolchain@stable
       - name: Test
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all
+        run: |
+          cargo test --all
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -34,12 +30,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Set up rust
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
+          targets: ${{ matrix.target.name }}
+      - name: Set up cross
+        run: |
+          cargo install cross
       - name: Build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release --target=${{ matrix.target.name }} ${{ join(matrix.target.args, ' ') }}
-          use-cross: true
+        run: |
+          cross build --release --target=${{ matrix.target.name }} ${{ join(matrix.target.args, ' ') }}
