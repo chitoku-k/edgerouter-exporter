@@ -84,7 +84,7 @@ features = ["derive"]
 version = "0.7.0"
 
 [dependencies.tokio]
-version = "1.28.1"
+version = "1.28.2"
 features = ["macros", "net", "process", "rt-multi-thread"]
 
 [dev-dependencies.indoc]
