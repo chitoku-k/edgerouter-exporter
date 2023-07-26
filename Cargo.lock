@@ -310,7 +310,7 @@ checksum = "519b83cd10f5f6e969625a409f735182bea5558cd8b64c655806ceaae36f1999"
 
 [[package]]
 name = "edgerouter-exporter"
-version = "2.8.4"
+version = "2.9.0"
 dependencies = [
  "anyhow",
  "async-trait",
