@@ -1,0 +1,11 @@
+[Unit]
+Description=Prometheus exporter for EdgeRouter metrics
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+EnvironmentFile=-/config/user-data/edgerouter-exporter.env
+ExecStart=/usr/bin/edgerouter-exporter
+
+[Install]
+WantedBy=multi-user.target

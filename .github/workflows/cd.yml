@@ -27,13 +27,18 @@ jobs:
       - name: Set up cross
         run: |
           cargo install cross
+      - name: Set up cargo-deb
+        run: |
+          cargo install cargo-deb
       - name: Build
         run: |
           cross build --release --target=${{ matrix.target.name }} ${{ join(matrix.target.args, ' ') }}
-      - name: Rename
-        run: |
-          mv target/${{ matrix.target.name }}/release/edgerouter-exporter{,-${{ matrix.target.id }}}
+          cargo deb \
+            --no-build \
+            --no-strip \
+            --target=${{ matrix.target.name }} \
+            --output=target/${{ matrix.target.name }}/debian/prometheus-edgerouter-exporter_${{ matrix.target.id }}.deb
       - name: Upload
         uses: softprops/action-gh-release@v1
         with:
-          files: target/${{ matrix.target.name }}/release/edgerouter-exporter-${{ matrix.target.id }}
+          files: target/${{ matrix.target.name }}/debian/prometheus-edgerouter-exporter_${{ matrix.target.id }}.deb
