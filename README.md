@@ -39,76 +39,51 @@ To find on which architecture your model is running, refer to [EdgeRouter - Hard
 ### MediaTek-based devices
 
 ```console
-$ curl -fL -o edgerouter-exporter https://github.com/chitoku-k/edgerouter-exporter/releases/latest/download/edgerouter-exporter-mipsel
-$ chmod +x edgerouter-exporter
-$ mv edgerouter-exporter /config/scripts
+$ curl -fLO https://github.com/chitoku-k/edgerouter-exporter/releases/latest/download/prometheus-edgerouter-exporter_mipsel.deb
+$ sudo mkdir -p /config/data/firstboot/install-packages
+$ sudo mv prometheus-edgerouter-exporter_mipsel.deb /config/data/firstboot/install-packages
+$ sudo dpkg -i /config/data/firstboot/install-packages/prometheus-edgerouter-exporter_mipsel.deb
 ```
 
 ### Cavium-based devices
 
 ```console
-$ curl -fL -o edgerouter-exporter https://github.com/chitoku-k/edgerouter-exporter/releases/latest/download/edgerouter-exporter-mips
-$ chmod +x edgerouter-exporter
-$ mv edgerouter-exporter /config/scripts
+$ curl -fLO https://github.com/chitoku-k/edgerouter-exporter/releases/latest/download/prometheus-edgerouter-exporter_mips.deb
+$ sudo mkdir -p /config/data/firstboot/install-packages
+$ sudo mv prometheus-edgerouter-exporter_mips.deb /config/data/firstboot/install-packages
+$ sudo dpkg -i /config/data/firstboot/install-packages/prometheus-edgerouter-exporter_mips.deb
 ```
 
 ### Configuration
 
-Configure by either of the following options.
-
-#### Command-line options
-
-See `edgerouter-exporter --help`.
-
 #### Environment variables
+
+Configure by creating `/config/user-data/edgerouter-exporter.env`.
 
 ```sh
 # Port number (required)
-export PORT=8080
+PORT=8080
 
 # Log level (optional; one of trace, debug, info, warn, and error)
-export LOG_LEVEL=info
+#LOG_LEVEL=info
 
 # TLS certificate and private key (optional; if not specified, exporter is served over HTTP)
-export TLS_CERT=/path/to/tls/cert
-export TLS_KEY=/path/to/tls/key
+#TLS_CERT=/path/to/tls/cert
+#TLS_KEY=/path/to/tls/key
 
 # Path to Unix socket for VICI (optional)
-export VICI_PATH=/run/charon.vici
+#VICI_PATH=/run/charon.vici
 
 # Op command (optional)
-export IP_COMMAND=/bin/ip
-export OP_COMMAND=/opt/vyatta/bin/vyatta-op-cmd-wrapper
-export OP_DDNS_COMMAND=/opt/vyatta/bin/sudo-users/vyatta-op-dynamic-dns.pl
-export VTYSH_COMMAND=/opt/vyatta/sbin/ubnt_vtysh
+#IP_COMMAND=/bin/ip
+#OP_COMMAND=/opt/vyatta/bin/vyatta-op-cmd-wrapper
+#OP_DDNS_COMMAND=/opt/vyatta/bin/sudo-users/vyatta-op-dynamic-dns.pl
+#VTYSH_COMMAND=/opt/vyatta/sbin/ubnt_vtysh
 ```
 
 ## Usage
 
-To simply run edgerouter-exporter:
-
 ```sh
-$ sudo /config/scripts/edgerouter-exporter
-```
-
-To daemonize edgerouter-exporter:
-
-```sh
-$ cat <<EOF | sudo tee /etc/systemd/system/prometheus-edgerouter-exporter.service
-[Unit]
-Description=Prometheus exporter for EdgeRouter metrics
-Wants=network-online.target
-After=network-online.target
-
-[Service]
-Environment=PORT=8080
-ExecStart=/config/scripts/edgerouter-exporter
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-$ sudo systemctl daemon-reload
 $ sudo systemctl enable --now prometheus-edgerouter-exporter.service
 ```
 

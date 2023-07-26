@@ -1,7 +1,25 @@
 [package]
 name = "edgerouter-exporter"
+description = "Prometheus exporter for EdgeRouter metrics"
 version = "2.8.4"
 edition = "2021"
+authors = ["Chitoku <odango@chitoku.jp>"]
+license = "MIT"
+
+[package.metadata.deb]
+name = "prometheus-edgerouter-exporter"
+depends = ["libc6 (>= 2.23)", "libgcc1", "libssl1.1"]
+assets = [["target/release/edgerouter-exporter", "usr/bin/", "755"]]
+maintainer-scripts = "debian/"
+extended-description = """
+This server reads statistics from EdgeOS and exports them via HTTP or HTTPS for
+consumption by Prometheus.
+"""
+
+[package.metadata.deb.systemd-units]
+unit-name = "prometheus-edgerouter-exporter"
+enable = false
+start = false
 
 [profile.release]
 opt-level = "z"
