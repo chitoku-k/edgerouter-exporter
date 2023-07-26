@@ -277,7 +277,8 @@ mod tests {
             Neighbor                 V   AS   MsgRcv    MsgSen TblVer   InQ   OutQ    Up/Down   State/PfxRcd
             2001:db8::2              4 64497 3000       7000     128      3      7  03:33:33              11
             2001:db8::3              4 64497 4000       8000     128      4      8  4d05h06m              12
-            2001:db8::4              4 64497    0          0       0      0      0     never     Connect
+            2001:db8::ffff:ffff:ffff:ffff4 64497    0          0       0      0      0     never     Connect
+
 
             Total number of neighbors 3
 
@@ -342,7 +343,7 @@ mod tests {
                         prefixes_received: Some(12),
                     },
                     BGPNeighbor {
-                        neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0x4)),
+                        neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0xffff, 0x0ffff, 0xffff, 0xffff)),
                         version: 4,
                         remote_as: 64497,
                         messages_received: 0,
@@ -398,7 +399,7 @@ mod tests {
                         prefixes_received: Some(12),
                     },
                     BGPNeighbor {
-                        neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0x4)),
+                        neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0xffff, 0x0ffff, 0xffff, 0xffff)),
                         version: 4,
                         remote_as: 64497,
                         messages_received: 0,
@@ -431,7 +432,7 @@ mod tests {
             192.0.2.4                4 64497    0          0       0      0      0     never     Connect
             2001:db8::2              4 64497 3000       7000     128      3      7  03:33:33               0
             2001:db8::3              4 64497 4000       8000     128      4      8  4d05h06m               0
-            2001:db8::4              4 64497    0          0       0      0      0     never     Connect
+            2001:db8::ffff:ffff:ffff:ffff4 64497    0          0       0      0      0     never     Connect
 
             Total number of neighbors 6
 
@@ -446,7 +447,7 @@ mod tests {
             Neighbor                 V   AS   MsgRcv    MsgSen TblVer   InQ   OutQ    Up/Down   State/PfxRcd
             2001:db8::2              4 64497 3000       7000     128      3      7  03:33:33              11
             2001:db8::3              4 64497 4000       8000     128      4      8  4d05h06m              12
-            2001:db8::4              4 64497    0          0       0      0      0     never     Connect
+            2001:db8::ffff:ffff:ffff:ffff4 64497    0          0       0      0      0     never     Connect
 
             Total number of neighbors 3
 
@@ -545,7 +546,7 @@ mod tests {
                         prefixes_received: Some(0),
                     },
                     BGPNeighbor {
-                        neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0x4)),
+                        neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0xffff, 0x0ffff, 0xffff, 0xffff)),
                         version: 4,
                         remote_as: 64497,
                         messages_received: 0,
@@ -600,7 +601,7 @@ mod tests {
                         prefixes_received: Some(12),
                     },
                     BGPNeighbor {
-                        neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0x4)),
+                        neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0xffff, 0x0ffff, 0xffff, 0xffff)),
                         version: 4,
                         remote_as: 64497,
                         messages_received: 0,
@@ -706,7 +707,7 @@ mod tests {
                         prefixes_received: Some(12),
                     },
                     BGPNeighbor {
-                        neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0x4)),
+                        neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0xffff, 0x0ffff, 0xffff, 0xffff)),
                         version: 4,
                         remote_as: 64497,
                         messages_received: 0,
