@@ -18,6 +18,8 @@ use crate::{
     service::bgp::BGPStatusResult,
 };
 
+const BGP_VERSION: &str = "4";
+
 pub struct BGPParser;
 
 impl Parser for BGPParser {
@@ -33,8 +35,17 @@ impl Parser for BGPParser {
     }
 }
 
-fn parse_bgp_neighbor(header: &[&str], entry: &[&str]) -> anyhow::Result<BGPNeighbor> {
-    let entry: HashMap<_, _> = header.iter().zip(entry.iter()).collect();
+fn parse_bgp_neighbor(header: &[&str], line: &[&str]) -> anyhow::Result<BGPNeighbor> {
+    let entry: HashMap<_, _> = header.iter().zip(line.iter()).collect();
+    if header.len() > entry.len() && entry.get(&"V").is_some_and(|&&v| v != BGP_VERSION) {
+        return header
+            .iter()
+            .position(|&k| k == "V")
+            .and_then(|i| line.get(i - 1).and_then(|v| v.strip_suffix(BGP_VERSION)).map(|v| (i, v))
+            .map(|(i, v)| [&line[..i - 1], &[v], &[BGP_VERSION], &line[i..]].concat()))
+            .map(|line| parse_bgp_neighbor(header, &line))
+            .context("invalid V")?;
+    }
 
     let state_or_pfx_rcd = entry.get(&"State/PfxRcd").context("cannot find State/PfxRcd")?;
     let (state, prefixes_received) = match state_or_pfx_rcd.parse().ok() {
@@ -206,7 +217,7 @@ mod tests {
             192.0.2.4                4 64497    0          0       0      0      0     never     Connect
             2001:db8::2              4 64497 3000       7000     128      3      7  03:33:33               0
             2001:db8::3              4 64497 4000       8000     128      4      8  4d05h06m               0
-            2001:db8::4              4 64497    0          0       0      0      0     never     Connect
+            2001:db8::ffff:ffff:ffff:ffff4 64497    0          0       0      0      0     never     Connect
 
             Total number of neighbors 6
 
@@ -289,7 +300,7 @@ mod tests {
                     prefixes_received: Some(0),
                 },
                 BGPNeighbor {
-                    neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0x4)),
+                    neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0xffff, 0x0ffff, 0xffff, 0xffff)),
                     version: 4,
                     remote_as: 64497,
                     messages_received: 0,
@@ -323,7 +334,7 @@ mod tests {
             192.0.2.4                4 64497    0          0       0      0      0     never     Connect
             2001:db8::2              4 64497 3000       7000     128      3      7  03:33:33               0
             2001:db8::3              4 64497 4000       8000     128      4      8  4d05h06m               0
-            2001:db8::4              4 64497    0          0       0      0      0     never     Connect
+            2001:db8::ffff:ffff:ffff:ffff4 64497    0          0       0      0      0     never     Connect
 
             Total number of neighbors 6
 
@@ -406,7 +417,7 @@ mod tests {
                     prefixes_received: Some(0),
                 },
                 BGPNeighbor {
-                    neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0x4)),
+                    neighbor: IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0xffff, 0x0ffff, 0xffff, 0xffff)),
                     version: 4,
                     remote_as: 64497,
                     messages_received: 0,
