@@ -17,7 +17,7 @@ pub struct VersionRunner<E, P> {
 impl<E, P> VersionRunner<E, P>
 where
     E: Executor + Send + Sync,
-    for<'a> P: Parser<Input<'a> = &'a str, Item = VersionResult> + Send + Sync,
+    P: Parser<Context<'static> = (), Item = VersionResult> + Send + Sync,
 {
     pub fn new(command: OpCommand, executor: E, parser: P) -> Self {
         Self {
@@ -29,7 +29,7 @@ where
 
     async fn version(&self) -> anyhow::Result<VersionResult> {
         let output = self.executor.output(&self.command, &["show", "version"]).await?;
-        let result = self.parser.parse(&output)?;
+        let result = self.parser.parse(&output, ())?;
         Ok(result)
     }
 }
@@ -38,7 +38,7 @@ where
 impl<E, P> Runner for VersionRunner<E, P>
 where
     E: Executor + Send + Sync,
-    for<'a> P: Parser<Input<'a> = &'a str, Item = VersionResult> + Send + Sync,
+    P: Parser<Context<'static> = (), Item = VersionResult> + Send + Sync,
 {
     type Item = VersionResult;
 
@@ -62,10 +62,10 @@ mod tests {
         VersionParser {}
 
         impl Parser for VersionParser {
-            type Input<'a> = &'a str;
+            type Context<'a> = ();
             type Item = VersionResult;
 
-            fn parse(&self, input: &str) -> anyhow::Result<<Self as Parser>::Item>;
+            fn parse(&self, input: &str, context: <Self as Parser>::Context<'static>) -> anyhow::Result<<Self as Parser>::Item>;
         }
     }
 
@@ -93,8 +93,8 @@ mod tests {
         mock_parser
             .expect_parse()
             .times(1)
-            .with(eq(output))
-            .returning(|_| Ok(Version {
+            .with(eq(output), eq(()))
+            .returning(|_, _| Ok(Version {
                 version: "v2.0.6".to_string(),
                 build_id: "5208541".to_string(),
                 build_on: NaiveDate::from_ymd_opt(2006, 1, 2).and_then(|d| d.and_hms_opt(15, 4, 0)).unwrap(),

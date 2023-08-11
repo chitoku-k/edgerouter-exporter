@@ -33,10 +33,10 @@ pub struct LoadBalanceStatusParser;
 pub struct LoadBalanceWatchdogParser;
 
 impl Parser for LoadBalanceStatusParser {
-    type Input<'a> = &'a str;
+    type Context<'a> = ();
     type Item = LoadBalanceStatusResult;
 
-    fn parse(&self, input: Self::Input<'_>) -> anyhow::Result<Self::Item> {
+    fn parse(&self, input: &str, _context: ()) -> anyhow::Result<Self::Item> {
         parse_load_balance_status(input)
             .finish()
             .map(|(_, status)| status)
@@ -46,10 +46,10 @@ impl Parser for LoadBalanceStatusParser {
 }
 
 impl Parser for LoadBalanceWatchdogParser {
-    type Input<'a> = &'a str;
+    type Context<'a> = ();
     type Item = LoadBalanceWatchdogResult;
 
-    fn parse(&self, input: Self::Input<'_>) -> anyhow::Result<Self::Item> {
+    fn parse(&self, input: &str, _context: ()) -> anyhow::Result<Self::Item> {
         parse_load_balance_watchdog(input)
             .finish()
             .map(|(_, groups)| groups)
@@ -388,13 +388,13 @@ mod tests {
         let parser = LoadBalanceStatusParser;
         let input = "";
 
-        let actual = parser.parse(input);
+        let actual = parser.parse(input, ());
         assert!(actual.is_err());
 
         let parser = LoadBalanceWatchdogParser;
         let input = "";
 
-        let actual = parser.parse(input);
+        let actual = parser.parse(input, ());
         assert!(actual.is_err());
     }
 
@@ -403,13 +403,13 @@ mod tests {
         let parser = LoadBalanceStatusParser;
         let input = "load-balance is not configured";
 
-        let actual = parser.parse(input).unwrap();
+        let actual = parser.parse(input, ()).unwrap();
         assert_eq!(actual, vec![]);
 
         let parser = LoadBalanceWatchdogParser;
         let input = "load-balance is not configured";
 
-        let actual = parser.parse(input).unwrap();
+        let actual = parser.parse(input, ()).unwrap();
         assert_eq!(actual, vec![]);
     }
 
@@ -425,7 +425,7 @@ mod tests {
 
         "};
 
-        let actual = parser.parse(input).unwrap();
+        let actual = parser.parse(input, ()).unwrap();
         assert_eq!(actual, vec![
             LoadBalanceStatus {
                 name: "FAILOVER_01".to_string(),
@@ -440,7 +440,7 @@ mod tests {
         let parser = LoadBalanceWatchdogParser;
         let input = "Group FAILOVER_01";
 
-        let actual = parser.parse(input).unwrap();
+        let actual = parser.parse(input, ()).unwrap();
         assert_eq!(actual, vec![
             LoadBalanceWatchdog {
                 name: "FAILOVER_01".to_string(),
@@ -489,7 +489,7 @@ mod tests {
 
         "};
 
-        let actual = parser.parse(input).unwrap();
+        let actual = parser.parse(input, ()).unwrap();
         assert_eq!(actual, vec![
             LoadBalanceStatus {
                 name: "FAILOVER_01".to_string(),
@@ -564,7 +564,7 @@ mod tests {
 
         "};
 
-        let actual = parser.parse(input).unwrap();
+        let actual = parser.parse(input, ()).unwrap();
         assert_eq!(actual, vec![
             LoadBalanceWatchdog {
                 name: "FAILOVER_01".to_string(),
@@ -686,7 +686,7 @@ mod tests {
 
         "};
 
-        let actual = parser.parse(input).unwrap();
+        let actual = parser.parse(input, ()).unwrap();
         assert_eq!(actual, vec![
             LoadBalanceStatus {
                 name: "FAILOVER_01".to_string(),
@@ -845,7 +845,7 @@ mod tests {
 
         "};
 
-        let actual = parser.parse(input).unwrap();
+        let actual = parser.parse(input, ()).unwrap();
         assert_eq!(actual, vec![
             LoadBalanceWatchdog {
                 name: "FAILOVER_01".to_string(),

@@ -21,10 +21,10 @@ use crate::{
 pub struct InterfaceParser;
 
 impl Parser for InterfaceParser {
-    type Input<'a> = &'a str;
+    type Context<'a> = ();
     type Item = InterfaceResult;
 
-    fn parse(&self, input: Self::Input<'_>) -> anyhow::Result<Self::Item> {
+    fn parse(&self, input: &str, _context: ()) -> anyhow::Result<Self::Item> {
         parse_interfaces(input)
             .finish()
             .map(|(_, interfaces)| interfaces)
@@ -140,7 +140,7 @@ mod tests {
             pppoe0           UP             203.0.113.1 peer 192.0.2.255/32 
         "#};
 
-        let actual = parser.parse(input).unwrap();
+        let actual = parser.parse(input, ()).unwrap();
         assert_eq!(actual, vec![
             Interface {
                 ifname: "lo".to_string(),

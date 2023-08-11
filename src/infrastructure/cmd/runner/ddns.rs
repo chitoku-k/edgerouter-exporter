@@ -17,7 +17,7 @@ pub struct DdnsRunner<E, P> {
 impl<E, P> DdnsRunner<E, P>
 where
     E: Executor + Send + Sync,
-    for<'a> P: Parser<Input<'a> = &'a str, Item = DdnsStatusResult> + Send + Sync,
+    P: Parser<Context<'static> = (), Item = DdnsStatusResult> + Send + Sync,
 {
     pub fn new(command: OpDdnsCommand, executor: E, parser: P) -> Self {
         Self {
@@ -29,7 +29,7 @@ where
 
     async fn statuses(&self) -> anyhow::Result<DdnsStatusResult> {
         let output = self.executor.output(&self.command, &["--show-status"]).await?;
-        let result = self.parser.parse(&output)?;
+        let result = self.parser.parse(&output, ())?;
         Ok(result)
     }
 }
@@ -38,7 +38,7 @@ where
 impl<E, P> Runner for DdnsRunner<E, P>
 where
     E: Executor + Send + Sync,
-    for<'a> P: Parser<Input<'a> = &'a str, Item = DdnsStatusResult> + Send + Sync,
+    P: Parser<Context<'static> = (), Item = DdnsStatusResult> + Send + Sync,
 {
     type Item = DdnsStatusResult;
 
@@ -67,10 +67,10 @@ mod tests {
         DdnsParser {}
 
         impl Parser for DdnsParser {
-            type Input<'a> = &'a str;
+            type Context<'a> = ();
             type Item = DdnsStatusResult;
 
-            fn parse(&self, input: &str) -> anyhow::Result<<Self as Parser>::Item>;
+            fn parse(&self, input: &str, context: <Self as Parser>::Context<'static>) -> anyhow::Result<<Self as Parser>::Item>;
         }
     }
 
@@ -102,8 +102,8 @@ mod tests {
         mock_parser
             .expect_parse()
             .times(1)
-            .with(eq(output))
-            .returning(|_| Ok(vec![
+            .with(eq(output), eq(()))
+            .returning(|_, _| Ok(vec![
                 DdnsStatus {
                     interface: "eth0".to_string(),
                     ip_address: Some(IpAddr::V4(Ipv4Addr::new(192, 0, 2, 1))),

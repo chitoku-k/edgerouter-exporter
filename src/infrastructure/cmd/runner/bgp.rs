@@ -18,7 +18,7 @@ pub struct BGPRunner<E, P> {
 impl<E, P> BGPRunner<E, P>
 where
     E: Executor + Send + Sync,
-    for<'a> P: Parser<Input<'a> = &'a str, Item = BGPStatusResult> + Send + Sync,
+    P: Parser<Context<'static> = (), Item = BGPStatusResult> + Send + Sync,
 {
     pub fn new(command: VtyshCommand, executor: E, parser: P) -> Self {
         Self {
@@ -30,7 +30,7 @@ where
 
     async fn ipv4(&self) -> anyhow::Result<BGPStatusResult> {
         let output = self.executor.output(&self.command, &["-c", "show ip bgp summary"]).await?;
-        let result = self.parser.parse(&output)?.map(|mut status| {
+        let result = self.parser.parse(&output, ())?.map(|mut status| {
             status.neighbors.retain(|n| n.neighbor.is_ipv4());
             status
         });
@@ -39,7 +39,7 @@ where
 
     async fn ipv6(&self) -> anyhow::Result<BGPStatusResult> {
         let output = self.executor.output(&self.command, &["-c", "show bgp ipv6 summary"]).await?;
-        let result = self.parser.parse(&output)?.map(|mut status| {
+        let result = self.parser.parse(&output, ())?.map(|mut status| {
             status.neighbors.retain(|n| n.neighbor.is_ipv6());
             status
         });
@@ -51,7 +51,7 @@ where
 impl<E, P> Runner for BGPRunner<E, P>
 where
     E: Executor + Send + Sync,
-    for<'a> P: Parser<Input<'a> = &'a str, Item = BGPStatusResult> + Send + Sync,
+    P: Parser<Context<'static> = (), Item = BGPStatusResult> + Send + Sync,
 {
     type Item = (BGPStatusResult, BGPStatusResult);
 
@@ -79,10 +79,10 @@ mod tests {
         BGPParser {}
 
         impl Parser for BGPParser {
-            type Input<'a> = &'a str;
+            type Context<'a> = ();
             type Item = BGPStatusResult;
 
-            fn parse(&self, input: &str) -> anyhow::Result<<Self as Parser>::Item>;
+            fn parse(&self, input: &str, context: <Self as Parser>::Context<'static>) -> anyhow::Result<<Self as Parser>::Item>;
         }
     }
 
@@ -106,8 +106,8 @@ mod tests {
         mock_parser
             .expect_parse()
             .times(2)
-            .with(eq(""))
-            .returning(|_| Ok(None));
+            .with(eq(""), eq(()))
+            .returning(|_, _| Ok(None));
 
         let runner = BGPRunner::new(command, mock_executor, mock_parser);
         let actual = runner.run().await.unwrap();
@@ -149,8 +149,8 @@ mod tests {
         mock_parser
             .expect_parse()
             .times(1)
-            .with(eq(ipv4_output))
-            .returning(|_| Ok(Some(BGPStatus {
+            .with(eq(ipv4_output), eq(()))
+            .returning(|_, _| Ok(Some(BGPStatus {
                 router_id: "192.0.2.1".to_string(),
                 local_as: 64496,
                 table_version: 128,
@@ -204,8 +204,8 @@ mod tests {
         mock_parser
             .expect_parse()
             .times(1)
-            .with(eq(""))
-            .returning(|_| Ok(None));
+            .with(eq(""), eq(()))
+            .returning(|_, _| Ok(None));
 
         let runner = BGPRunner::new(command, mock_executor, mock_parser);
         let actual = runner.run().await.unwrap();
@@ -301,13 +301,13 @@ mod tests {
         mock_parser
             .expect_parse()
             .times(1)
-            .with(eq(""))
-            .returning(|_| Ok(None));
+            .with(eq(""), eq(()))
+            .returning(|_, _| Ok(None));
         mock_parser
             .expect_parse()
             .times(1)
-            .with(eq(ipv6_output))
-            .returning(|_| Ok(Some(BGPStatus {
+            .with(eq(ipv6_output), eq(()))
+            .returning(|_, _| Ok(Some(BGPStatus {
                 router_id: "192.0.2.1".to_string(),
                 local_as: 64496,
                 table_version: 128,
@@ -470,8 +470,8 @@ mod tests {
         mock_parser
             .expect_parse()
             .times(1)
-            .with(eq(ipv4_output))
-            .returning(|_| Ok(Some(BGPStatus {
+            .with(eq(ipv4_output), eq(()))
+            .returning(|_, _| Ok(Some(BGPStatus {
                 router_id: "192.0.2.1".to_string(),
                 local_as: 64496,
                 table_version: 128,
@@ -564,8 +564,8 @@ mod tests {
         mock_parser
             .expect_parse()
             .times(1)
-            .with(eq(ipv6_output))
-            .returning(|_| Ok(Some(BGPStatus {
+            .with(eq(ipv6_output), eq(()))
+            .returning(|_, _| Ok(Some(BGPStatus {
                 router_id: "192.0.2.1".to_string(),
                 local_as: 64496,
                 table_version: 128,
