@@ -19,10 +19,10 @@ pub mod pppoe;
 pub mod version;
 
 pub trait Parser {
-    type Input<'a>;
+    type Context<'a>;
     type Item;
 
-    fn parse(&self, input: Self::Input<'_>) -> anyhow::Result<Self::Item>;
+    fn parse(&self, input: &str, context: Self::Context<'_>) -> anyhow::Result<Self::Item>;
 }
 
 #[derive(Into)]

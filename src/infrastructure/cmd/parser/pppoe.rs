@@ -24,10 +24,10 @@ use crate::{
 pub struct PPPoEParser;
 
 impl Parser for PPPoEParser {
-    type Input<'a> = (&'a str, &'a [Interface]);
+    type Context<'a> = (&'a [Interface],);
     type Item = PPPoEClientSessionResult;
 
-    fn parse(&self, (input, interfaces): Self::Input<'_>) -> anyhow::Result<Self::Item> {
+    fn parse(&self, input: &str, (interfaces,): Self::Context<'_>) -> anyhow::Result<Self::Item> {
         parse_pppoe_client_sessions(input, interfaces)
             .finish()
             .map(|(_, sessions)| sessions)
@@ -191,7 +191,7 @@ mod tests {
         let input = "";
         let interfaces = &[];
 
-        assert!(parser.parse((input, interfaces)).is_err());
+        assert!(parser.parse(input, (interfaces,)).is_err());
     }
 
     #[test]
@@ -200,7 +200,7 @@ mod tests {
         let input = "No active PPPoE client sessions";
         let interfaces = &[];
 
-        let actual = parser.parse((input, interfaces)).unwrap();
+        let actual = parser.parse(input, (interfaces,)).unwrap();
         assert_eq!(actual, vec![]);
     }
 
@@ -219,7 +219,7 @@ mod tests {
         "};
         let interfaces = &[];
 
-        let actual = parser.parse((input, interfaces)).unwrap();
+        let actual = parser.parse(input, (interfaces,)).unwrap();
         assert_eq!(actual, vec![
             PPPoEClientSession {
                 user: "user01".to_string(),
@@ -286,7 +286,7 @@ mod tests {
             },
         ];
 
-        let actual = parser.parse((input, interfaces)).unwrap();
+        let actual = parser.parse(input, (interfaces,)).unwrap();
         assert_eq!(actual, vec![
             PPPoEClientSession {
                 user: "user01".to_string(),
@@ -353,7 +353,7 @@ mod tests {
             },
         ];
 
-        let actual = parser.parse((input, interfaces)).unwrap();
+        let actual = parser.parse(input, (interfaces,)).unwrap();
         assert_eq!(actual, vec![
             PPPoEClientSession {
                 user: "user01".to_string(),

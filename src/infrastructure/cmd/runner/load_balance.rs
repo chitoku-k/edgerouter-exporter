@@ -21,8 +21,8 @@ pub struct LoadBalanceRunner<E, StatusParser, WatchdogParser> {
 impl<E, StatusParser, WatchdogParser> LoadBalanceRunner<E, StatusParser, WatchdogParser>
 where
     E: Executor + Send + Sync,
-    for<'a> StatusParser: Parser<Input<'a> = &'a str, Item = LoadBalanceStatusResult> + Send + Sync,
-    for<'a> WatchdogParser: Parser<Input<'a> = &'a str, Item = LoadBalanceWatchdogResult> + Send + Sync,
+    StatusParser: Parser<Context<'static> = (), Item = LoadBalanceStatusResult> + Send + Sync,
+    WatchdogParser: Parser<Context<'static> = (), Item = LoadBalanceWatchdogResult> + Send + Sync,
 {
     pub fn new(command: OpCommand, executor: E, status_parser: StatusParser, watchdog_parser: WatchdogParser) -> Self {
         Self {
@@ -35,13 +35,13 @@ where
 
     async fn status(&self) -> anyhow::Result<LoadBalanceStatusResult> {
         let output = self.executor.output(&self.command, &["show", "load-balance", "status"]).await?;
-        let result = self.status_parser.parse(&output)?;
+        let result = self.status_parser.parse(&output, ())?;
         Ok(result)
     }
 
     async fn watchdog(&self) -> anyhow::Result<LoadBalanceWatchdogResult> {
         let output = self.executor.output(&self.command, &["show", "load-balance", "watchdog"]).await?;
-        let result = self.watchdog_parser.parse(&output)?;
+        let result = self.watchdog_parser.parse(&output, ())?;
         Ok(result)
     }
 }
@@ -50,8 +50,8 @@ where
 impl<E, StatusParser, WatchdogParser> Runner for LoadBalanceRunner<E, StatusParser, WatchdogParser>
 where
     E: Executor + Send + Sync,
-    for<'a> StatusParser: Parser<Input<'a> = &'a str, Item = LoadBalanceStatusResult> + Send + Sync,
-    for<'a> WatchdogParser: Parser<Input<'a> = &'a str, Item = LoadBalanceWatchdogResult> + Send + Sync,
+    StatusParser: Parser<Context<'static> = (), Item = LoadBalanceStatusResult> + Send + Sync,
+    WatchdogParser: Parser<Context<'static> = (), Item = LoadBalanceWatchdogResult> + Send + Sync,
 {
     type Item = LoadBalanceStatusResult;
 
@@ -105,10 +105,10 @@ mod tests {
         LoadBalanceStatusParser {}
 
         impl Parser for LoadBalanceStatusParser {
-            type Input<'a> = &'a str;
+            type Context<'a> = ();
             type Item = LoadBalanceStatusResult;
 
-            fn parse(&self, input: &str) -> anyhow::Result<<Self as Parser>::Item>;
+            fn parse(&self, input: &str, context: <Self as Parser>::Context<'static>) -> anyhow::Result<<Self as Parser>::Item>;
         }
     }
 
@@ -116,10 +116,10 @@ mod tests {
         LoadBalanceWatchdogParser {}
 
         impl Parser for LoadBalanceWatchdogParser {
-            type Input<'a> = &'a str;
+            type Context<'a> = ();
             type Item = LoadBalanceWatchdogResult;
 
-            fn parse(&self, input: &str) -> anyhow::Result<<Self as Parser>::Item>;
+            fn parse(&self, input: &str, context: <Self as Parser>::Context<'static>) -> anyhow::Result<<Self as Parser>::Item>;
         }
     }
 
@@ -203,8 +203,8 @@ mod tests {
         mock_status_parser
             .expect_parse()
             .times(1)
-            .with(eq(status_output))
-            .returning(|_| Ok(vec![
+            .with(eq(status_output), eq(()))
+            .returning(|_, _| Ok(vec![
                 LoadBalanceStatus {
                     name: "FAILOVER_01".to_string(),
                     balance_local: false,
@@ -258,8 +258,8 @@ mod tests {
         mock_watchdog_parser
             .expect_parse()
             .times(1)
-            .with(eq(watchdog_output))
-            .returning(|_| Ok(vec![
+            .with(eq(watchdog_output), eq(()))
+            .returning(|_, _| Ok(vec![
                 LoadBalanceWatchdog {
                     name: "FAILOVER_01".to_string(),
                     interfaces: vec![

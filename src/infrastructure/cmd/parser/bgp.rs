@@ -23,10 +23,10 @@ const BGP_VERSION: &str = "4";
 pub struct BGPParser;
 
 impl Parser for BGPParser {
-    type Input<'a> = &'a str;
+    type Context<'a> = ();
     type Item = BGPStatusResult;
 
-    fn parse(&self, input: Self::Input<'_>) -> anyhow::Result<Self::Item> {
+    fn parse(&self, input: &str, _context: ()) -> anyhow::Result<Self::Item> {
         parse_bgp_status(input)
             .finish()
             .map(|(_, status)| status)
@@ -189,7 +189,7 @@ mod tests {
         let parser = BGPParser;
         let input = "command not found";
 
-        let actual = parser.parse(input);
+        let actual = parser.parse(input, ());
         assert!(actual.is_err());
     }
 
@@ -198,7 +198,7 @@ mod tests {
         let parser = BGPParser;
         let input = "";
 
-        let actual = parser.parse(input).unwrap();
+        let actual = parser.parse(input, ()).unwrap();
         assert_eq!(actual, None);
     }
 
@@ -224,7 +224,7 @@ mod tests {
             Total number of Established sessions 4
         "};
 
-        let actual = parser.parse(input).unwrap();
+        let actual = parser.parse(input, ()).unwrap();
         assert_eq!(actual, Some(BGPStatus {
             router_id: "192.0.2.1".to_string(),
             local_as: 64496,
@@ -341,7 +341,7 @@ mod tests {
             Total number of Established sessions 4
         "};
 
-        let actual = parser.parse(input).unwrap();
+        let actual = parser.parse(input, ()).unwrap();
         assert_eq!(actual, Some(BGPStatus {
             router_id: "192.0.2.1".to_string(),
             local_as: 64496,

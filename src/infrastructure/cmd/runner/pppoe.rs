@@ -24,8 +24,8 @@ pub struct PPPoERunner<E, PPPoEParser, InterfaceParser> {
 impl<E, PPPoEParser, InterfaceParser> PPPoERunner<E, PPPoEParser, InterfaceParser>
 where
     E: Executor + Send + Sync,
-    for<'a> PPPoEParser: Parser<Input<'a> = (&'a str, &'a [Interface]), Item = PPPoEClientSessionResult> + Send + Sync,
-    for<'a> InterfaceParser: Parser<Input<'a> = &'a str, Item = InterfaceResult> + Send + Sync,
+    PPPoEParser: for<'a> Parser<Context<'a> = (&'a [Interface],), Item = PPPoEClientSessionResult> + Send + Sync,
+    InterfaceParser: Parser<Context<'static> = (), Item = InterfaceResult> + Send + Sync,
 {
     pub fn new(
         op_command: OpCommand,
@@ -45,13 +45,13 @@ where
 
     async fn sessions(&self, interfaces: &[Interface]) -> anyhow::Result<PPPoEClientSessionResult> {
         let output = self.executor.output(&self.op_command, &["show", "pppoe-client"]).await?;
-        let result = self.pppoe_parser.parse((&output, interfaces))?;
+        let result = self.pppoe_parser.parse(&output, (interfaces,))?;
         Ok(result)
     }
 
     async fn interfaces(&self) -> anyhow::Result<InterfaceResult> {
         let output = self.executor.output(&self.ip_command, &["--brief", "addr", "show"]).await?;
-        let result = self.interface_parser.parse(&output)?;
+        let result = self.interface_parser.parse(&output, ())?;
         Ok(result)
     }
 }
@@ -60,8 +60,8 @@ where
 impl<E, PPPoEParser, InterfaceParser> Runner for PPPoERunner<E, PPPoEParser, InterfaceParser>
 where
     E: Executor + Send + Sync,
-    for<'a> PPPoEParser: Parser<Input<'a> = (&'a str, &'a [Interface]), Item = PPPoEClientSessionResult> + Send + Sync,
-    for<'a> InterfaceParser: Parser<Input<'a> = &'a str, Item = InterfaceResult> + Send + Sync,
+    PPPoEParser: for<'a> Parser<Context<'a> = (&'a [Interface],), Item = PPPoEClientSessionResult> + Send + Sync,
+    InterfaceParser: Parser<Context<'static> = (), Item = InterfaceResult> + Send + Sync,
 {
     type Item = PPPoEClientSessionResult;
 
@@ -97,10 +97,10 @@ mod tests {
         PPPoEParser {}
 
         impl Parser for PPPoEParser {
-            type Input<'a> = (&'a str, &'a [Interface]);
+            type Context<'a> = (&'a [Interface],);
             type Item = PPPoEClientSessionResult;
 
-            fn parse<'a>(&self, input: (&'a str, &'a [Interface])) -> anyhow::Result<<Self as Parser>::Item>;
+            fn parse<'a>(&self, input: &str, context: <Self as Parser>::Context<'a>) -> anyhow::Result<<Self as Parser>::Item>;
         }
     }
 
@@ -108,10 +108,10 @@ mod tests {
         InterfaceParser {}
 
         impl Parser for InterfaceParser {
-            type Input<'a> = &'a str;
+            type Context<'a> = ();
             type Item = InterfaceResult;
 
-            fn parse(&self, input: &str) -> anyhow::Result<<Self as Parser>::Item>;
+            fn parse(&self, input: &str, context: <Self as Parser>::Context<'static>) -> anyhow::Result<<Self as Parser>::Item>;
         }
     }
 
@@ -186,8 +186,8 @@ mod tests {
         mock_pppoe_parser
             .expect_parse()
             .times(1)
-            .withf(move |output| output == &(pppoe_output, &interfaces[..]))
-            .returning(|_| Ok(vec![
+            .withf(move |output, context| (output, context) == (pppoe_output, &(&interfaces[..],)))
+            .returning(|_, _| Ok(vec![
                 PPPoEClientSession {
                     user: "user01".to_string(),
                     time: Duration::new(3723, 0),
@@ -218,8 +218,8 @@ mod tests {
         mock_interface_parser
             .expect_parse()
             .times(1)
-            .with(eq(interface_output))
-            .returning(|_| Ok(vec![
+            .with(eq(interface_output), eq(()))
+            .returning(|_, _| Ok(vec![
                 Interface {
                     ifname: "lo".to_string(),
                     operstate: "UNKNOWN".to_string(),
