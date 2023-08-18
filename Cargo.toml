@@ -31,7 +31,7 @@ default = ["tls"]
 tls = ["tls-listener/hyper-h1", "tls-listener/hyper-h2", "tls-listener/openssl"]
 
 [dependencies.anyhow]
-version = "1.0.72"
+version = "1.0.75"
 
 [dependencies.async-trait]
 version = "0.1.72"
