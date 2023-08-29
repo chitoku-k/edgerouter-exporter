@@ -32,8 +32,9 @@ jobs:
       - name: Set up rust
         uses: dtolnay/rust-toolchain@nightly
       - name: Set up cross
-        run: |
-          cargo install cross
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cross
       - name: Build
         run: |
           cross build --release --target=${{ matrix.target.name }} ${{ join(matrix.target.args, ' ') }}
