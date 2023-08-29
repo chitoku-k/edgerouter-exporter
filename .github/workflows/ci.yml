@@ -9,11 +9,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      # TODO: Use Rust 1.71 since MIPS GNU targets no longer receive Tier 2 support.
-      # https://github.com/rust-lang/compiler-team/issues/648
-      # https://github.com/cross-rs/cross/issues/1319
       - name: Set up rust
-        uses: dtolnay/rust-toolchain@1.71
+        uses: dtolnay/rust-toolchain@nightly
       - name: Test
         run: |
           cargo test --all
@@ -32,13 +29,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      # TODO: Use Rust 1.71 since MIPS GNU targets no longer receive Tier 2 support.
-      # https://github.com/rust-lang/compiler-team/issues/648
-      # https://github.com/cross-rs/cross/issues/1319
       - name: Set up rust
-        uses: dtolnay/rust-toolchain@1.71
-        with:
-          targets: ${{ matrix.target.name }}
+        uses: dtolnay/rust-toolchain@nightly
       - name: Set up cross
         run: |
           cargo install cross

@@ -9,7 +9,7 @@ A Prometheus exporter for EdgeRouter BGP, DDNS, Load Balancers, and PPPoE sessio
 
 For development, the following dependencies are required:
 
-- [rustup](https://rustup.rs/)
+- [rustup](https://rustup.rs/) (nightly toolchain is required for [build-std](https://doc.rust-lang.org/cargo/reference/unstable.html#build-std))
 - [cross](https://github.com/cross-rs/cross)
 - openssl (e.g. libssl-dev, openssl, or openssl-devel)
 
