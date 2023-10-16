@@ -1,5 +1,3 @@
-use async_trait::async_trait;
-
 use crate::{
     domain::interface::Interface,
     infrastructure::{
@@ -56,7 +54,6 @@ where
     }
 }
 
-#[async_trait]
 impl<E, PPPoEParser, InterfaceParser> Runner for PPPoERunner<E, PPPoEParser, InterfaceParser>
 where
     E: Executor + Send + Sync,
@@ -78,6 +75,7 @@ mod tests {
         time::Duration,
     };
 
+    use futures::future::ok;
     use indoc::indoc;
     use mockall::{mock, predicate::eq};
     use number_prefix::{NumberPrefix, Prefix};
@@ -175,12 +173,12 @@ mod tests {
             .expect_output()
             .times(1)
             .withf(|command, args| (command, args) == ("/opt/vyatta/bin/vyatta-op-cmd-wrapper", &["show", "pppoe-client"]))
-            .returning(|_, _| Ok(pppoe_output.to_string()));
+            .returning(|_, _| Box::pin(ok(pppoe_output.to_string())));
         mock_executor
             .expect_output()
             .times(1)
             .withf(|command, args| (command, args) == ("/bin/ip", &["--brief", "addr", "show"]))
-            .returning(|_, _| Ok(interface_output.to_string()));
+            .returning(|_, _| Box::pin(ok(interface_output.to_string())));
 
         let mut mock_pppoe_parser = MockPPPoEParser::new();
         mock_pppoe_parser

@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use async_trait::async_trait;
 use axum::{extract::State, http::StatusCode, response::IntoResponse};
 use derive_more::Constructor;
 use prometheus_client::{encoding::text::encode, metrics::gauge, registry::Registry};
@@ -43,7 +42,6 @@ pub struct MetricsHandler<BGPRunner, DdnsRunner, IPsecRunner, LoadBalanceRunner,
     version_runner: VersionRunner,
 }
 
-#[async_trait]
 impl<BGPRunner, DdnsRunner, IPsecRunner, LoadBalanceRunner, PPPoERunner, VersionRunner> Controller<String>
     for MetricsHandler<BGPRunner, DdnsRunner, IPsecRunner, LoadBalanceRunner, PPPoERunner, VersionRunner>
 where

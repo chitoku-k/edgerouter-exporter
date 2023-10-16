@@ -1,4 +1,4 @@
-use async_trait::async_trait;
+use std::future::Future;
 
 pub mod bgp;
 pub mod ddns;
@@ -8,9 +8,8 @@ pub mod load_balance;
 pub mod pppoe;
 pub mod version;
 
-#[async_trait]
 pub trait Runner {
     type Item;
 
-    async fn run(&self) -> anyhow::Result<Self::Item>;
+    fn run(&self) -> impl Future<Output = anyhow::Result<Self::Item>> + Send;
 }

@@ -1,7 +1,6 @@
 use std::io::ErrorKind;
 
 use anyhow::{Context, Error};
-use async_trait::async_trait;
 use futures::TryStreamExt;
 use indexmap::IndexMap;
 
@@ -44,7 +43,6 @@ impl IPsecRunner {
     }
 }
 
-#[async_trait]
 impl Runner for IPsecRunner {
     type Item = IPsecResult;
 
