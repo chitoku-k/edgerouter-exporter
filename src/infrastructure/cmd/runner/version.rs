@@ -1,5 +1,3 @@
-use async_trait::async_trait;
-
 use crate::{
     infrastructure::{
         cmd::{parser::Parser, runner::Executor},
@@ -34,7 +32,6 @@ where
     }
 }
 
-#[async_trait]
 impl<E, P> Runner for VersionRunner<E, P>
 where
     E: Executor + Send + Sync,
@@ -50,6 +47,7 @@ where
 #[cfg(test)]
 mod tests {
     use chrono::NaiveDate;
+    use futures::future::ok;
     use indoc::indoc;
     use mockall::{mock, predicate::eq};
     use pretty_assertions::assert_eq;
@@ -87,7 +85,7 @@ mod tests {
             .expect_output()
             .times(1)
             .withf(|command, args| (command, args) == ("/opt/vyatta/bin/vyatta-op-cmd-wrapper", &["show", "version"]))
-            .returning(|_, _| Ok(output.to_string()));
+            .returning(|_, _| Box::pin(ok(output.to_string())));
 
         let mut mock_parser = MockVersionParser::new();
         mock_parser

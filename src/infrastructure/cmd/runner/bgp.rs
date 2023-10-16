@@ -1,4 +1,3 @@
-use async_trait::async_trait;
 use tokio::try_join;
 
 use crate::{
@@ -47,7 +46,6 @@ where
     }
 }
 
-#[async_trait]
 impl<E, P> Runner for BGPRunner<E, P>
 where
     E: Executor + Send + Sync,
@@ -64,6 +62,7 @@ where
 mod tests {
     use std::{net::{IpAddr, Ipv4Addr, Ipv6Addr}, time::Duration};
 
+    use futures::future::ok;
     use indoc::indoc;
     use mockall::{mock, predicate::eq};
     use pretty_assertions::assert_eq;
@@ -95,12 +94,12 @@ mod tests {
             .expect_output()
             .times(1)
             .withf(|command, args| (command, args) == ("/opt/vyatta/sbin/ubnt_vtysh", &["-c", "show ip bgp summary"]))
-            .returning(|_, _| Ok("".to_string()));
+            .returning(|_, _| Box::pin(ok("".to_string())));
         mock_executor
             .expect_output()
             .times(1)
             .withf(|command, args| (command, args) == ("/opt/vyatta/sbin/ubnt_vtysh", &["-c", "show bgp ipv6 summary"]))
-            .returning(|_, _| Ok("".to_string()));
+            .returning(|_, _| Box::pin(ok("".to_string())));
 
         let mut mock_parser = MockBGPParser::new();
         mock_parser
@@ -138,12 +137,12 @@ mod tests {
             .expect_output()
             .times(1)
             .withf(|command, args| (command, args) == ("/opt/vyatta/sbin/ubnt_vtysh", &["-c", "show ip bgp summary"]))
-            .returning(|_, _| Ok(ipv4_output.to_string()));
+            .returning(|_, _| Box::pin(ok(ipv4_output.to_string())));
         mock_executor
             .expect_output()
             .times(1)
             .withf(|command, args| (command, args) == ("/opt/vyatta/sbin/ubnt_vtysh", &["-c", "show bgp ipv6 summary"]))
-            .returning(|_, _| Ok("".to_string()));
+            .returning(|_, _| Box::pin(ok("".to_string())));
 
         let mut mock_parser = MockBGPParser::new();
         mock_parser
@@ -290,12 +289,12 @@ mod tests {
             .expect_output()
             .times(1)
             .withf(|command, args| (command, args) == ("/opt/vyatta/sbin/ubnt_vtysh", &["-c", "show ip bgp summary"]))
-            .returning(|_, _| Ok("".to_string()));
+            .returning(|_, _| Box::pin(ok("".to_string())));
         mock_executor
             .expect_output()
             .times(1)
             .withf(|command, args| (command, args) == ("/opt/vyatta/sbin/ubnt_vtysh", &["-c", "show bgp ipv6 summary"]))
-            .returning(|_, _| Ok(ipv6_output.to_string()));
+            .returning(|_, _| Box::pin(ok(ipv6_output.to_string())));
 
         let mut mock_parser = MockBGPParser::new();
         mock_parser
@@ -459,12 +458,12 @@ mod tests {
             .expect_output()
             .times(1)
             .withf(|command, args| (command, args) == ("/opt/vyatta/sbin/ubnt_vtysh", &["-c", "show ip bgp summary"]))
-            .returning(|_, _| Ok(ipv4_output.to_string()));
+            .returning(|_, _| Box::pin(ok(ipv4_output.to_string())));
         mock_executor
             .expect_output()
             .times(1)
             .withf(|command, args| (command, args) == ("/opt/vyatta/sbin/ubnt_vtysh", &["-c", "show bgp ipv6 summary"]))
-            .returning(|_, _| Ok(ipv6_output.to_string()));
+            .returning(|_, _| Box::pin(ok(ipv6_output.to_string())));
 
         let mut mock_parser = MockBGPParser::new();
         mock_parser

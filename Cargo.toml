@@ -33,9 +33,6 @@ tls = ["tls-listener/hyper-h1", "tls-listener/hyper-h2", "tls-listener/openssl"]
 [dependencies.anyhow]
 version = "1.0.75"
 
-[dependencies.async-trait]
-version = "0.1.73"
-
 [dependencies.atomic-shim]
 version = "0.2.0"
 

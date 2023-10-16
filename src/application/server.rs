@@ -1,7 +1,6 @@
-use std::{net::Ipv6Addr, sync::Arc};
+use std::{future::Future, net::Ipv6Addr, sync::Arc};
 
 use anyhow::Context;
-use async_trait::async_trait;
 use axum::{routing::get, Router};
 use hyper::server::{conn::AddrIncoming, Server};
 #[cfg(feature = "tls")]
@@ -19,9 +18,8 @@ use {
 
 use crate::application::metrics;
 
-#[async_trait]
 pub trait Controller<T> {
-    async fn handle(&self) -> anyhow::Result<T>;
+    fn handle(&self) -> impl Future<Output = anyhow::Result<T>> + Send;
 }
 
 pub struct Engine<MetricsController> {
