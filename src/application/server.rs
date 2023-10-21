@@ -113,7 +113,7 @@ async fn bind_tls(app: Router, incoming: AddrIncoming, tls_cert: String, tls_key
         select! {
             stream = listener.accept() => {
                 match stream.context("error accepting TLS listener")? {
-                    Ok(stream) => {
+                    Ok((stream, _remote)) => {
                         tokio::spawn(http.serve_connection(stream, app.clone()));
                     },
                     Err(e) => {
