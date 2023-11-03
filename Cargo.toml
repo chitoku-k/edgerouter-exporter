@@ -85,7 +85,7 @@ default-features = false
 version = "0.4.0"
 
 [dependencies.openssl]
-version = "0.10.57"
+version = "0.10.59"
 
 [dependencies.prometheus-client]
 version = "0.22.0"
