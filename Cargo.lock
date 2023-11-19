@@ -311,7 +311,7 @@ checksum = "dcbb2bf8e87535c23f7a8a321e364ce21462d0ff10cb6407820e8e96dfff6653"
 
 [[package]]
 name = "edgerouter-exporter"
-version = "2.9.1"
+version = "2.9.2"
 dependencies = [
  "anyhow",
  "atomic-shim",
