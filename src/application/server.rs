@@ -2,10 +2,11 @@ use std::{future::Future, net::Ipv6Addr, sync::Arc};
 
 use anyhow::Context;
 use axum::{routing::get, Router};
-use hyper::server::{conn::AddrIncoming, Server};
+use tokio::net::TcpListener;
 #[cfg(feature = "tls")]
 use {
-    hyper::server::conn::Http,
+    hyper::{server::conn::http1::Builder, service::service_fn},
+    hyper_util::rt::tokio::TokioIo,
     notify::Watcher,
     openssl::ssl::{SslContext, SslFiletype, SslMethod},
     tls_listener::TlsListener,
@@ -14,6 +15,7 @@ use {
         time::{sleep, Duration},
         select,
     },
+    tower_service::Service,
 };
 
 use crate::application::metrics;
@@ -54,12 +56,12 @@ where
             .route("/", get(metrics::handle::<MetricsController>))
             .with_state(Arc::new(self.metrics_controller));
 
-        let addr = (Ipv6Addr::UNSPECIFIED, self.port).into();
+        let addr = (Ipv6Addr::UNSPECIFIED, self.port);
         let app = Router::new()
             .nest("/healthz", health)
             .nest("/metrics", metrics);
 
-        let incoming = AddrIncoming::bind(&addr)?;
+        let listener = TcpListener::bind(addr).await?;
         match self.tls {
             #[cfg(not(feature = "tls"))]
             Some(_) => {
@@ -67,10 +69,10 @@ where
             },
             #[cfg(feature = "tls")]
             Some((tls_cert, tls_key)) => {
-                bind_tls(app, incoming, tls_cert, tls_key).await?;
+                bind_tls(app, listener, tls_cert, tls_key).await?;
             },
             None => {
-                bind(app, incoming).await?;
+                bind(app, listener).await?;
             },
         }
 
@@ -92,7 +94,7 @@ fn acceptor(tls_cert: &str, tls_key: &str) -> anyhow::Result<SslContext> {
 }
 
 #[cfg(feature = "tls")]
-async fn bind_tls(app: Router, incoming: AddrIncoming, tls_cert: String, tls_key: String) -> anyhow::Result<()> {
+async fn bind_tls(app: Router, listener: TcpListener, tls_cert: String, tls_key: String) -> anyhow::Result<()> {
     let (tx, mut rx) = unbounded_channel();
 
     let mut watcher = notify::recommended_watcher(move |event| {
@@ -102,15 +104,19 @@ async fn bind_tls(app: Router, incoming: AddrIncoming, tls_cert: String, tls_key
     })?;
     watcher.watch(tls_cert.as_ref(), notify::RecursiveMode::NonRecursive)?;
 
-    let mut listener = TlsListener::new(acceptor(&tls_cert, &tls_key)?, incoming);
-    let http = Http::new();
+    let mut listener = TlsListener::new(acceptor(&tls_cert, &tls_key)?, listener);
+    let service = service_fn(move |request| {
+        app.clone().call(request)
+    });
 
     loop {
         select! {
             stream = listener.accept() => {
                 match stream.context("error accepting TLS listener")? {
                     Ok((stream, _remote)) => {
-                        tokio::spawn(http.serve_connection(stream, app.clone()));
+                        let http = Builder::new();
+                        let io = TokioIo::new(stream);
+                        tokio::spawn(http.serve_connection(io, service.clone()));
                     },
                     Err(e) => {
                         log::debug!("{}", e)
@@ -136,9 +142,8 @@ async fn bind_tls(app: Router, incoming: AddrIncoming, tls_cert: String, tls_key
     }
 }
 
-async fn bind(app: Router, incoming: AddrIncoming) -> anyhow::Result<()> {
-    Server::builder(incoming)
-        .serve(app.into_make_service())
+async fn bind(app: Router, listener: TcpListener) -> anyhow::Result<()> {
+    axum::serve(listener, app)
         .await
         .context("error starting server")
 }
