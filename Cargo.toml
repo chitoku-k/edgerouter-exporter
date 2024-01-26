@@ -55,7 +55,7 @@ default-features = false
 version = "0.99.0"
 
 [dependencies.env_logger]
-version = "0.10.2"
+version = "0.11.0"
 
 [dependencies.futures]
 version = "0.3.30"
