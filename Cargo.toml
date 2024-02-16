@@ -42,7 +42,7 @@ features = ["http1", "tokio"]
 default-features = false
 
 [dependencies.chrono]
-version = "0.4.33"
+version = "0.4.34"
 features = ["clock", "std"]
 default-features = false
 
