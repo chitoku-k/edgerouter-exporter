@@ -1,5 +1,3 @@
-use log::LevelFilter;
-
 use crate::{
     application::{metrics::MetricsHandler, server::Engine},
     infrastructure::{
@@ -30,15 +28,7 @@ pub struct Application;
 
 impl Application {
     pub async fn start() -> anyhow::Result<()> {
-        env_logger::builder()
-            .format_target(false)
-            .format_timestamp_secs()
-            .format_indent(None)
-            .filter(None, LevelFilter::Info)
-            .parse_env("LOG_LEVEL")
-            .init();
-
-        let config = env::get();
+        let config = env::init();
         let engine = Engine::new(
             config.port,
             config.tls_cert,

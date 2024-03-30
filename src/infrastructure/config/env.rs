@@ -20,16 +20,20 @@ pub struct VtyshCommand(String);
 #[derive(Debug, Eq, Parser, PartialEq)]
 #[command(version = version())]
 pub struct Config {
+    /// Log level
+    #[arg(long, env, default_value = "info")]
+    pub log_level: String,
+
     /// Port number
     #[arg(long, env)]
     pub port: u16,
 
     /// Path to TLS certificate (if not specified, exporter is served over HTTP)
-    #[arg(long, env)]
+    #[arg(long, env, requires = "tls_key")]
     pub tls_cert: Option<String>,
 
     /// Path to TLS private key (if not specified, exporter is served over HTTP)
-    #[arg(long, env)]
+    #[arg(long, env, requires = "tls_cert")]
     pub tls_key: Option<String>,
 
     /// Path to Unix socket for VICI
@@ -53,8 +57,10 @@ pub struct Config {
     pub vtysh_command: VtyshCommand,
 }
 
-pub fn get() -> Config {
-    Config::parse()
+pub fn init() -> Config {
+    let config = Config::parse();
+    config.init();
+    config
 }
 
 #[cfg(not(feature = "tls"))]
@@ -85,4 +91,15 @@ fn default_op_ddns_command() -> OpDdnsCommand {
 
 fn default_vtysh_command() -> VtyshCommand {
     VtyshCommand("/opt/vyatta/sbin/ubnt_vtysh".to_string())
+}
+
+impl Config {
+    fn init(&self) {
+        env_logger::builder()
+            .format_target(false)
+            .format_timestamp_secs()
+            .format_indent(None)
+            .parse_filters(&self.log_level)
+            .init();
+    }
 }
