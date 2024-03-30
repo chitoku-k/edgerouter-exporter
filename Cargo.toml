@@ -38,7 +38,7 @@ version = "0.2.0"
 
 [dependencies.axum]
 version = "0.7.5"
-features = ["http1", "tokio"]
+features = ["http1", "http2", "tokio"]
 default-features = false
 
 [dependencies.chrono]
