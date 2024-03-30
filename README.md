@@ -61,11 +61,11 @@ $ sudo dpkg -i /config/data/firstboot/install-packages/prometheus-edgerouter-exp
 Configure by creating `/config/user-data/edgerouter-exporter.env`.
 
 ```sh
-# Port number (required)
-PORT=8080
-
 # Log level (optional; one of trace, debug, info, warn, and error)
 #LOG_LEVEL=info
+
+# Port number (required)
+PORT=8080
 
 # TLS certificate and private key (optional; if not specified, exporter is served over HTTP)
 #TLS_CERT=/path/to/tls/cert
@@ -80,6 +80,12 @@ PORT=8080
 #OP_DDNS_COMMAND=/opt/vyatta/bin/sudo-users/vyatta-op-dynamic-dns.pl
 #VTYSH_COMMAND=/opt/vyatta/sbin/ubnt_vtysh
 ```
+
+#### Command-line options
+
+The command-line options that are equivalent to the environment variables above
+can be specified by lowercasing option and replacing underscores (`_`) with
+hyphens (`-`). For instance, `LOG_LEVEL` is equivalent to `--log-level`.
 
 ## Usage
 
