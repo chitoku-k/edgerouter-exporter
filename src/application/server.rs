@@ -5,10 +5,10 @@ use axum::{routing::get, Router};
 use tokio::net::TcpListener;
 #[cfg(feature = "tls")]
 use {
-    hyper::{server::conn::http1::Builder, service::service_fn},
-    hyper_util::rt::tokio::TokioIo,
+    hyper::service::service_fn,
+    hyper_util::{rt::tokio::{TokioExecutor, TokioIo}, server::conn::auto::Builder},
     notify::Watcher,
-    openssl::ssl::{SslContext, SslFiletype, SslMethod},
+    openssl::ssl::{self, AlpnError, SslContext, SslFiletype, SslMethod},
     tls_listener::TlsListener,
     tokio::{
         sync::mpsc::unbounded_channel,
@@ -89,6 +89,10 @@ fn acceptor(tls_cert: &str, tls_key: &str) -> anyhow::Result<SslContext> {
     builder
         .set_private_key_file(tls_key, SslFiletype::PEM)
         .context("error loading TLS private key")?;
+    builder
+        .set_alpn_select_callback(|_, client| {
+            ssl::select_next_proto(b"\x02h2\x08http/1.1", client).ok_or(AlpnError::NOACK)
+        });
 
     Ok(builder.build())
 }
@@ -114,12 +118,17 @@ async fn bind_tls(app: Router, listener: TcpListener, tls_cert: String, tls_key:
             stream = listener.accept() => {
                 match stream.context("error accepting TLS listener")? {
                     Ok((stream, _remote)) => {
-                        let http = Builder::new();
+                        let http = Builder::new(TokioExecutor::new());
                         let io = TokioIo::new(stream);
-                        tokio::spawn(http.serve_connection(io, service.clone()));
+                        let service = service.clone();
+                        tokio::spawn(async move {
+                            if let Err(e) = http.serve_connection(io, service).await {
+                                log::debug!("{}", e);
+                            }
+                        });
                     },
                     Err(e) => {
-                        log::debug!("{}", e)
+                        log::debug!("{}", e);
                     },
                 }
             },
