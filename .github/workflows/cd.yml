@@ -27,7 +27,7 @@ jobs:
         with:
           tool: cross
       - name: Set up cargo-deb
-        uses: taiki-e/cache-cargo-install-action@v1
+        uses: taiki-e/cache-cargo-install-action@v2
         with:
           tool: cargo-deb
       - name: Build
