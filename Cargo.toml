@@ -52,7 +52,7 @@ features = ["cargo", "derive", "env", "help", "std", "string", "suggestions", "u
 default-features = false
 
 [dependencies.derive_more]
-version = "0.99.0"
+version = "0.99.18"
 
 [dependencies.env_logger]
 version = "0.11.3"
