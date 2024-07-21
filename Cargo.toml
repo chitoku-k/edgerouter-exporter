@@ -28,7 +28,7 @@ codegen-units = 1
 
 [features]
 default = ["tls"]
-tls = ["tls-listener/hyper-h1", "tls-listener/hyper-h2", "tls-listener/openssl"]
+tls = ["tls-listener/openssl"]
 
 [dependencies.anyhow]
 version = "1.0.86"
@@ -102,7 +102,7 @@ version = "1.0.204"
 features = ["derive"]
 
 [dependencies.tls-listener]
-version = "0.8.0"
+version = "0.10.1"
 
 [dependencies.tokio]
 version = "1.38.1"

@@ -116,21 +116,15 @@ async fn bind_tls(app: Router, listener: TcpListener, tls_cert: String, tls_key:
     loop {
         select! {
             stream = listener.accept() => {
-                match stream.context("error accepting TLS listener")? {
-                    Ok((stream, _remote)) => {
-                        let http = Builder::new(TokioExecutor::new());
-                        let io = TokioIo::new(stream);
-                        let service = service.clone();
-                        tokio::spawn(async move {
-                            if let Err(e) = http.serve_connection(io, service).await {
-                                log::debug!("{}", e);
-                            }
-                        });
-                    },
-                    Err(e) => {
+                let (stream, _remote) = stream.context("error accepting TLS listener")?;
+                let http = Builder::new(TokioExecutor::new());
+                let io = TokioIo::new(stream);
+                let service = service.clone();
+                tokio::spawn(async move {
+                    if let Err(e) = http.serve_connection(io, service).await {
                         log::debug!("{}", e);
-                    },
-                }
+                    }
+                });
             },
             event = rx.recv() => {
                 if event.filter(|e| e.kind.is_modify()).is_none() {
