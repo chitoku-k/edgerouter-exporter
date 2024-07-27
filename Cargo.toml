@@ -105,7 +105,7 @@ features = ["derive"]
 version = "0.10.1"
 
 [dependencies.tokio]
-version = "1.38.1"
+version = "1.39.1"
 features = ["macros", "net", "process", "rt-multi-thread"]
 
 [dependencies.tower-service]
