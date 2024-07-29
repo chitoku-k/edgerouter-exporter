@@ -1,11 +1,14 @@
-use std::process::exit;
+use std::process::ExitCode;
 
 use edgerouter_exporter::di::container::Application;
 
 #[tokio::main]
-async fn main() {
-    if let Err(e) = Application::start().await {
-        log::error!("failed to start application\nError: {e:?}");
-        exit(1);
+async fn main() -> ExitCode {
+    match Application::start().await {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(e) => {
+            log::error!("failed to start application\nError: {e:?}");
+            ExitCode::FAILURE
+        },
     }
 }
