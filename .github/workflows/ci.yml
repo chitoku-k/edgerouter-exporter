@@ -1,6 +1,13 @@
 name: CI Workflow
 on:
-  - push
+  push:
+    branches:
+      - master
+  pull_request:
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
   test:
@@ -9,11 +16,22 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Set up reviewdog
+        uses: reviewdog/action-setup@v1
       - name: Set up rust
         uses: dtolnay/rust-toolchain@nightly
-      - name: Test
+        with:
+          components: clippy
+      - name: Run tests
         run: |
-          cargo test --all
+          cargo test --workspace
+      - name: Run clippy
+        if: ${{ always() }}
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cargo clippy --workspace --quiet --message-format=short --color=never 2>&1 |
+            reviewdog -f=clippy -reporter=github-pr-annotations -filter-mode=nofilter -fail-on-error -tee
   build:
     name: Build
     runs-on: ubuntu-latest
