@@ -119,4 +119,4 @@ version = "2.0.5"
 version = "0.13.0"
 
 [dev-dependencies.pretty_assertions]
-version = "1.4.0"
+version = "1.4.1"
