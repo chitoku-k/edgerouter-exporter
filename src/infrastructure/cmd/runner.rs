@@ -10,9 +10,17 @@ pub mod load_balance;
 pub mod pppoe;
 pub mod version;
 
-#[cfg_attr(test, mockall::automock)]
+#[cfg(test)]
+mockall::mock! {
+    pub(super) Executor {}
+
+    impl Executor for Executor {
+        fn output<'a>(&self, command: &str, args: &[&'a str]) -> impl Future<Output = anyhow::Result<String>> + Send;
+    }
+}
+
 pub trait Executor {
-    fn output<'a>(&self, command: &str, args: &[&'a str]) -> impl Future<Output = anyhow::Result<String>> + Send {
+    fn output(&self, command: &str, args: &[&str]) -> impl Future<Output = anyhow::Result<String>> + Send {
         log::debug!("executing {command} with {args:?}");
 
         async move {
