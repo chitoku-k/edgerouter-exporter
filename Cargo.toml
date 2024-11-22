@@ -62,7 +62,7 @@ version = "0.11.5"
 version = "0.3.31"
 
 [dependencies.hyper]
-version = "1.5.0"
+version = "1.5.1"
 features = ["server"]
 
 [dependencies.hyper-util]
