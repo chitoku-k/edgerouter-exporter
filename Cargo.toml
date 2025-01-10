@@ -93,7 +93,7 @@ version = "0.4.0"
 version = "0.10.68"
 
 [dependencies.prometheus-client]
-version = "0.22.3"
+version = "0.23.0"
 
 [dependencies.rsvici]
 version = "0.1.1"
