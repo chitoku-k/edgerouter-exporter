@@ -9,8 +9,8 @@ use nom::{
     character::complete::{alphanumeric1, line_ending, newline, not_line_ending, space0, space1, u32, u64},
     combinator::{map, map_res, opt},
     multi::{many0, many1},
-    sequence::{delimited, separated_pair, terminated, tuple},
-    Finish, IResult,
+    sequence::{delimited, separated_pair, terminated},
+    Finish, IResult, Parser as _,
 };
 
 use crate::{
@@ -63,31 +63,31 @@ fn parse_load_balance_status(input: &str) -> IResult<&str, LoadBalanceStatusResu
         map(tag("load-balance is not configured"), |_| vec![]),
         many1(
             map(
-                tuple((
+                (
                     delimited(
-                        tuple((tag("Group"), space1)),
+                        (tag("Group"), space1),
                         map(not_line_ending, &str::to_string),
                         opt(newline),
                     ),
                     terminated(
                         permutation((
                             delimited(
-                                tuple((space1, tag("Balance Local"), space0, tag(":"), space0)),
+                                (space1, tag("Balance Local"), space0, tag(":"), space0),
                                 map_res(not_line_ending, &str::parse),
                                 newline,
                             ),
                             delimited(
-                                tuple((space1, tag("Lock Local DNS"), space0, tag(":"), space0)),
+                                (space1, tag("Lock Local DNS"), space0, tag(":"), space0),
                                 map_res(not_line_ending, &str::parse),
                                 newline,
                             ),
                             delimited(
-                                tuple((space1, tag("Conntrack Flush"), space0, tag(":"), space1)),
+                                (space1, tag("Conntrack Flush"), space0, tag(":"), space1),
                                 map_res(not_line_ending, &str::parse),
                                 newline,
                             ),
                             delimited(
-                                tuple((space1, tag("Sticky Bits"), space0, tag(":"), space1, tag("0x"))),
+                                (space1, tag("Sticky Bits"), space0, tag(":"), space1, tag("0x")),
                                 map_res(not_line_ending, |s| u32::from_str_radix(s, 16)),
                                 newline,
                             ),
@@ -96,20 +96,20 @@ fn parse_load_balance_status(input: &str) -> IResult<&str, LoadBalanceStatusResu
                     ),
                     many0(
                         map(
-                            tuple((
+                            (
                                 delimited(
-                                    tuple((space1, tag("interface"), space0, tag(":"), space1)),
+                                    (space1, tag("interface"), space0, tag(":"), space1),
                                     map(not_line_ending, &str::to_string),
                                     newline,
                                 ),
                                 permutation((
                                     delimited(
-                                        tuple((space1, tag("reachable"), space0, tag(":"), space1)),
+                                        (space1, tag("reachable"), space0, tag(":"), space1),
                                         map_res(not_line_ending, &str::parse),
                                         newline,
                                     ),
                                     delimited(
-                                        tuple((space1, tag("status"), space0, tag(":"), space1)),
+                                        (space1, tag("status"), space0, tag(":"), space1),
                                         map(
                                             not_line_ending,
                                             |s| match s {
@@ -122,7 +122,7 @@ fn parse_load_balance_status(input: &str) -> IResult<&str, LoadBalanceStatusResu
                                         newline,
                                     ),
                                     delimited(
-                                        tuple((space1, tag("gateway"), space0, tag(":"), space1)),
+                                        (space1, tag("gateway"), space0, tag(":"), space1),
                                         map(
                                             not_line_ending,
                                             |s: &str| {
@@ -136,42 +136,42 @@ fn parse_load_balance_status(input: &str) -> IResult<&str, LoadBalanceStatusResu
                                         newline,
                                     ),
                                     delimited(
-                                        tuple((space1, tag("route table"), space0, tag(":"), space1)),
+                                        (space1, tag("route table"), space0, tag(":"), space1),
                                         u32,
                                         newline,
                                     ),
                                     delimited(
-                                        tuple((space1, tag("weight"), space0, tag(":"), space1)),
+                                        (space1, tag("weight"), space0, tag(":"), space1),
                                         map(u32, |u| u as f64 / 100.0),
-                                        tuple((tag("%"), newline)),
+                                        (tag("%"), newline),
                                     ),
                                     delimited(
-                                        tuple((space1, tag("fo_priority"), space0, tag(":"), space1)),
+                                        (space1, tag("fo_priority"), space0, tag(":"), space1),
                                         u32,
                                         newline,
                                     ),
                                     delimited(
-                                        tuple((space1, tag("flows"), newline)),
+                                        (space1, tag("flows"), newline),
                                         map(
                                             many0(
-                                                tuple((
+                                                (
                                                     delimited(
                                                         space0,
                                                         map(take_till(|c| c == ':'), |s: &str| s.trim_end().to_string()),
-                                                        tuple((tag(":"), space1)),
+                                                        (tag(":"), space1),
                                                     ),
                                                     terminated(
                                                         map_res(not_line_ending, FlowSize::from_str),
                                                         newline,
                                                     ),
-                                                )),
+                                                ),
                                             ),
                                             |v| v.into_iter().collect(),
                                         ),
                                         many1(newline),
                                     ),
                                 )),
-                            )),
+                            ),
                             |(
                                 interface,
                                 (
@@ -198,7 +198,7 @@ fn parse_load_balance_status(input: &str) -> IResult<&str, LoadBalanceStatusResu
                             }
                         ),
                     ),
-                )),
+                ),
                 |(
                     name,
                     (
@@ -220,7 +220,7 @@ fn parse_load_balance_status(input: &str) -> IResult<&str, LoadBalanceStatusResu
                 },
             ),
         ),
-    ))(input)
+    )).parse_complete(input)
 }
 
 fn parse_load_balance_watchdog(input: &str) -> IResult<&str, LoadBalanceWatchdogResult> {
@@ -228,16 +228,16 @@ fn parse_load_balance_watchdog(input: &str) -> IResult<&str, LoadBalanceWatchdog
         map(tag("load-balance is not configured"), |_| vec![]),
         many1(
             map(
-                tuple((
+                (
                     delimited(
-                        tuple((tag("Group"), space1)),
+                        (tag("Group"), space1),
                         map(not_line_ending, &str::to_string),
                         opt(newline),
                     ),
                     many0(
                         terminated(
                             map(
-                                tuple((
+                                (
                                     delimited(
                                         space1,
                                         map(not_line_ending, &str::to_string),
@@ -245,14 +245,14 @@ fn parse_load_balance_watchdog(input: &str) -> IResult<&str, LoadBalanceWatchdog
                                     ),
                                     permutation((
                                         delimited(
-                                            tuple((space1, tag("status:"), space1)),
+                                            (space1, tag("status:"), space1),
                                             alt((
                                                 map(
                                                     delimited(
-                                                        tuple((
+                                                        (
                                                             tag("Waiting on recovery"),
                                                             space1,
-                                                        )),
+                                                        ),
                                                         delimited(
                                                             tag("("),
                                                             separated_pair(u64, tag("/"), u64),
@@ -282,31 +282,31 @@ fn parse_load_balance_watchdog(input: &str) -> IResult<&str, LoadBalanceWatchdog
                                             |o| o.is_some(),
                                         ),
                                         delimited(
-                                            tuple((space1, tag("pings:"), space1)),
+                                            (space1, tag("pings:"), space1),
                                             u64,
                                             newline,
                                         ),
                                         delimited(
-                                            tuple((space1, tag("fails:"), space1)),
+                                            (space1, tag("fails:"), space1),
                                             u64,
                                             newline,
                                         ),
                                         delimited(
-                                            tuple((space1, tag("run fails:"), space1)),
+                                            (space1, tag("run fails:"), space1),
                                             separated_pair(u64, tag("/"), u64),
                                             newline,
                                         ),
                                         delimited(
-                                            tuple((space1, tag("route drops:"), space1)),
+                                            (space1, tag("route drops:"), space1),
                                             u64,
                                             newline,
                                         ),
                                         delimited(
-                                            tuple((space1, tag("ping gateway:"), space1)),
+                                            (space1, tag("ping gateway:"), space1),
                                             map(
                                                 separated_pair(
                                                     take_till(|c| c == ' '),
-                                                    tuple((space1, tag("-"), space1)),
+                                                    (space1, tag("-"), space1),
                                                     not_line_ending,
                                                 ),
                                                 |(gateway, status)| match status {
@@ -318,17 +318,17 @@ fn parse_load_balance_watchdog(input: &str) -> IResult<&str, LoadBalanceWatchdog
                                             newline,
                                         ),
                                         opt(delimited(
-                                            tuple((space1, tag("last route drop"), space0, tag(":"), space1)),
+                                            (space1, tag("last route drop"), space0, tag(":"), space1),
                                             map_res(not_line_ending, |s| NaiveDateTime::parse_from_str(s, "%a %b %e %H:%M:%S %Y")),
                                             newline,
                                         )),
                                         opt(delimited(
-                                            tuple((space1, tag("last route recover"), space0, tag(":"), space1)),
+                                            (space1, tag("last route recover"), space0, tag(":"), space1),
                                             map_res(not_line_ending, |s| NaiveDateTime::parse_from_str(s, "%a %b %e %H:%M:%S %Y")),
                                             newline,
                                         )),
                                     )),
-                                )),
+                                ),
                                 |(
                                     interface,
                                     (
@@ -360,7 +360,7 @@ fn parse_load_balance_watchdog(input: &str) -> IResult<&str, LoadBalanceWatchdog
                             many1(line_ending),
                         ),
                     ),
-                )),
+                ),
                 |(name, interfaces)| {
                     LoadBalanceWatchdog {
                         name,
@@ -369,7 +369,7 @@ fn parse_load_balance_watchdog(input: &str) -> IResult<&str, LoadBalanceWatchdog
                 },
             ),
         ),
-    ))(input)
+    )).parse_complete(input)
 }
 
 #[cfg(test)]
