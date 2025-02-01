@@ -6,8 +6,8 @@ use nom::{
     character::complete::{newline, not_line_ending, space1},
     combinator::{map, map_res},
     error::Error,
-    sequence::{delimited, tuple},
-    Finish, IResult,
+    sequence::delimited,
+    Finish, IResult, Parser as _,
 };
 
 use crate::{
@@ -35,37 +35,37 @@ fn parse_version(input: &str) -> IResult<&str, VersionResult> {
     map(
         permutation((
             delimited(
-                tuple((tag("Version:"), space1)),
+                (tag("Version:"), space1),
                 map(not_line_ending, &str::to_string),
                 newline,
             ),
             delimited(
-                tuple((tag("Build ID:"), space1)),
+                (tag("Build ID:"), space1),
                 map(not_line_ending, &str::to_string),
                 newline,
             ),
             delimited(
-                tuple((tag("Build on:"), space1)),
+                (tag("Build on:"), space1),
                 map_res(not_line_ending, |s| NaiveDateTime::parse_from_str(s, "%m/%d/%y %H:%M")),
                 newline,
             ),
             delimited(
-                tuple((tag("Copyright:"), space1)),
+                (tag("Copyright:"), space1),
                 map(not_line_ending, &str::to_string),
                 newline,
             ),
             delimited(
-                tuple((tag("HW model:"), space1)),
+                (tag("HW model:"), space1),
                 map(not_line_ending, &str::to_string),
                 newline,
             ),
             delimited(
-                tuple((tag("HW S/N:"), space1)),
+                (tag("HW S/N:"), space1),
                 map(not_line_ending, &str::to_string),
                 newline,
             ),
             delimited(
-                tuple((tag("Uptime:"), space1)),
+                (tag("Uptime:"), space1),
                 map(not_line_ending, &str::to_string),
                 newline,
             ),
@@ -89,14 +89,13 @@ fn parse_version(input: &str) -> IResult<&str, VersionResult> {
                 uptime,
             }
         },
-    )(input)
+    ).parse_complete(input)
 }
 
 #[cfg(test)]
 mod tests {
     use chrono::NaiveDate;
     use indoc::indoc;
-
     use pretty_assertions::assert_eq;
 
     use super::*;

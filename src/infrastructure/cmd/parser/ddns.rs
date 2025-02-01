@@ -7,8 +7,8 @@ use nom::{
     combinator::{map, map_res, opt},
     error::Error,
     multi::many1,
-    sequence::{delimited, terminated, tuple},
-    Finish, IResult,
+    sequence::{delimited, terminated},
+    Finish, IResult, Parser as _,
 };
 
 use crate::{
@@ -43,28 +43,28 @@ fn parse_ddns_status(input: &str) -> IResult<&str, DdnsStatusResult> {
                 map(
                     permutation((
                         delimited(
-                            tuple((tag("interface"), space0, tag(":"), space1)),
+                            (tag("interface"), space0, tag(":"), space1),
                             map(take_till(|c| c == ' ' || c == '\n'), &str::to_string),
-                            tuple((not_line_ending, newline)),
+                            (not_line_ending, newline),
                         ),
                         opt(delimited(
-                            tuple((tag("ip address"), space0, tag(":"), space1)),
+                            (tag("ip address"), space0, tag(":"), space1),
                             map_res(not_line_ending, &str::parse),
                             newline,
                         )),
                         opt(delimited(
-                            tuple((tag("host-name"), space0, tag(":"), space1)),
+                            (tag("host-name"), space0, tag(":"), space1),
                             map(not_line_ending, &str::to_string),
                             newline,
                         )),
                         opt(delimited(
-                            tuple((tag("last update"), space0, tag(":"), space1)),
+                            (tag("last update"), space0, tag(":"), space1),
                             map_res(not_line_ending, |s| NaiveDateTime::parse_from_str(s, "%a %b %e %H:%M:%S %Y")),
                             newline,
                         )),
                         map(
                             opt(delimited(
-                                tuple((tag("update-status"), space0, tag(":"), space1)),
+                                (tag("update-status"), space0, tag(":"), space1),
                                 opt(
                                     map(alphanumeric1::<&str, _>, |s| {
                                         match s.to_ascii_lowercase().as_str() {
@@ -128,7 +128,7 @@ fn parse_ddns_status(input: &str) -> IResult<&str, DdnsStatusResult> {
                 many1(line_ending),
             ),
         ),
-    ))(input)
+    )).parse_complete(input)
 }
 
 #[cfg(test)]

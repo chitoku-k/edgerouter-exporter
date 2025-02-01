@@ -8,8 +8,8 @@ use nom::{
     combinator::{flat_map, map, map_parser, map_res, peek},
     error::Error,
     multi::many0,
-    sequence::{delimited, terminated, tuple},
-    Finish, IResult,
+    sequence::{delimited, terminated},
+    Finish, IResult, Parser as _,
 };
 
 use crate::{
@@ -40,7 +40,7 @@ fn parse_pppoe_client_sessions<'a>(input: &'a str, interfaces: &[Interface]) -> 
     alt((
         map(tag("No active PPPoE client sessions"), |_| vec![]),
         delimited(
-            tuple((
+            (
                 tag("Active PPPoE client sessions:"),
                 multispace1,
                 tag("User"),
@@ -59,10 +59,10 @@ fn parse_pppoe_client_sessions<'a>(input: &'a str, interfaces: &[Interface]) -> 
                 multispace1,
                 take_while(|c| c == '-' || c == ' '),
                 multispace1,
-            )),
+            ),
             many0(
                 map(
-                    tuple((
+                    (
                         terminated(
                             map(take_till(|c| c == ' '), &str::to_string),
                             space1,
@@ -129,7 +129,7 @@ fn parse_pppoe_client_sessions<'a>(input: &'a str, interfaces: &[Interface]) -> 
                             map_res(take_till(|c| c == '\n'), ByteSize::from_str),
                             newline,
                         ),
-                    )),
+                    ),
                     |(
                         user,
                         time,
@@ -159,15 +159,15 @@ fn parse_pppoe_client_sessions<'a>(input: &'a str, interfaces: &[Interface]) -> 
                     },
                 ),
             ),
-            tuple((
+            (
                 multispace1,
                 tag("Total sessions:"),
                 space1,
                 u64,
                 multispace1,
-            )),
+            ),
         ),
-    ))(input)
+    )).parse_complete(input)
 }
 
 #[cfg(test)]

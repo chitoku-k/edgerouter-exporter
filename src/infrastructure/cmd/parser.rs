@@ -7,8 +7,8 @@ use nom::{
     character::complete::u64,
     combinator::map,
     error::Error,
-    sequence::{terminated, tuple},
-    Finish, IResult,
+    sequence::terminated,
+    Finish, IResult, Parser as _,
 };
 
 pub mod bgp;
@@ -40,36 +40,36 @@ impl FromStr for Duration {
 fn parse_duration(input: &str) -> IResult<&str, time::Duration> {
     alt((
         map(
-            tuple((
+            (
                 terminated(u64, tag(":")),
                 terminated(u64, tag(":")),
                 u64,
-            )),
+            ),
             |(h, m, s)| time::Duration::new(h * 60 * 60 + m * 60 + s, 0),
         ),
         map(
-            tuple((
+            (
                 terminated(u64, tag("h")),
                 terminated(u64, tag("m")),
                 terminated(u64, tag("s")),
-            )),
+            ),
             |(h, m, s)| time::Duration::new(h * 60 * 60 + m * 60 + s, 0),
         ),
         map(
-            tuple((
+            (
                 terminated(u64, tag("w")),
                 terminated(u64, tag("d")),
                 terminated(u64, tag("h")),
-            )),
+            ),
             |(w, d, h)| time::Duration::new(w * 7 * 24 * 60 * 60 + d * 24 * 60 * 60 + h * 60 * 60, 0),
         ),
         map(
-            tuple((
+            (
                 terminated(u64, tag("d")),
                 terminated(u64, tag("h")),
                 terminated(u64, tag("m")),
-            )),
+            ),
             |(d, h, m)| time::Duration::new(d * 24 * 60 * 60 + h * 60 * 60 + m * 60, 0),
         ),
-    ))(input)
+    )).parse_complete(input)
 }

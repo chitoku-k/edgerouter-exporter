@@ -8,8 +8,8 @@ use nom::{
     combinator::{map, map_res},
     error::Error,
     multi::many0,
-    sequence::{separated_pair, terminated, tuple},
-    Finish, IResult,
+    sequence::{separated_pair, terminated},
+    Finish, IResult, Parser as _,
 };
 
 use crate::{
@@ -38,21 +38,21 @@ fn parse_cidr(input: &str) -> IResult<&str, (IpAddr, u32)> {
         parse_ip_address,
         tag("/"),
         u32,
-    )(input)
+    ).parse_complete(input)
 }
 
 fn parse_ip_address(input: &str) -> IResult<&str, IpAddr> {
     alt((
         map_res(take_while(|c| c == '.' || char::is_digit(c, 10)), &str::parse),
         map_res(take_while(|c| c == ':' || char::is_digit(c, 16)), &str::parse),
-    ))(input)
+    )).parse_complete(input)
 }
 
 fn parse_interfaces(input: &str) -> IResult<&str, InterfaceResult> {
     many0(
         terminated(
             map(
-                tuple((
+                (
                     terminated(
                         map(take_till(|c| c == ' '), &str::to_string),
                         space1,
@@ -67,7 +67,7 @@ fn parse_interfaces(input: &str) -> IResult<&str, InterfaceResult> {
                                 map(
                                     separated_pair(
                                         parse_ip_address,
-                                        tuple((space1, tag("peer"), space1)),
+                                        (space1, tag("peer"), space1),
                                         parse_cidr,
                                     ),
                                     |(local, (address, prefixlen))| {
@@ -106,7 +106,7 @@ fn parse_interfaces(input: &str) -> IResult<&str, InterfaceResult> {
                             space0,
                         ),
                     ),
-                )),
+                ),
                 |(ifname, operstate, addr_info)| {
                     Interface {
                         ifname,
@@ -117,7 +117,7 @@ fn parse_interfaces(input: &str) -> IResult<&str, InterfaceResult> {
             ),
             multispace1,
         ),
-    )(input)
+    ).parse_complete(input)
 }
 
 #[cfg(test)]

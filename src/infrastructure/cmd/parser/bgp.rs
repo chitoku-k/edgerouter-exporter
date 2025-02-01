@@ -8,8 +8,8 @@ use nom::{
     combinator::{eof, map, map_res, opt},
     error::Error,
     multi::{many0, many1, many_till, separated_list1},
-    sequence::{delimited, terminated, tuple},
-    Finish, IResult,
+    sequence::{delimited, terminated},
+    Finish, IResult, Parser as _,
 };
 
 use crate::{
@@ -80,43 +80,43 @@ fn parse_bgp_neighbor(header: &[&str], line: &[&str]) -> anyhow::Result<BGPNeigh
 fn parse_bgp_status(input: &str) -> IResult<&str, BGPStatusResult> {
     alt((
         map(
-            tuple((multispace0, eof)),
+            (multispace0, eof),
             |_| None,
         ),
         map(
             permutation((
-                tuple((
+                (
                     delimited(
-                        tuple((tag("BGP router identifier"), space1)),
+                        (tag("BGP router identifier"), space1),
                         map(take_until(","), &str::to_string),
-                        tuple((tag(","), space1)),
+                        (tag(","), space1),
                     ),
                     delimited(
-                        tuple((tag("local AS number"), space1)),
+                        (tag("local AS number"), space1),
                         u32,
                         many1(newline),
                     ),
-                )),
+                ),
                 delimited(
-                    tuple((tag("BGP table version is"), space1)),
+                    (tag("BGP table version is"), space1),
                     u32,
                     many1(newline),
                 ),
                 terminated(
                     u64,
-                    tuple((space1, tag("BGP AS-PATH entries"), many1(newline))),
+                    (space1, tag("BGP AS-PATH entries"), many1(newline)),
                 ),
                 terminated(
                     u64,
-                    tuple((space1, tag("BGP community entries"), many1(newline))),
+                    (space1, tag("BGP community entries"), many1(newline)),
                 ),
                 opt(terminated(
                     u64,
-                    tuple((space1, tag("Configured ebgp ECMP multipath"), not_line_ending, many1(newline))),
+                    (space1, tag("Configured ebgp ECMP multipath"), not_line_ending, many1(newline)),
                 )),
                 opt(terminated(
                     u64,
-                    tuple((space1, tag("Configured ibgp ECMP multipath"), not_line_ending, many1(newline))),
+                    (space1, tag("Configured ibgp ECMP multipath"), not_line_ending, many1(newline)),
                 )),
                 map_res(
                     many_till(
@@ -135,12 +135,12 @@ fn parse_bgp_status(input: &str) -> IResult<&str, BGPStatusResult> {
                     },
                 ),
                 delimited(
-                    tuple((tag("Total number of neighbors"), space1)),
+                    (tag("Total number of neighbors"), space1),
                     u64,
                     many0(newline),
                 ),
                 delimited(
-                    tuple((tag("Total number of Established sessions"), space1)),
+                    (tag("Total number of Established sessions"), space1),
                     u64,
                     many0(newline),
                 ),
@@ -169,7 +169,7 @@ fn parse_bgp_status(input: &str) -> IResult<&str, BGPStatusResult> {
                 })
             },
         ),
-    ))(input)
+    )).parse_complete(input)
 }
 
 #[cfg(test)]
