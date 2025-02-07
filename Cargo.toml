@@ -52,7 +52,7 @@ features = ["cargo", "derive", "env", "help", "std", "string", "suggestions", "u
 default-features = false
 
 [dependencies.derive_more]
-version = "1.0.0"
+version = "2.0.1"
 features = ["as_ref", "constructor", "deref", "deref_mut", "display", "from", "from_str", "into", "into_iterator"]
 
 [dependencies.env_logger]
