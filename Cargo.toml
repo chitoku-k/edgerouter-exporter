@@ -103,7 +103,7 @@ version = "1.0.217"
 features = ["derive"]
 
 [dependencies.tls-listener]
-version = "0.10.3"
+version = "0.11.0"
 
 [dependencies.tokio]
 version = "1.43.0"
