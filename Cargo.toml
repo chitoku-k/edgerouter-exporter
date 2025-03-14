@@ -47,7 +47,7 @@ features = ["clock", "std"]
 default-features = false
 
 [dependencies.clap]
-version = "4.5.31"
+version = "4.5.32"
 features = ["cargo", "derive", "env", "help", "std", "string", "suggestions", "usage"]
 default-features = false
 
