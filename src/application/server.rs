@@ -123,12 +123,12 @@ async fn bind_tls(app: Router, listener: TcpListener, tls_cert: String, tls_key:
                         let service = service.clone();
                         tokio::spawn(async move {
                             if let Err(e) = http.serve_connection(io, service).await {
-                                log::debug!("{}", e);
+                                log::debug!("{e}");
                             }
                         });
                     },
                     Err(e) => {
-                        log::debug!("{}", e);
+                        log::debug!("{e}");
                     },
                 }
             },
@@ -143,7 +143,7 @@ async fn bind_tls(app: Router, listener: TcpListener, tls_cert: String, tls_key:
                         listener.replace_acceptor(acceptor);
                     },
                     Err(e) => {
-                        log::warn!("{:?}", e);
+                        log::warn!("{e:?}");
                     },
                 }
             },
