@@ -66,7 +66,7 @@ version = "1.6.0"
 features = ["server"]
 
 [dependencies.hyper-util]
-version = "0.1.11"
+version = "0.1.12"
 features = ["tokio"]
 
 [dependencies.indenter]
