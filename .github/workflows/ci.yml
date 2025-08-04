@@ -33,7 +33,7 @@ jobs:
           cargo clippy --tests --workspace --quiet --message-format=short --color=never 2>&1 |
             reviewdog -f=clippy -reporter=github-pr-annotations -filter-mode=nofilter -fail-level=any -tee
   build:
-    name: Build
+    name: Build (${{ matrix.target.id }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
