@@ -70,7 +70,7 @@ version = "0.1.16"
 features = ["tokio"]
 
 [dependencies.indenter]
-version = "0.3.3"
+version = "0.3.4"
 
 [dependencies.indexmap]
 version = "2.10.0"
