@@ -73,7 +73,7 @@ features = ["tokio"]
 version = "0.3.4"
 
 [dependencies.indexmap]
-version = "2.11.1"
+version = "2.11.4"
 features = ["serde"]
 
 [dependencies.log]
