@@ -99,7 +99,7 @@ version = "0.24.0"
 version = "0.1.2"
 
 [dependencies.serde]
-version = "1.0.227"
+version = "1.0.228"
 features = ["derive"]
 
 [dependencies.tls-listener]
