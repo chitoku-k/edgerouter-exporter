@@ -23,7 +23,7 @@ jobs:
             args: []
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Set up rust
         uses: dtolnay/rust-toolchain@nightly
       - name: Set up cross
