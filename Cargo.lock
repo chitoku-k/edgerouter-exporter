@@ -1310,9 +1310,9 @@ dependencies = [
 
 [[package]]
 name = "tls-listener"
-version = "0.11.1"
+version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "76e467b2d0f2bd172dd7fc4e5795c81c11212520bbe2fc7facd1aa39b05fcc6d"
+checksum = "1461056cc1ef47003f7ee16e4cef3741068d4c7f6b627bfce49b7c00c120a530"
 dependencies = [
  "futures-util",
  "openssl",
