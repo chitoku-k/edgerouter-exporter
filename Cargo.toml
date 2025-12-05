@@ -77,7 +77,7 @@ version = "2.12.1"
 features = ["serde"]
 
 [dependencies.log]
-version = "0.4.28"
+version = "0.4.29"
 
 [dependencies.nom]
 version = "8.0.0"
