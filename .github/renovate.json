@@ -4,10 +4,6 @@
   "schedule": ["* 0-3 * * 6"],
   "timezone": "Asia/Tokyo",
   "labels": ["dependencies"],
-  "commitMessageAction": "Bump",
-  "commitMessageExtra": "",
-  "commitMessageSuffix": "from {{currentVersion}} to {{newVersion}}",
-  "commitMessageTopic": "{{depName}}",
   "prConcurrentLimit": 0,
   "prHourlyLimit": 0,
   "packageRules": [
@@ -18,6 +14,13 @@
     {
       "matchManagers": ["cargo"],
       "addLabels": ["rust"]
+    },
+    {
+      "matchDepNames": ["*"],
+      "commitMessageAction": "Bump",
+      "commitMessageExtra": "",
+      "commitMessageSuffix": "from {{currentVersion}} to {{newVersion}}",
+      "commitMessageTopic": "{{depName}}"
     }
   ]
 }
