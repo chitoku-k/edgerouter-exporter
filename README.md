@@ -262,6 +262,6 @@ edgerouter_pppoe_client_session_transmit_packets_total{interface_name="pppoe0",i
 | 500    | Unexpected error calling a command. |
 
 [workflow-link]:                    https://github.com/chitoku-k/edgerouter-exporter/actions?query=branch:master
-[workflow-badge]:                   https://img.shields.io/github/actions/workflow/status/chitoku-k/edgerouter-exporter/ci.yml?branch=master&style=flat-square
+[workflow-badge]:                   https://img.shields.io/github/actions/workflow/status/chitoku-k/edgerouter-exporter/test.yml?branch=master&style=flat-square
 [IPsec Exporter]:                   https://github.com/dennisstritzke/ipsec_exporter
 [EdgeRouter - Hardware Offloading]: https://help.ui.com/hc/en-us/articles/115006567467-EdgeRouter-Hardware-Offloading
