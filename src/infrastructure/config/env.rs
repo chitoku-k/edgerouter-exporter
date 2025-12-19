@@ -65,12 +65,12 @@ pub fn init() -> Config {
 
 #[cfg(not(feature = "tls"))]
 fn version() -> &'static str {
-    crate_version!()
+    concat!("v", crate_version!())
 }
 
 #[cfg(feature = "tls")]
 fn version() -> String {
-    format!("{} ({})", crate_version!(), openssl::version::version())
+    format!("{} ({})", concat!("v", crate_version!()), openssl::version::version())
 }
 
 fn default_vici_path() -> ViciPath {

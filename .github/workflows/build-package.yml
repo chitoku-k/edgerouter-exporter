@@ -44,18 +44,6 @@ jobs:
         uses: taiki-e/cache-cargo-install-action@v2
         with:
           tool: cargo-deb
-      - name: Set up cargo-edit
-        uses: taiki-e/cache-cargo-install-action@v2
-        with:
-          tool: cargo-edit
-      - name: Get version
-        uses: chitoku-k/actions/describe-git-tag@master
-        id: version
-      - name: Set version
-        run: |
-          cargo set-version "${VERSION#v}"
-        env:
-          VERSION: ${{ steps.version.outputs.value }}
       - name: Build
         run: |
           cross build --release --target=${{ matrix.platform.target }}
