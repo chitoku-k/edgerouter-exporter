@@ -32,7 +32,7 @@ jobs:
           - mipsel
     steps:
       - name: Download
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           path: ${{ runner.temp }}
           pattern: artifacts-${{ matrix.platform }}
