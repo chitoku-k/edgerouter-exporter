@@ -96,7 +96,7 @@ version = "0.10.75"
 version = "0.24.0"
 
 [dependencies.rsvici]
-version = "0.1.2"
+version = "0.1.4"
 
 [dependencies.serde]
 version = "1.0.228"
