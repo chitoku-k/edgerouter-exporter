@@ -1,0 +1,38 @@
+name: Test
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  workflow_call:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    name: ${{ matrix.platform.arch }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - arch: mips
+            target: mips-unknown-linux-gnu
+          - arch: mipsel
+            target: mipsel-unknown-linux-gnu
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: nightly
+      - name: Set up cross
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cross
+      - name: Run tests
+        run: |
+          cross test --target=${{ matrix.platform.target }} --workspace

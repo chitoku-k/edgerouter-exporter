@@ -1,0 +1,42 @@
+name: Lint
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  workflow_call:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  clippy:
+    name: Clippy (${{ matrix.platform.arch }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - arch: mips
+            target: mips-unknown-linux-gnu
+          - arch: mipsel
+            target: mipsel-unknown-linux-gnu
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Set up reviewdog
+        uses: reviewdog/action-setup@v1
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: nightly
+      - name: Set up cross
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cross
+      - name: Run clippy
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
+        run: |
+          cross clippy --target=${{ matrix.platform.target }} --tests --workspace --quiet --message-format=short --color=never 2>&1 | reviewdog -f=clippy -reporter=github-pr-annotations -filter-mode=nofilter -fail-level=any -tee
