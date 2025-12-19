@@ -1,0 +1,29 @@
+name: Release
+on:
+  release:
+    types:
+      - published
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  lint:
+    name: Lint
+    uses: ./.github/workflows/lint.yml
+
+  test:
+    name: Test
+    uses: ./.github/workflows/test.yml
+
+  publish-package:
+    name: Publish package
+    needs:
+      - lint
+      - test
+    uses: ./.github/workflows/publish-package.yml
+    permissions:
+      contents: write
+    with:
+      tag: ${{ github.event.release.tag_name }}

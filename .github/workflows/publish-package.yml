@@ -1,0 +1,44 @@
+name: Publish package
+on:
+  workflow_call:
+    inputs:
+      tag:
+        type: string
+        required: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: Build
+    uses: ./.github/workflows/build-package.yml
+    with:
+      upload: true
+
+  upload:
+    name: Upload (${{ matrix.platform }})
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - mips
+          - mipsel
+    steps:
+      - name: Download
+        uses: actions/download-artifact@v6
+        with:
+          path: ${{ runner.temp }}
+          pattern: artifacts-${{ matrix.platform }}
+          merge-multiple: true
+      - name: Upload
+        uses: svenstaro/upload-release-action@v2
+        with:
+          tag: ${{ inputs.tag }}
+          file: ${{ runner.temp }}/prometheus-edgerouter-exporter_${{ matrix.platform }}.deb

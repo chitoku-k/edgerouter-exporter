@@ -1,0 +1,64 @@
+name: Build package
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  workflow_call:
+    inputs:
+      upload:
+        type: boolean
+        default: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: ${{ matrix.platform.arch }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - arch: mips
+            target: mips-unknown-linux-gnu
+          - arch: mipsel
+            target: mipsel-unknown-linux-gnu
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          filter: tree:0
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: nightly
+      - name: Set up cross
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cross
+      - name: Set up cargo-deb
+        uses: taiki-e/cache-cargo-install-action@v2
+        with:
+          tool: cargo-deb
+      - name: Build
+        run: |
+          cross build --release --target=${{ matrix.platform.target }}
+      - name: Package
+        run: |
+          cargo deb \
+            --no-build \
+            --no-strip \
+            --target=${{ matrix.platform.target }} \
+            --output=${{ runner.temp }}/artifacts/prometheus-edgerouter-exporter_${{ matrix.platform.arch }}.deb
+      - name: Upload
+        if: ${{ inputs.upload || false }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: artifacts-${{ matrix.platform.arch }}
+          path: ${{ runner.temp }}/artifacts/*
+          if-no-files-found: error
+          retention-days: 1
