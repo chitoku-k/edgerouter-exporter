@@ -41,11 +41,11 @@ jobs:
         with:
           tool: cross
       - name: Set up cargo-deb
-        uses: taiki-e/cache-cargo-install-action@v2
+        uses: taiki-e/cache-cargo-install-action@v3
         with:
           tool: cargo-deb
       - name: Set up cargo-edit
-        uses: taiki-e/cache-cargo-install-action@v2
+        uses: taiki-e/cache-cargo-install-action@v3
         with:
           tool: cargo-edit
       - name: Get version
