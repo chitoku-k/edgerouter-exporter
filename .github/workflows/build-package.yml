@@ -68,7 +68,7 @@ jobs:
             --output=${{ runner.temp }}/artifacts/prometheus-edgerouter-exporter_${{ matrix.platform.arch }}.deb
       - name: Upload
         if: ${{ inputs.upload || false }}
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: artifacts-${{ matrix.platform.arch }}
           path: ${{ runner.temp }}/artifacts/*
