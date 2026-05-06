@@ -27,7 +27,7 @@ impl IPsecRunner {
         let mut client = match rsvici::unix::connect(&self.path).await {
             Ok(client) => client,
             Err(e) if e.kind() == ErrorKind::NotFound => {
-                log::debug!("failed to connect to strongSwan at {:?}: {e}", &self.path);
+                log::debug!("failed to connect to strongSwan at {:?}: {e}", self.path);
                 return Ok(IndexMap::new());
             },
             Err(e) => {
