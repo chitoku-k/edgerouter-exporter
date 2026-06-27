@@ -94,6 +94,7 @@ mod tests {
     mock! {
         PPPoEParser {}
 
+        #[allow(clippy::extra_unused_lifetimes)]
         impl Parser for PPPoEParser {
             type Context<'a> = (&'a [Interface],);
             type Item = PPPoEClientSessionResult;
@@ -105,6 +106,7 @@ mod tests {
     mock! {
         InterfaceParser {}
 
+        #[allow(clippy::extra_unused_lifetimes)]
         impl Parser for InterfaceParser {
             type Context<'a> = ();
             type Item = InterfaceResult;
