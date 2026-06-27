@@ -14,6 +14,7 @@ pub mod version;
 mockall::mock! {
     pub(super) Executor {}
 
+    #[allow(clippy::extra_unused_lifetimes)]
     impl Executor for Executor {
         fn output<'a>(&self, command: &str, args: &[&'a str]) -> impl Future<Output = anyhow::Result<String>> + Send;
     }
