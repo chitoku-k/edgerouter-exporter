@@ -24,15 +24,15 @@ jobs:
             target: mipsel-unknown-linux-gnu
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
       - name: Set up reviewdog
-        uses: reviewdog/action-setup@v1
+        uses: reviewdog/action-setup@v1.5.0
       - name: Set up Rust
-        uses: actions-rust-lang/setup-rust-toolchain@v2
+        uses: actions-rust-lang/setup-rust-toolchain@v2.0.0
         with:
           toolchain: nightly
       - name: Set up cross
-        uses: taiki-e/install-action@v2
+        uses: taiki-e/install-action@v2.88.0
         with:
           tool: cross
       - name: Run clippy

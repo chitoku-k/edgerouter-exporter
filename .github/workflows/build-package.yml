@@ -28,24 +28,24 @@ jobs:
             target: mipsel-unknown-linux-gnu
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
           filter: tree:0
       - name: Set up Rust
-        uses: actions-rust-lang/setup-rust-toolchain@v2
+        uses: actions-rust-lang/setup-rust-toolchain@v2.0.0
         with:
           toolchain: nightly
       - name: Set up cross
-        uses: taiki-e/install-action@v2
+        uses: taiki-e/install-action@v2.88.0
         with:
           tool: cross
       - name: Set up cargo-deb
-        uses: taiki-e/cache-cargo-install-action@v3
+        uses: taiki-e/cache-cargo-install-action@v3.0.8
         with:
           tool: cargo-deb
       - name: Set up cargo-edit
-        uses: taiki-e/cache-cargo-install-action@v3
+        uses: taiki-e/cache-cargo-install-action@v3.0.8
         with:
           tool: cargo-edit
       - name: Get version
@@ -68,7 +68,7 @@ jobs:
             --output=${{ runner.temp }}/artifacts/prometheus-edgerouter-exporter_${{ matrix.platform.arch }}.deb
       - name: Upload
         if: ${{ inputs.upload || false }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: artifacts-${{ matrix.platform.arch }}
           path: ${{ runner.temp }}/artifacts/*

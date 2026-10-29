@@ -32,13 +32,13 @@ jobs:
           - mipsel
     steps:
       - name: Download
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@v8.0.2
         with:
           path: ${{ runner.temp }}
           pattern: artifacts-${{ matrix.platform }}
           merge-multiple: true
       - name: Upload
-        uses: svenstaro/upload-release-action@v2
+        uses: svenstaro/upload-release-action@2.11.5
         with:
           tag: ${{ inputs.tag }}
           file: ${{ runner.temp }}/prometheus-edgerouter-exporter_${{ matrix.platform }}.deb
