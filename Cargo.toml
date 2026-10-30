@@ -83,7 +83,7 @@ version = "0.4.34"
 version = "8.0.0"
 
 [dependencies.notify]
-version = "8.2.0"
+version = "8.2.1"
 default-features = false
 
 [dependencies.number_prefix]
