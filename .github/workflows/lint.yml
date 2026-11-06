@@ -28,7 +28,7 @@ jobs:
       - name: Set up reviewdog
         uses: reviewdog/action-setup@v1.5.0
       - name: Set up Rust
-        uses: actions-rust-lang/setup-rust-toolchain@v2.0.0
+        uses: actions-rust-lang/setup-rust-toolchain@v2.0.1
         with:
           toolchain: nightly
       - name: Set up cross
