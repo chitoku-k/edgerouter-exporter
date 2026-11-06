@@ -32,7 +32,7 @@ jobs:
         with:
           toolchain: nightly
       - name: Set up cross
-        uses: taiki-e/install-action@v2.88.0
+        uses: taiki-e/install-action@v2.90.1
         with:
           tool: cross
       - name: Run clippy
