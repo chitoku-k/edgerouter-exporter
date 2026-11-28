@@ -30,7 +30,7 @@ jobs:
         with:
           toolchain: nightly
       - name: Set up cross
-        uses: taiki-e/install-action@v2.90.7
+        uses: taiki-e/install-action@v2.90.11
         with:
           tool: cross
       - name: Run tests
